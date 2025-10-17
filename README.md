@@ -8,6 +8,9 @@ A simple, mod based game development framework I made for my own games; containi
 
 Nothing fancy. It’s not designed to take you to space. You can take a look if you want, but it’s probably not a project you’ll need.
 
+> [!NOTE]  
+> Scythe is not a game engine. On the contrary, it’s developed with Unity. It’s simply a Unity-based toolkit/framework.
+
 ## 🛠 License
 
 Scythe is licensed under the [LGPL-2.1 license](./LICENSE).
