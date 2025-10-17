@@ -1,0 +1,18 @@
+[submodule "lib"]
+	path = lib
+	url = https://github.com/fkerimk/scythe-lib
+[submodule "util"]
+	path = util
+	url = https://github.com/fkerimk/scythe-util
+[submodule "core"]
+	path = core
+	url = https://github.com/fkerimk/scythe-core
+[submodule "run"]
+	path = run
+	url = https://github.com/fkerimk/scythe-run
+[submodule "build"]
+	path = build
+	url = https://github.com/fkerimk/scythe-build
+[submodule "mods/template"]
+	path = mods/template
+	url = https://github.com/fkerimk/scythe-mods-template
