@@ -24,6 +24,7 @@ Make sure you have the .NET 10 SDK packages installed.
 
 ```bash
 git clone --recurse-submodules https://github.com/fkerimk/scythe.git
+cd ./scythe/
 ./build/build.sh
 ```
 
