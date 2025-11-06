@@ -5,12 +5,12 @@ namespace scythe;
 #pragma warning disable CS8981 
 public class cam {
 
-    private Camera3D rl_cam;
+    public Camera3D rl_cam;
     
-    public float3 up {
-        get => rl_cam.Up.to_float3();
-        set => rl_cam.Up = value.to_vector3();
-    }
+    //public float3 up {
+    //    get => rl_cam.Up.to_float3();
+    //    set => rl_cam.Up = value.to_vector3();
+    //}
     
     public float3 pos {
         get => rl_cam.Position.to_float3();
@@ -26,6 +26,10 @@ public class cam {
         get => rl_cam.FovY;
         set => rl_cam.FovY = value;
     }
+    
+    public float3 up => -float3.normalize(float3.cross(fwd, right));
+    public float3 fwd => float3.normalize(target - pos);
+    public float3 right => float3.normalize(float3.cross(fwd, float3.up));
 
     public cam() {
         

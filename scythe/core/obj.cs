@@ -5,7 +5,7 @@ namespace scythe;
 #pragma warning disable CS8981
 public class obj {
     
-    public string name;
+    private string _name;
     public string type;
     public obj? parent;
     public List<obj> children = [];
@@ -13,9 +13,11 @@ public class obj {
     public Matrix4x4 matrix = Matrix4x4.Identity;
     public type? type_class = null;
     
+    [label("Name")] public string name { get => _name; set => _name = value; }
+    
     public obj(string name, string type, obj? parent = null) {
 
-        this.name = name;
+        _name = name;
         this.type = type;
         this.parent = parent;
         
@@ -53,7 +55,7 @@ public class obj {
 
     private void order_children() {
     
-        children.Sort((a, b) => natural_compare(a.name, b.name));
+        children.Sort((a, b) => natural_compare(a._name, b._name));
     }
 
     private static int natural_compare(string a, string b) {

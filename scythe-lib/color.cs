@@ -27,6 +27,11 @@ public static partial class ext {
         return new(color.r, color.g, color.b, color.a);
     }
     
+    public static color to_color(this System.Numerics.Vector4 color) {
+        
+        return new(color.X, color.Y, color.Z, color.W);
+    }
+    
     public static byte4 to_bytes(this color color) {
         
         return new((byte)(color.r * 255), (byte)(color.g * 255), (byte)(color.b * 255), (byte)(color.a * 255));

@@ -77,6 +77,7 @@ public static class colors {
     //
     public static color gui_tree_enabled => new(0.5f, 0.5f, 0.5f);
     public static color gui_tree_disabled => new(0.3f, 0.2f, 0.2f);
+    public static color gui_tree_selected => new(0.6f, 0.3f, 0.15f);
     
     public static color gui_type_object    => new(0.5f, 0.5f, 0.5f);
     public static color gui_type_model     => new(0.5f, 0.9f, 0.9f);

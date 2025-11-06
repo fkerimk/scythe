@@ -3,21 +3,37 @@ using scythe;
 
 Directory.SetCurrentDirectory(path.exe_dir);
 
-splash:
-//var splash = new splash(2); splash.show(
-//    320, 190, 
-//    TraceLogLevel.None, 
-//    ConfigFlags.UndecoratedWindow
-//);
+var splash = false;
+var editor = true;
 
-editor:
-var editor = new editor(); editor.show(
-    1, 1, 
-    TraceLogLevel.Warning, 
-    ConfigFlags.Msaa4xHint,
-    ConfigFlags.AlwaysRunWindow,
-    ConfigFlags.ResizableWindow
-);
+if (splash) {
+    
+    new splash(2).show(
+        320, 190, 
+        TraceLogLevel.None, 
+        ConfigFlags.UndecoratedWindow
+    );
+}
 
-runtime:
-var runtime = new runtime();
+if (editor) {
+    
+    new editor().show(
+        1, 1, 
+        TraceLogLevel.Warning, 
+        ConfigFlags.Msaa4xHint,
+        ConfigFlags.AlwaysRunWindow,
+        ConfigFlags.ResizableWindow
+    );
+    
+} else {
+    
+    new runtime().show(
+        1, 1, 
+        TraceLogLevel.Warning, 
+        ConfigFlags.Msaa4xHint,
+        ConfigFlags.AlwaysRunWindow,
+        ConfigFlags.ResizableWindow
+    );
+}
+
+Environment.Exit(0);

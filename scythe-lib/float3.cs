@@ -40,6 +40,7 @@ public struct float3(float X, float Y, float Z) {
     // pre-values
     public static float3 zero =>  new(0, 0, 0);
     public static float3 one  =>  new(1, 1, 1);
+    public static float3 up   =>  new(0, 1, 0);
 }
 
 #pragma warning disable CS8981

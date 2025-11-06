@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using ImGuiNET;
 using Raylib_cs;
 using rlImGui_cs;
@@ -8,6 +7,8 @@ namespace scythe;
 
 #pragma warning disable CS8981
 internal class editor : raylib_session {
+
+    public static cam? cam;
     
     protected override unsafe void draw() {
         
@@ -24,13 +25,12 @@ internal class editor : raylib_session {
         
         // generic initials
         var core = new core();
-        var cam = new cam();
+        cam = new();
         var freecam = new freecam(cam);
-        
         fonts.load(imgui);
-        
         var level_3d = new level_3d();
         var level_browser = new level_browser(core.level);
+        var object_browser = new object_browser();
         
         while (!Raylib.WindowShouldClose()) {
             
@@ -55,19 +55,22 @@ internal class editor : raylib_session {
             cam.start_rendering();
             
             // run 3d
-            core.loop_3d();
+            core.loop_3d(true);
             
             // draw grid
             var grid = new grid(cam);
             grid.draw();
             
+            // run ui
+            core.loop_ui(true);
+            
+            // run editor
+            core.loop_editor(level_3d);
+            
             // stop camera
             cam.stop_rendering();
             
-            // run ui
-            core.loop_ui();
-            
-            Raylib.DrawFPS(10, 10);
+            Raylib.DrawText($"{Raylib.GetFPS()}", 10, 10, 20, colors.primary.to_raylib());
 
             Raylib.EndTextureMode();
             
@@ -83,11 +86,11 @@ internal class editor : raylib_session {
             imgui.MouseDoubleClickTime = 0.2f; // Saniye cinsinden (varsayılan 0.3)
             //imgui.MouseDoubleClickMaxDist = 6.0f; // Pixel cinsinden
             
-            // draw viewport
+            // draw elements
             level_3d.draw();
-            
-            // draw level browser
             level_browser.draw();
+            object_browser.obj = level_browser.selected_object;
+            object_browser.draw();
             
             // stop imgui
             ImGui.PopFont();
@@ -97,6 +100,8 @@ internal class editor : raylib_session {
             // stop raylib
             Raylib.EndDrawing();
         }
+        
+        core.quit();
         
         Raylib.CloseWindow();
     }

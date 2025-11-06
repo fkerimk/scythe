@@ -76,11 +76,7 @@ public class freecam {
         if (Raylib.IsKeyDown(KeyboardKey.E)) input.y += 1;
         if (Raylib.IsKeyDown(KeyboardKey.Q)) input.y -= 1;
         
-        var fwd = float3.normalize(cam.target - cam.pos);
-        var right = float3.normalize(float3.cross(fwd, cam.up));
-        var up = -float3.normalize(float3.cross(fwd, right));
-        
-        cam.pos += (up * input.y + right * input.x + fwd * input.z) * speed * Raylib.GetFrameTime();
+        cam.pos += (cam.up * input.y + cam.right * input.x + cam.fwd * input.z) * speed * Raylib.GetFrameTime();
     }
 
     private void set_from_target(float3 pos, float3 target) {

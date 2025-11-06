@@ -1,5 +1,4 @@
-﻿using System.Numerics;
-using ImGuiNET;
+﻿using ImGuiNET;
 
 namespace scythe;
 
@@ -9,10 +8,11 @@ public class level_browser(level level) : viewport("Level", ImGuiWindowFlags.NoC
     public level level = level;
     
     // cache
-    private obj? drag_object;
-    private obj? drag_target;
-    private obj? delete_object;
-    private float? saved_scroll;
+    public obj? drag_object;
+    public obj? drag_target;
+    public obj? delete_object;
+    public obj? selected_object;
+    public float? saved_scroll;
     
     public override void on_draw() {
 
@@ -51,6 +51,7 @@ public class level_browser(level level) : viewport("Level", ImGuiWindowFlags.NoC
 
         // tree node
         var is_open = ImGui.GetStateStorage().GetInt(ImGui.GetID(" ##" + obj.GetHashCode()), 1) != 0;
+        var is_selected = selected_object == obj;
         
         var arrow_color = is_open ?
             colors.gui_tree_enabled.to_vector4() :
@@ -59,10 +60,15 @@ public class level_browser(level level) : viewport("Level", ImGuiWindowFlags.NoC
         if (obj.children.Count == 0)
             arrow_color = colors.clear.to_vector4();
         
+        var flags = ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanFullWidth;
+        if (is_selected) flags |= ImGuiTreeNodeFlags.Selected;
+        
         ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - indent * 12.5f - 7.5f, ImGui.GetCursorPosY()));
         
         ImGui.PushStyleColor(ImGuiCol.Text, arrow_color);
-        var tree = ImGui.TreeNodeEx(" ##" + obj.GetHashCode(), ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanFullWidth);
+        ImGui.PushStyleColor(ImGuiCol.Header, colors.gui_tree_selected.to_vector4());
+        var tree = ImGui.TreeNodeEx(" ##" + obj.GetHashCode(), flags);
+        ImGui.PopStyleColor();
         ImGui.PopStyleColor();
         
         // right click
@@ -70,7 +76,11 @@ public class level_browser(level level) : viewport("Level", ImGuiWindowFlags.NoC
             ImGui.OpenPopupOnItemClick("context##" + obj.GetHashCode());
         
         // left click
-        else if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left)) {}
+        else if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left)) {
+
+            selected_object = obj;
+            Console.WriteLine($"{obj.name} is selected!");
+        }
         
         // object context
         if (ImGui.BeginPopup("context##" + obj.GetHashCode())) {

@@ -5,32 +5,31 @@ namespace scythe;
 
 #pragma warning disable CS8981
 public class model(obj obj) : type(obj) {
+    
+    [label("Path")] public string path { get; set; }
+    [label("Color")] public color color { get; set; } = new(1,1,1,1);
 
     public Model rl_model;
+    private bool model_loaded;
     
-    public string path;
-
-    public bool model_loaded;
-
-    public override void loop() {
+    public override void loop_3d(bool is_editor) {
 
         if (!model_loaded) {
 
-            rl_model = Raylib.LoadModel(path);
+            rl_model = Raylib.LoadModel(scythe.path.relative(path));
             model_loaded = true;
         }
 
         rl_model.Transform = obj.parent!.matrix;
         
-        Raylib.DrawModel(rl_model, Vector3.Zero, 1, Color.White);
+        Raylib.DrawModel(rl_model, Vector3.Zero, 1, color.to_raylib());
+    }
+
+    public override void loop_ui(bool is_editor) {}
+    public override void loop_editor(viewport viewport) { }
+
+    public override void quit() {
         
-        //Raylib.DrawModelEx(
-        //    rl_model,
-        //    new(obj.parent!.prs.px, obj.parent!.prs.py, obj.parent!.prs.pz),
-        //    new(obj.parent!.prs.rx, obj.parent!.prs.ry, obj.parent!.prs.rz),
-        //    35,
-        //    new(obj.parent!.prs.sx, obj.parent!.prs.sy, obj.parent!.prs.sz),
-        //    new(1f, 1f, 1f, 1f)
-        //);
+        Raylib.UnloadModel(rl_model);
     }
 }
