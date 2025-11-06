@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Numerics;
+using System.Runtime.InteropServices;
 using ImGuiNET;
 using Raylib_cs;
 using rlImGui_cs;
@@ -6,36 +7,14 @@ using rlImGui_cs;
 namespace scythe;
 
 #pragma warning disable CS8981
-internal static class editor {
-
-    internal static unsafe void show() {
+internal class editor : raylib_session {
+    
+    protected override unsafe void draw() {
         
-        // ----------------------------------------------------------------
-        // raylib setup
-        // ----------------------------------------------------------------
-        Raylib.SetTraceLogLevel(TraceLogLevel.Warning);
-
-        Raylib.SetConfigFlags(ConfigFlags.Msaa4xHint);
-        Raylib.SetConfigFlags(ConfigFlags.AlwaysRunWindow);
-        Raylib.SetConfigFlags(ConfigFlags.ResizableWindow);
+        resize_window(new(screen.width / 2, screen.height / 2));
+        center_window();
         
-        Raylib.InitWindow(1, 1, "SCYTHE");
-        
-        Raylib.ClearWindowState(ConfigFlags.UndecoratedWindow);
-        
-        var width = screen.width / 2;
-        var height = screen.height / 2;
-        
-        Raylib.SetWindowSize(width, height);
-        Raylib.SetWindowPosition((screen.width - width) / 2, (screen.height - height) / 2);
-        
-        Raylib.SetTargetFPS(screen.refresh_rate);
-        
-        Raylib.SetExitKey(KeyboardKey.Null);
-        
-        // ----------------------------------------------------------------
         // imgui setup
-        // ----------------------------------------------------------------
         rlImGui.Setup(true, true);
         
         var imgui = ImGui.GetIO();
@@ -43,40 +22,49 @@ internal static class editor {
         //imgui.NativePtr->IniFilename = (byte*)IntPtr.Zero.ToPointer();
         imgui.NativePtr->IniFilename = (byte*)Marshal.StringToHGlobalAnsi("layout/user.ini").ToPointer();
         
-        // ----------------------------------------------------------------
         // generic initials
-        // ----------------------------------------------------------------
-        core.init();
-        freecam.init();
+        var core = new core();
+        var cam = new cam();
+        var freecam = new freecam(cam);
         
         fonts.load(imgui);
-        viewport.init();
-
+        
+        var level_3d = new level_3d();
+        var level_browser = new level_browser(core.level);
+        
         while (!Raylib.WindowShouldClose()) {
+            
+            Raylib.SetTargetFPS(screen.refresh_rate);
 
             // reload viewport render
-            if (viewport.tex_size != viewport.tex_temp) {
+            if (level_3d.tex_size != level_3d.tex_temp) {
                 
-                Raylib.UnloadRenderTexture(viewport.rt);
-                viewport.rt = Raylib.LoadRenderTexture((int)viewport.tex_size.X, (int)viewport.tex_size.Y);
-                viewport.tex_temp = viewport.tex_size;
+                Raylib.UnloadRenderTexture(level_3d.rt);
+                level_3d.rt = Raylib.LoadRenderTexture((int)level_3d.tex_size.X, (int)level_3d.tex_size.Y);
+                level_3d.tex_temp = level_3d.tex_size;
             }
             
             // render core on viewport
-            Raylib.BeginTextureMode(viewport.rt);
+            Raylib.BeginTextureMode(level_3d.rt);
             
-            Raylib.ClearBackground(colors.game);
+            clear(colors.game);
 
-            freecam.update(viewport.pos.to_int2() + viewport.size.to_int2() / 2);
+            // start camera
+            freecam.loop(level_3d);
         
-            Raylib.BeginMode3D(cam.current);
+            cam.start_rendering();
             
+            // run 3d
             core.loop_3d();
             
+            // draw grid
+            var grid = new grid(cam);
             grid.draw();
             
-            Raylib.EndMode3D();
+            // stop camera
+            cam.stop_rendering();
             
+            // run ui
             core.loop_ui();
             
             Raylib.DrawFPS(10, 10);
@@ -85,16 +73,21 @@ internal static class editor {
             
             // draw raylib
             Raylib.BeginDrawing();
-            Raylib.ClearBackground(colors.back);
+            clear(new(0, 0, 0));
             
             // draw imgui
             rlImGui.Begin();
             style.push();
             ImGui.PushFont(fonts.montserrat_regular);
             ImGui.DockSpaceOverViewport(ImGui.GetMainViewport().ID);
+            imgui.MouseDoubleClickTime = 0.2f; // Saniye cinsinden (varsayılan 0.3)
+            //imgui.MouseDoubleClickMaxDist = 6.0f; // Pixel cinsinden
             
             // draw viewport
-            viewport.draw();
+            level_3d.draw();
+            
+            // draw level browser
+            level_browser.draw();
             
             // stop imgui
             ImGui.PopFont();

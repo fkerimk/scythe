@@ -4,17 +4,17 @@ using Raylib_cs;
 namespace scythe;
 
 #pragma warning disable CS8981 
-public static class grid {
+public class grid(cam cam) {
 
-    public static void draw() {
+    public void draw() {
         
-        var gridpos = new Vector3(
-            (int)cam.current.Position.X, 0,
-            (int)cam.current.Position.Z
+        var grid_pos = new float3(
+            (int)cam.pos.x, 0,
+            (int)cam.pos.z
         );
             
         Rlgl.PushMatrix();
-        Rlgl.Translatef(gridpos.X, gridpos.Y, gridpos.Z);
+        Rlgl.Translatef(grid_pos.x, grid_pos.y, grid_pos.z);
 
         const int slices = 100;
         const float spacing = 1f;
@@ -27,11 +27,11 @@ public static class grid {
                 
             var start_x = new Vector3(-half, 0, pos);
             var end_x = new Vector3(half, 0, pos);
-            Raylib.DrawLine3D(start_x, end_x, colors.grid);
+            Raylib.DrawLine3D(start_x, end_x, colors.grid.to_raylib());
 
             var start_z = new Vector3(pos, 0, -half);
             var end_z = new Vector3(pos, 0, half);
-            Raylib.DrawLine3D(start_z, end_z, colors.grid);
+            Raylib.DrawLine3D(start_z, end_z, colors.grid.to_raylib());
         }
         
         Rlgl.PopMatrix();

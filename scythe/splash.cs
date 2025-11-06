@@ -4,16 +4,9 @@ using Raylib_cs;
 namespace scythe;
 
 #pragma warning disable CS8981
-internal static class splash {
-
-    private const float duration = 2;
-    private static readonly int2 size = new(320, 190);
-    
-    internal static void show() {
+internal class splash(float duration) : raylib_session{
+    protected override void draw() {
         
-        Raylib.SetTraceLogLevel(TraceLogLevel.None);
-        
-        Raylib.InitWindow(size.x, size.y, "SCYTHE");
         Raylib.SetWindowState(ConfigFlags.UndecoratedWindow);
 
         var art = Raylib.LoadTexture(path.relative("art/splash.png"));
@@ -24,9 +17,9 @@ internal static class splash {
 
             Raylib.BeginDrawing();
                 
-            Raylib.SetWindowSize(size.x, size.y);
+            Raylib.SetWindowSize(width, height);
                 
-            Raylib.DrawTexturePro(art, new(0, 0, art.Width, art.Height), new(0, 0, size.x, size.y), Vector2.Zero, 0, Color.White);
+            Raylib.DrawTexturePro(art, new(0, 0, art.Width, art.Height), new(0, 0, width, height), Vector2.Zero, 0, Color.White);
 
             time += Raylib.GetFrameTime();
 

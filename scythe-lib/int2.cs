@@ -1,5 +1,3 @@
-// ReSharper disable InconsistentNaming
-
 using System.Numerics;
 
 namespace scythe;

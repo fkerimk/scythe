@@ -4,79 +4,91 @@ using Raylib_cs;
 namespace scythe;
 
 #pragma warning disable CS8981 
-public static class freecam {
+public class freecam {
+
+    private readonly cam cam;
     
     const float sens = 0.003f;
-    const float clamp = 1.5f;
+    const float clamp = 1.55f;
     const float speed = 15;
     
-    static Vector2 rot;
+    private Vector2 rot;
     
-    public static void init() {
+    private bool isLocked;
+
+    public freecam(cam cam) {
         
-        set_from_target(cam.current.Position, cam.current.Target);
+        this.cam = cam;
+
+        set_from_target(cam.pos, cam.target);
     }
     
-    public static void update(int2 center) {
+    public void loop(viewport viewport) {
 
-        if (Raylib.IsMouseButtonPressed(MouseButton.Right)) {
-            
+        var center = viewport.pos.to_int2() + viewport.size.to_int2() / 2;
+        
+        if (viewport.isHovered && Raylib.IsMouseButtonPressed(MouseButton.Right)) {
+
             Raylib.DisableCursor();
+            
+            isLocked = true;
         }
 
-        if (Raylib.IsMouseButtonReleased(MouseButton.Right)) {
+        if (isLocked && Raylib.IsMouseButtonReleased(MouseButton.Right)) {
             
             Raylib.EnableCursor();
             Raylib.SetMousePosition(center.x, center.y);
+            
+            isLocked = false;
         }
         
-        if (!Raylib.IsMouseButtonDown(MouseButton.Right)) return;
+        if (!isLocked) return;
 
         movement();
         rotation();
     }
 
-    private static void rotation() {
+    private void rotation() {
         
         var input = Raylib.GetMouseDelta();
 
         rot -= new Vector2(input.Y * sens, input.X * sens);
         rot.X = Math.Clamp(rot.X, -clamp, clamp);
 
-        var forward = new Vector3(
+        var forward = new float3(
             
             MathF.Cos(rot.X) * MathF.Sin(rot.Y),
             MathF.Sin(rot.X),
             MathF.Cos(rot.X) * MathF.Cos(rot.Y)
         );
 
-        cam.current.Target = cam.current.Position + forward;
+        cam.target = cam.pos + forward;
     }
 
-    private static void movement() {
+    private void movement() {
 
-        var input = Vector3.Zero;
+        var input = float3.zero;
 
-        if (Raylib.IsKeyDown(KeyboardKey.W)) input.Z += 1;
-        if (Raylib.IsKeyDown(KeyboardKey.S)) input.Z -= 1;
-        if (Raylib.IsKeyDown(KeyboardKey.D)) input.X += 1;
-        if (Raylib.IsKeyDown(KeyboardKey.A)) input.X -= 1;
-        if (Raylib.IsKeyDown(KeyboardKey.E)) input.Y += 1;
-        if (Raylib.IsKeyDown(KeyboardKey.Q)) input.Y -= 1;
+        if (Raylib.IsKeyDown(KeyboardKey.W)) input.z += 1;
+        if (Raylib.IsKeyDown(KeyboardKey.S)) input.z -= 1;
+        if (Raylib.IsKeyDown(KeyboardKey.D)) input.x += 1;
+        if (Raylib.IsKeyDown(KeyboardKey.A)) input.x -= 1;
+        if (Raylib.IsKeyDown(KeyboardKey.E)) input.y += 1;
+        if (Raylib.IsKeyDown(KeyboardKey.Q)) input.y -= 1;
         
-        var fwd = Vector3.Normalize(cam.current.Target - cam.current.Position);
-        var right = Vector3.Normalize(Vector3.Cross(fwd, cam.current.Up));
-        var up = -Vector3.Normalize(Vector3.Cross(fwd, right));
+        var fwd = float3.normalize(cam.target - cam.pos);
+        var right = float3.normalize(float3.cross(fwd, cam.up));
+        var up = -float3.normalize(float3.cross(fwd, right));
         
-        cam.current.Position += (up * input.Y + right * input.X + fwd * input.Z) * speed * Raylib.GetFrameTime();
+        cam.pos += (up * input.y + right * input.x + fwd * input.z) * speed * Raylib.GetFrameTime();
     }
 
-    private static void set_from_target(Vector3 pos, Vector3 target) {
+    private void set_from_target(float3 pos, float3 target) {
         
-        var dir = Vector3.Normalize(target - pos);
+        var dir = float3.normalize(target - pos);
 
-        var vertical = MathF.Asin(dir.Y);
-        var horizontal = MathF.Atan2(dir.X, dir.Z);
+        var vertical = MathF.Asin(dir.y);
+        var horizontal = MathF.Atan2(dir.x, dir.z);
 
         rot = new(vertical, horizontal);
     }

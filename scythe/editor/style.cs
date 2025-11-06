@@ -30,9 +30,9 @@ public static class style {
         //Button,
         //ButtonHovered,
         //ButtonActive,
-        //Header,
-        //HeaderHovered,
-        //HeaderActive,
+        ImGui.PushStyleColor(ImGuiCol.Header, colors.gui_header.to_vector4());
+        ImGui.PushStyleColor(ImGuiCol.HeaderHovered, colors.gui_header_hovered.to_vector4());
+        ImGui.PushStyleColor(ImGuiCol.HeaderActive, colors.gui_header_active.to_vector4());
         //Separator,
         //SeparatorHovered,
         //SeparatorActive,
@@ -59,7 +59,7 @@ public static class style {
         //TableRowBgAlt,
         //TextLink,
         //TextSelectedBg,
-        //DragDropTarget,
+        ImGui.PushStyleColor(ImGuiCol.DragDropTarget, colors.gui_drag_drop_target.to_vector4());
         //NavCursor,
         //NavWindowingHighlight,
         //NavWindowingDimBg,
@@ -75,7 +75,7 @@ public static class style {
 
     public static void pop() {
 
-        for (var i = 0; i < 18; i++)
+        for (var i = 0; i < 22; i++)
             ImGui.PopStyleColor();
     }
 }
