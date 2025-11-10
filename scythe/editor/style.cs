@@ -2,6 +2,7 @@
 
 namespace scythe;
 
+#pragma warning disable CS8981
 public static class style {
 
     public static void push() {

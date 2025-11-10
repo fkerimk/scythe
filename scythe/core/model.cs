@@ -5,8 +5,8 @@ namespace scythe;
 
 #pragma warning disable CS8981
 public class model(obj obj) : type(obj) {
-    
-    [label("Path")] public string path { get; set; }
+
+    [label("Path")] public string path { get; set; } = "";
     [label("Color")] public color color { get; set; } = new(1,1,1,1);
 
     public Model rl_model;

@@ -1,5 +1,6 @@
 ﻿namespace scythe;
 
+#pragma warning disable CS8981
 public static class icons {
     
     public static string obj       => fa_dot_circle_o;

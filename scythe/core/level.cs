@@ -14,8 +14,7 @@ public class level {
         
         var cube_t = new obj("transform", "transform", cube);
         cube_t.set_parent(cube);
-        (cube_t.type_class as transform)!.pos = new(0, -0.1f, 0);
-        (cube_t.type_class as transform)!.scale = new(3, 0.2f, 3);
+        (cube_t.type_class as transform)!.scale = new(2, 0.2f, 2);
 
         var cube_m = new obj("model", "model", cube);
         cube_m.set_parent(cube);

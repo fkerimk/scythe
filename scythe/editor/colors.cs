@@ -3,18 +3,20 @@
 #pragma warning disable CS8981
 public static class colors {
     
-    //
+    // generic
     public static color clear => new(0f, 0, 0, 0);
+    public static color black => new(0, 0, 0);
+    public static color white => new(1, 1, 1);
+    public static color yellow => new(1, 1, 0);
     public static color debug => new(1f, 0, 0);
     public static color primary => new(1f, 0.27f, 0f);
-    
-    //
+    public static color primary_soft => new(0.7f, 0.3f, 0f);
     public static color back => new(0.23f, 0.23f, 0.26f);
     public static color game => new(0.1f, 0.1f, 0.11f);
     public static color grid => new(0.18f, 0.18f, 0.18f);
     
-    //
-    public static color gui_text => new color(1, 1, 1);
+    // imgui
+    public static color gui_text => white;
     public static color gui_text_disabled => new(0.41f, 0.41f, 0.41f);
     public static color gui_window_bg => new(0.15f, 0.16f, 0.17f);
     //ChildBg,
@@ -72,18 +74,13 @@ public static class colors {
     //NavWindowingHighlight,
     //NavWindowingDimBg,
     //ModalWindowDimBg,
-    //COUNT,
     
-    //
+    // gui
     public static color gui_tree_enabled => new(0.5f, 0.5f, 0.5f);
     public static color gui_tree_disabled => new(0.3f, 0.2f, 0.2f);
-    public static color gui_tree_selected => new(0.6f, 0.3f, 0.15f);
-    
+    public static color gui_tree_selected => primary_soft;
     public static color gui_type_object    => new(0.5f, 0.5f, 0.5f);
     public static color gui_type_model     => new(0.5f, 0.9f, 0.9f);
     public static color gui_type_transform => new(0.9f, 0.5f, 0.2f);
     public static color gui_type_animation => new(0.9f, 0.5f, 0.9f);
-    
-    //public static color file => uint_white;
-    //public static color folder => uint_orange;
 }

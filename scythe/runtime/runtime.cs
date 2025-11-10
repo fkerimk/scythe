@@ -1,15 +1,13 @@
-﻿using ImGuiNET;
-using Raylib_cs;
-using rlImGui_cs;
+﻿using Raylib_cs;
 
 namespace scythe;
 
 #pragma warning disable CS8981
 internal class runtime : raylib_session {
 
-    private cam cam;
+    private cam? cam;
     
-    protected override unsafe void draw() {
+    protected override void draw() {
         
         resize_window(new(screen.width / 2, screen.height / 2));
         center_window();

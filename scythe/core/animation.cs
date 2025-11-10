@@ -5,7 +5,7 @@ namespace scythe;
 #pragma warning disable CS8981
 public unsafe class animation(obj obj) : type(obj) {
     
-    [label("Path")] public string path { get; set; }
+    [label("Path")] public string path { get; set; } = "";
 
     [label("Track")]
     public int track { get; set {

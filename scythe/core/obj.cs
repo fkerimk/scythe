@@ -5,19 +5,18 @@ namespace scythe;
 #pragma warning disable CS8981
 public class obj {
     
-    private string _name;
-    public string type;
+    public readonly string type;
     public obj? parent;
-    public List<obj> children = [];
-    //public prs prs = new prs(0, 0, 0, 0, 0, 0, 1, 1, 1);
+    public readonly List<obj> children = [];
     public Matrix4x4 matrix = Matrix4x4.Identity;
-    public type? type_class = null;
+    public readonly type? type_class;
+    public bool is_selected;
     
-    [label("Name")] public string name { get => _name; set => _name = value; }
-    
+    [label("Name")] public string name { get; set; }
+
     public obj(string name, string type, obj? parent = null) {
 
-        _name = name;
+        this.name = name;
         this.type = type;
         this.parent = parent;
         
@@ -55,7 +54,7 @@ public class obj {
 
     private void order_children() {
     
-        children.Sort((a, b) => natural_compare(a._name, b._name));
+        children.Sort((a, b) => natural_compare(a.name, b.name));
     }
 
     private static int natural_compare(string a, string b) {

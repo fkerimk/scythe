@@ -18,25 +18,10 @@ public class level_3d() : viewport("3D", ImGuiWindowFlags.NoCollapse) {
             return;
         }
 
-        //var ratio = (float)screen.width / screen.height;
-        //var target = new Vector2(size.X, size.Y);
-        //
-        //if (target.X / ratio > target.Y)
-        //    target.X = target.Y * ratio;
-        //else target.Y = target.X / ratio;
-        //
-        //var offset = new Vector2(
-        //    (size.X - target.X) * 0.5f,
-        //    (size.Y - target.Y) * 0.5f
-        //);
-        //
-        //ImGui.SetCursorPosX(ImGui.GetCursorPosX() + offset.X);
-        //ImGui.SetCursorPosY(ImGui.GetCursorPosY() + offset.Y);
-            
         var tex = (IntPtr)rt.Texture.Id;
 
-        ImGui.Image(tex, size, new(0, 1), new(1, 0));
+        ImGui.Image(tex, content_region, new(0, 1), new(1, 0));
         
-        tex_size = size;
+        tex_size = content_region;
     }
 }

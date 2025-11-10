@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using Raylib_cs;
 
 namespace scythe;
 
@@ -12,6 +13,8 @@ public class core {
 
         cam = new();
         level = new();
+        
+        shaders.load();
     }
 
     public void loop_3d(bool is_editor) {
@@ -64,6 +67,8 @@ public class core {
     }
 
     public void quit() {
+        
+        shaders.unload();
         
         quit_obj(level.root);
     }

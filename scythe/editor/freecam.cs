@@ -14,7 +14,8 @@ public class freecam {
     
     private Vector2 rot;
     
-    private bool isLocked;
+    private bool is_locked;
+    private int2 lock_pos;
 
     public freecam(cam cam) {
         
@@ -25,27 +26,30 @@ public class freecam {
     
     public void loop(viewport viewport) {
 
-        var center = viewport.pos.to_int2() + viewport.size.to_int2() / 2;
+        var center = viewport.window_pos.to_int2() + viewport.content_region.to_int2() / 2;
         
         if (viewport.isHovered && Raylib.IsMouseButtonPressed(MouseButton.Right)) {
 
+            is_locked = true;
+            //lock_pos = Raylib.GetMousePosition();
+            lock_pos = center;
             Raylib.DisableCursor();
-            
-            isLocked = true;
         }
 
-        if (isLocked && Raylib.IsMouseButtonReleased(MouseButton.Right)) {
+        if (is_locked && Raylib.IsMouseButtonReleased(MouseButton.Right)) {
             
             Raylib.EnableCursor();
-            Raylib.SetMousePosition(center.x, center.y);
+            Raylib.SetMousePosition(lock_pos.x, lock_pos.y);
             
-            isLocked = false;
+            is_locked = false;
         }
         
-        if (!isLocked) return;
-
+        if (!is_locked) return;
+        
         movement();
         rotation();
+        
+        Raylib.SetMousePosition(lock_pos.x, lock_pos.y);
     }
 
     private void rotation() {

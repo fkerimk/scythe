@@ -71,16 +71,12 @@ public class level_browser(level level) : viewport("Level", ImGuiWindowFlags.NoC
         ImGui.PopStyleColor();
         ImGui.PopStyleColor();
         
-        // right click
+        // right click - context
         if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Right))
             ImGui.OpenPopupOnItemClick("context##" + obj.GetHashCode());
         
-        // left click
-        else if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left)) {
-
-            selected_object = obj;
-            Console.WriteLine($"{obj.name} is selected!");
-        }
+        // left click - select
+        else if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left)) select_object(obj);
         
         // object context
         if (ImGui.BeginPopup("context##" + obj.GetHashCode())) {
@@ -155,5 +151,12 @@ public class level_browser(level level) : viewport("Level", ImGuiWindowFlags.NoC
         ImGui.TreePop();
 
         return true;
+    }
+
+    public void select_object(obj? obj) {
+        
+        selected_object?.is_selected = false;
+        selected_object = obj;
+        obj?.is_selected = true;
     }
 }

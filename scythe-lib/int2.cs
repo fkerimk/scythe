@@ -2,10 +2,12 @@ using System.Numerics;
 
 namespace scythe;
 
-public struct int2(int X, int Y) {
+public struct int2(int x, int y) {
         
-    public int x = X;
-    public int y = Y;
+    public int x = x;
+    public int y = y;
+
+    public int2(float x, float y) : this((int)x, (int)y) { }
     
     public static int2 operator +(int2 a, int2 b) {
         
