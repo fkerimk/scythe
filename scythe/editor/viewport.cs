@@ -7,12 +7,10 @@ namespace scythe;
 #pragma warning disable CS8981
 public abstract class viewport(string title, ImGuiWindowFlags flags) {
 
-    public Vector2 mouse_pos;
+    public custom_style? custom_style;
+    
     public Vector2 window_pos;
-    public Vector2 window_size;
     public Vector2 content_region;
-    public Vector2 cursor_start;
-    public float title_height;
     public Vector2 relative_mouse;
     public Vector2 relative_mouse_3d;
     
@@ -20,6 +18,8 @@ public abstract class viewport(string title, ImGuiWindowFlags flags) {
     
     public void draw() {
 
+        if (custom_style != null) style.push(custom_style);
+        
         if (!ImGui.Begin(title, flags)) {
 
             isHovered = false;
@@ -29,25 +29,24 @@ public abstract class viewport(string title, ImGuiWindowFlags flags) {
             return;
         }
         
-        mouse_pos = ImGui.GetMousePos();
         window_pos = ImGui.GetWindowPos();
-        window_size = ImGui.GetWindowSize();
         content_region = ImGui.GetContentRegionAvail();
-        cursor_start = ImGui.GetCursorStartPos();
-        title_height = ImGui.GetFontSize() + ImGui.GetStyle().FramePadding.Y * 2f;
-        relative_mouse = mouse_pos - window_pos - cursor_start;
-        var center = new Vector2(Raylib.GetScreenWidth() / 2f, Raylib.GetScreenHeight() / 2f);
-        relative_mouse_3d = center + Raylib.GetMousePosition() - window_pos - ImGui.GetWindowSize() * 0.5f;
+        relative_mouse = ImGui.GetMousePos() - window_pos - ImGui.GetCursorStartPos();
         
-        //var window_relative_mouse = Raylib.GetWindowPosition() + Raylib.GetMousePosition() - Raylib.GetWindowPosition() ;
-        //relative_mouse_3d = window_relative_mouse;
+        relative_mouse_3d = Raylib.GetScreenCenter()
+            + Raylib.GetMousePosition()
+            - ImGui.GetWindowPos()
+            - new Vector2(-ImGui.GetStyle().FramePadding.X, ImGui.GetStyle().FramePadding.Y * 2)
+            - ImGui.GetWindowSize() * 0.5f;
         
         isHovered = ImGui.IsWindowHovered();
         
         on_draw();
         
         ImGui.End();
+        
+        if (custom_style != null) style.pop();
     }
-    
-    public abstract void on_draw();
+
+    protected abstract void on_draw();
 }

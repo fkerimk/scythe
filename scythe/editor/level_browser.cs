@@ -13,8 +13,8 @@ public class level_browser(level level) : viewport("Level", ImGuiWindowFlags.NoC
     public obj? delete_object;
     public obj? selected_object;
     public float? saved_scroll;
-    
-    public override void on_draw() {
+
+    protected override void on_draw() {
 
         ImGui.BeginChild("scroll", new(0, 0));
         
@@ -120,16 +120,7 @@ public class level_browser(level level) : viewport("Level", ImGuiWindowFlags.NoC
         ImGui.SameLine();
         ImGui.PushFont(fonts.font_awesome_small);
         ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 15, ImGui.GetCursorPosY() + 2.5f));
-        
-        switch (obj.type) {
-            
-            case "model"    : ImGui.TextColored(colors.gui_type_model.to_vector4()    , icons.model    ); break;
-            case "transform": ImGui.TextColored(colors.gui_type_transform.to_vector4(), icons.transform); break;
-            case "animation": ImGui.TextColored(colors.gui_type_animation.to_vector4(), icons.animation); break;
-            
-            default: ImGui.TextColored(colors.gui_type_object.to_vector4(), icons.obj); break;
-        };
-        
+        ImGui.TextColored(obj.color.to_vector4(), obj.icon);
         ImGui.PopFont();
 
         // object name

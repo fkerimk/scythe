@@ -4,13 +4,14 @@ using ImGuiNET;
 namespace scythe;
 
 #pragma warning disable CS8981
+#pragma warning disable IL2075
 public class object_browser() : viewport("Object", ImGuiWindowFlags.NoCollapse) {
     
     public obj? obj;
 
     private int prop_index;
-    
-    public override void on_draw() {
+
+    protected override void on_draw() {
         
         if (obj == null) return;
 
@@ -35,12 +36,12 @@ public class object_browser() : viewport("Object", ImGuiWindowFlags.NoCollapse) 
         foreach (var prop in type.GetProperties()) 
             draw_property(obj, prop);
 
-        if (obj.type_class != null) {
+        if (obj.type != null) {
             
-            var clas_type = obj.type_class.GetType();
+            var clas_type = obj.type.GetType();
             
             foreach (var prop in clas_type.GetProperties()) 
-                draw_property(obj.type_class, prop);
+                draw_property(obj.type, prop);
         }
     }
 
@@ -49,12 +50,11 @@ public class object_browser() : viewport("Object", ImGuiWindowFlags.NoCollapse) 
         var id = $"##prop{prop_index}";
         
         var label_attr = prop.GetCustomAttribute<label>();
+
+        if (label_attr == null) return;
         
-        if (label_attr != null)
-            ImGui.Text(label_attr.value);
-        else
-            ImGui.Text(prop.Name);
-        
+        ImGui.Text(label_attr.value);
+
         var value = prop.GetValue(target);
             
         if (value != null) {
@@ -104,6 +104,15 @@ public class object_browser() : viewport("Object", ImGuiWindowFlags.NoCollapse) 
                 var cast_value = (bool)value;
                 ImGui.PushItemWidth(-1);
                 ImGui.Checkbox(id, ref cast_value);
+                ImGui.PopItemWidth();
+                prop.SetValue(target, cast_value);
+            }
+            
+            if (prop.PropertyType == typeof(float)) {
+
+                var cast_value = (float)value;
+                ImGui.PushItemWidth(-1);
+                ImGui.InputFloat(id, ref cast_value);
                 ImGui.PopItemWidth();
                 prop.SetValue(target, cast_value);
             }

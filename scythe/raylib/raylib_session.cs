@@ -2,14 +2,16 @@
 
 namespace scythe;
 
-internal abstract class raylib_session {
+internal abstract class raylib_session(int init_width, int init_height, TraceLogLevel trace, params ConfigFlags[] flags) {
     
     protected static int width => Raylib.GetScreenWidth();
     protected static int height => Raylib.GetScreenHeight();
+    protected static int target_fps = -1;
+    protected static bool close_window = false;
 
-    internal virtual unsafe void show(int init_width, int init_height, TraceLogLevel log_level, params ConfigFlags[] flags) {
+    internal void show() {
         
-        Raylib.SetTraceLogLevel(log_level);
+        Raylib.SetTraceLogLevel(trace);
         
         Raylib.ClearWindowState(ConfigFlags.VSyncHint);
         Raylib.ClearWindowState(ConfigFlags.FullscreenMode);
@@ -31,14 +33,35 @@ internal abstract class raylib_session {
         foreach (var flag in flags)
             Raylib.SetConfigFlags(flag);
         
-        Raylib.InitWindow(init_width, init_height, "SCYTHE");
+        Raylib.InitWindow(init_width, init_height, config.mod.name);
         
         Raylib.SetExitKey(KeyboardKey.Null);
 
-        draw();
+        init();
+        
+        while (!Raylib.WindowShouldClose()) {
+            
+            loop();
+
+            if (target_fps == -1) target_fps = screen.refresh_rate;
+            
+            Raylib.SetTargetFPS(target_fps);
+            
+            Raylib.EndDrawing();
+
+            if (!close_window) continue;
+            close_window = false;
+            break;
+        }
+        
+        quit();
+
+        Raylib.CloseWindow();
     }
 
-    protected abstract unsafe void draw();
+    protected abstract void init();
+    protected abstract void loop();
+    protected abstract void quit();
 
     protected void resize_window(int2 size) {
         

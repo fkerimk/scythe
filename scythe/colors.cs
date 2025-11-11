@@ -23,9 +23,9 @@ public static class colors {
     //PopupBg,
     public static color gui_border => new(0.1f, 0.1f, 0.11f);
     //BorderShadow,
-    //FrameBg,
-    //FrameBgHovered,
-    //FrameBgActive,
+    public static color gui_frame_bg => primary_soft;
+    public static color gui_frame_bg_hovered => primary;
+    public static color gui_frame_bg_active => primary_soft;
     public static color gui_title_bg => new(0.1f, 0.11f, 0.12f);
     public static color gui_title_bg_active => gui_title_bg;
     public static color gui_title_bg_collapsed => gui_title_bg;
@@ -34,12 +34,12 @@ public static class colors {
     //ScrollbarGrab,
     //ScrollbarGrabHovered,
     //ScrollbarGrabActive,
-    //CheckMark,
+    public static color gui_check_mark => gui_text;
     //SliderGrab,
     //SliderGrabActive,
-    //Button,
-    //ButtonHovered,
-    //ButtonActive,
+    public static color gui_button => primary_soft;
+    public static color gui_button_hovered => primary;
+    public static color gui_button_active => primary_soft;
     public static color gui_header => gui_window_bg;
     public static color gui_header_hovered => new(0.3f, 0.31f, 0.32f);
     public static color gui_header_active => primary;
@@ -83,4 +83,5 @@ public static class colors {
     public static color gui_type_model     => new(0.5f, 0.9f, 0.9f);
     public static color gui_type_transform => new(0.9f, 0.5f, 0.2f);
     public static color gui_type_animation => new(0.9f, 0.5f, 0.9f);
+    public static color gui_type_light     => new(0.9f, 0.9f, 0.5f);
 }

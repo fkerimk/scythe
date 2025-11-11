@@ -1,33 +1,30 @@
 ﻿using System.Numerics;
+using System.Reflection;
 
 namespace scythe;
 
 #pragma warning disable CS8981
+#pragma warning disable IL2067
 public class obj {
-    
-    public readonly string type;
-    public obj? parent;
-    public readonly List<obj> children = [];
-    public Matrix4x4 matrix = Matrix4x4.Identity;
-    public readonly type? type_class;
-    public bool is_selected;
+
+    public string icon => type?.label_icon ?? icons.obj;
+    public color color => type?.label_color ?? colors.gui_type_object;
     
     [label("Name")] public string name { get; set; }
 
-    public obj(string name, string type, obj? parent = null) {
-
+    public obj? parent;
+    public readonly List<obj> children = [];
+    public Matrix4x4 matrix = Matrix4x4.Identity;
+    public readonly type? type;
+    public bool is_selected;
+    
+    public obj(string name, Type? type, obj? parent = null) {
+        
         this.name = name;
-        this.type = type;
         this.parent = parent;
-        
-        type_class = type switch {
-        
-            "model" => new model(this),
-            "transform" => new transform(this),
-            "animation" => new animation(this),
-        
-            _ => null
-        };
+
+        if (type == null || type == typeof(obj)) this.type = null;
+        else this.type = (type?)(Activator.CreateInstance(type, this) ?? Activator.CreateInstance(type));
     }
     
     public void delete() {
@@ -38,8 +35,9 @@ public class obj {
         parent.order_children();
     }
     
-    public void set_parent(obj obj) {
+    public void set_parent(obj? obj) {
         
+        if (obj == null) return;
         if (obj == this) return;
         if (parent == null) return;
         

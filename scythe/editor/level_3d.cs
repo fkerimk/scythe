@@ -10,7 +10,7 @@ public class level_3d() : viewport("3D", ImGuiWindowFlags.NoCollapse) {
     public RenderTexture2D rt = new();
     public Vector2 tex_size = Vector2.One, tex_temp = Vector2.Zero;
 
-    public override void on_draw() {
+    protected override void on_draw() {
         
         if (rt.Texture.Width == 0 || rt.Texture.Height == 0) {
                 

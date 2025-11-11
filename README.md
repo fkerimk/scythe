@@ -1,24 +1,21 @@
-# SCYTHE
+# SCYTHE 
 
 Just a game engine. The spiritual successor to Scythe-Unity, a Unity based game development framework (unreleased).
 
-## What is this?
+## 🧑‍🏫 What is this?
 
 A simple engine designed for developing easily editable and moddable games at a basic level.
 
 Nothing fancy. It’s not designed to take you to space. You can take a look if you want, but it’s probably not a tool you’ll need.
 
-## 🛠 License
+## 🛠️ License
 
 Scythe is licensed under the [LGPL-2.1 license](./LICENSE).
 
-## Building
+## 👷 Building
 
 > [!CAUTION]  
-> Scythe hasn’t even learned to crawl yet. It’s not mature enough to be of any real use to you.
-
-> [!CAUTION]  
-> When you build the project, some essential resources required to run it are still missing from the repository. It is recommended for experimental or educational use only.
+> Scythe hasn’t even learned to crawl yet. It’s not mature enough to be of any real use to you. It is recommended for experimental or educational use only.
 
 Make sure you have the .NET 10 SDK packages installed.
 
@@ -28,4 +25,35 @@ cd scythe
 dotnet build
 ```
 
-For potential build errors *(especially on other platforms)*, you can try removing the `<PublishAot>true</PublishAot>` setting in `scythe.csproj`.
+## 🏹 Running
+
+> [!TIP]  
+> You can start it without `-editor` parameter for runtime.
+
+```ps
+dotnet run -editor
+```
+
+## 🔧 Configuring
+
+The `scythe.ini` file in the project folder comes with all default settings. Scythe first reads the `scythe.ini` file in the working directory; if it’s not found there, it reads the one in the executable directory.
+
+There’s no setting you need to change to run it. You can set the location of the project to be loaded using `mod.path`.
+
+```ini
+[mod]
+path="template"
+```
+
+Make sure the basic resources included with the template are in the necessary locations within the project.
+
+Setting `fps_lock` to `-1` locks the FPS to the refresh rate _(vsync)_. Setting it to 0 makes it unlimited.
+
+## 🙏 Attributions
+
+"Font Awesome by Dave Gandy - http://fontawesome.io".
+
+### Sample character model used for testing skeletal animations:
+
+"Bear Man PSX" (https://skfb.ly/p9SUZ) by Bonvikt is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
+

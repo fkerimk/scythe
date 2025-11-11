@@ -1,45 +1,52 @@
-﻿namespace scythe;
+﻿using System.Reflection;
+
+namespace scythe;
 
 #pragma warning disable CS8981
+#pragma warning disable IL2067
+#pragma warning disable IL2026
 public class level {
 
-    public obj root;
+    public readonly obj root;
 
     public level() {
 
-        root = new("root", "object");
+        root = new("root", typeof(obj));
 
-        var cube = new obj("cube", "object", root);
-        cube.set_parent(root);
-        
-        var cube_t = new obj("transform", "transform", cube);
-        cube_t.set_parent(cube);
-        (cube_t.type_class as transform)!.scale = new(2, 0.2f, 2);
+        {
+            var obj = make_object("cube",  root);
+            var transform = make_object("transform", obj, "transform");
+            (transform.type as transform)!.scale = new(2, 0.2f, 2);
+            var model = make_object("model", obj, "model");
+            (model.type as model)!.path = "model/cube.glb";
+        }
 
-        var cube_m = new obj("model", "model", cube);
-        cube_m.set_parent(cube);
-        (cube_m.type_class as model)!.path = "model/cube/cube.glb";
+        {
+            var obj = make_object("bear_man", root);
+            make_object("transform", obj, "transform");
+            var model = make_object("model", obj, "model");
+            (model.type as model)!.path = "model/bear_man.glb";
+            var animation = make_object("animation", model, "animation");
+            (animation.type as animation)!.path = "model/bear_man.glb";
+            (animation.type as animation)!.track = 2;
+        }
         
-        var bear_man = new obj("bear_man", "object", root);
-        bear_man.set_parent(root);
-        
-        var bear_man_t = new obj("transform", "transform", cube);
-        bear_man_t.set_parent(bear_man);
-   
-        var bear_man_m = new obj("model", "model", cube);
-        bear_man_m.set_parent(bear_man);
-        (bear_man_m.type_class as model)!.path = "model/bear_man/bear_man.glb";
-        
-        var bear_man_a = new obj("animation", "animation", cube);
-        bear_man_a.set_parent(bear_man_m);
-        (bear_man_a.type_class as animation)!.path = "model/bear_man/bear_man.glb";
-        (bear_man_a.type_class as animation)!.track = 1;
+        { 
+            var obj = make_object("point_light", root); 
+            var light = make_object("light", obj, "light");
+            (light.type as light)!.intensity = 5;
+            var transform = make_object("transform", obj, "transform");
+            (transform.type as transform)!.pos = new(0, 3, 1);
+        }
+    }
+    
+    public obj make_object(string name, obj parent, string? type = null) {
 
+        var type_class = Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(t => t.Namespace == "scythe" && t.Name.Equals(type, StringComparison.OrdinalIgnoreCase));
+        
+        var obj = new obj(name, type_class, parent);
+        obj.set_parent(parent);
 
-        //for (var i = 0; i < 32; i++) {
-        //    
-        //    var child = new obj($"child {i}", "object", root);
-        //    root.children.Add(child);
-        //}
+        return obj;
     }
 }

@@ -6,6 +6,9 @@ namespace scythe;
 #pragma warning disable CS8981
 public class transform(obj obj) : type(obj) {
     
+    public override string label_icon => icons.transform;
+    public override color label_color => colors.gui_type_transform;
+    
     [label("Pos")] public float3 pos { get; set; } = float3.zero;
     
     [label("Euler")] public float3 euler { 
@@ -49,18 +52,20 @@ public class transform(obj obj) : type(obj) {
 
     public override void loop_ui(bool is_editor) {}
 
-    public override void loop_editor(viewport viewport) {
+    public override void loop_3d_editor(viewport viewport) {
 
-        if (obj is { is_selected: false, parent: not { is_selected: true } }) return;
+        if (cam.main == null) return;
 
+        if (obj.parent == null || (!obj.parent.is_selected && !obj.is_selected && !obj.parent.children.Any(_obj => _obj.is_selected))) return;
+        
         if (Raylib.IsKeyPressed(KeyboardKey.One)) mode = 0;
         if (Raylib.IsKeyPressed(KeyboardKey.Two)) mode = 1;
         if (Raylib.IsKeyPressed(KeyboardKey.Three)) mode = 2;
         
-        shaders.begin_transform();
+        shaders.begin(shaders.transform);
 
-        var ray = Raylib.GetScreenToWorldRay(viewport.relative_mouse_3d, editor.cam!.rl_cam);
-        Raylib.DrawSphere(ray.Position + ray.Direction * 15, 0.1f, Color.Magenta);
+        var ray = Raylib.GetScreenToWorldRay(viewport.relative_mouse_3d, cam.main.rl_cam);
+        //Raylib.DrawSphere(ray.Position + ray.Direction * 15, 0.1f, Color.Magenta);
 
         var rotMatrix = Matrix4x4.CreateFromQuaternion(rot);
         var right = Vector3.Transform(new Vector3(1, 0, 0), rotMatrix).to_float3();
@@ -72,30 +77,32 @@ public class transform(obj obj) : type(obj) {
         axis("z",fwd, new(0.3f, 0.3f, 0.9f), ray);
         
         shaders.end();
+    }
 
+    public override void loop_ui_editor(viewport viewport) {
+        
         if (Raylib.IsCursorHidden()) return;
         
-        Raylib.EndMode3D();
-
+        if (obj.parent == null || (!obj.parent.is_selected && !obj.is_selected && !obj.parent.children.Any(_obj => _obj.is_selected))) return;
+        
         var text_a = mode switch { 0 => "pos", 1 => "rot", 2 => "scale", _ => "bruh" };
         var text_pos_a = new int2(viewport.relative_mouse.X, viewport.relative_mouse.Y - 15);
         
         Raylib.DrawText(text_a, text_pos_a.x - 14, text_pos_a.y - 19, 20, colors.black.to_raylib());
         Raylib.DrawText(text_a, text_pos_a.x - 15, text_pos_a.y - 20, 20, colors.yellow.to_raylib());
         
-        if (active_move != 0){
+        if (active_move == 0) return;
         
-            var text_b = mode switch { 0 or 2 => $"{active_move:F2}m", 1 => $"{active_move:F2}°", _ => $"{active_move:F2}" }; 
-            var text_pos_b = new int2(viewport.relative_mouse.X, viewport.relative_mouse.Y - 15);
+        var text_b = mode switch { 0 or 2 => $"{active_move:F2}m", 1 => $"{active_move:F2}°", _ => $"{active_move:F2}" }; 
+        var text_pos_b = new int2(viewport.relative_mouse.X, viewport.relative_mouse.Y - 15);
             
-            Raylib.DrawText(text_b, text_pos_b.x - 14, text_pos_b.y - 39, 20, colors.black.to_raylib());
-            Raylib.DrawText(text_b, text_pos_b.x - 15, text_pos_b.y - 40, 20, colors.yellow.to_raylib());
-        }
-        
-        Raylib.BeginMode3D(editor.cam.rl_cam);
+        Raylib.DrawText(text_b, text_pos_b.x - 14, text_pos_b.y - 39, 20, colors.black.to_raylib());
+        Raylib.DrawText(text_b, text_pos_b.x - 15, text_pos_b.y - 40, 20, colors.yellow.to_raylib());
     }
 
-    private void axis(string id, float3 normal,  color color, Ray ray) {
+    private void axis(string id, float3 normal, color axis_color, Ray ray) {
+
+        if (cam.main == null) return;
         
         var is_active = active_id == id;
         
@@ -104,7 +111,7 @@ public class transform(obj obj) : type(obj) {
 
         if (!string.IsNullOrEmpty(active_id) && active_id != id) {
             
-            Raylib.DrawLine3D(a.to_vector3(), b.to_vector3(), color.to_raylib());
+            Raylib.DrawLine3D(a.to_vector3(), b.to_vector3(), axis_color.to_raylib());
             return;
         }
 
@@ -116,12 +123,10 @@ public class transform(obj obj) : type(obj) {
 
             var diff = (Raylib.GetMousePosition() - active_mouse_temp) * mode switch { 0 => 0.01f, 1 => 1f, 2 => 0.05f, _ => 0 };
                 
-            var cam = editor.cam!;
-
             var drag = mode switch {
                 
-                0 or 2 => cam.right * diff.X + cam.up * -diff.Y,
-                1 => cam.up * diff.X + cam.right * diff.Y,
+                0 or 2 => cam.main.right * diff.X + cam.main.up * -diff.Y,
+                1 => cam.main.up * diff.X + cam.main.right * diff.Y,
                 _ => float3.zero
             };
 
@@ -196,7 +201,7 @@ public class transform(obj obj) : type(obj) {
             active_move = 0;
         }
 
-        var target_color = (!is_active && is_hovered && !Raylib.IsCursorHidden()) ? colors.white : color;
+        var target_color = (!is_active && is_hovered && !Raylib.IsCursorHidden()) ? colors.white : axis_color;
         
         Raylib.DrawCylinderEx(a.to_vector3(), b.to_vector3(), radius, radius, 1, target_color.to_raylib());
     }

@@ -1,39 +1,29 @@
-﻿using Raylib_cs;
-using scythe;
+﻿using scythe;
 
-Directory.SetCurrentDirectory(path.exe_dir);
+// look out for config
+var ini_file = new ini(path.relative("scythe.ini"));
 
-var splash = false;
-var editor = true;
-
-if (splash) {
+if (!ini_file.is_valid) {
     
-    new splash(2).show(
-        320, 190, 
-        TraceLogLevel.None, 
-        ConfigFlags.UndecoratedWindow
-    );
+    ini_file.Dispose();
+    
+    Directory.SetCurrentDirectory(path.exe_dir);
+    ini_file = new(path.relative("scythe.ini"));
 }
 
-if (editor) {
-    
-    new editor().show(
-        1, 1, 
-        TraceLogLevel.Warning, 
-        ConfigFlags.Msaa4xHint,
-        ConfigFlags.AlwaysRunWindow,
-        ConfigFlags.ResizableWindow
-    );
-    
-} else {
-    
-    new runtime().show(
-        1, 1, 
-        TraceLogLevel.Warning, 
-        ConfigFlags.Msaa4xHint,
-        ConfigFlags.AlwaysRunWindow,
-        ConfigFlags.ResizableWindow
-    );
-}
+// config
+ini_file.to_config();
+
+if (Directory.Exists(config.mod.path)) Directory.SetCurrentDirectory(config.mod.path); else Environment.Exit(1);
+
+// cli
+cli.init();
+
+if (!cli.get("no-splash", out _))
+    new splash(1).show();
+
+if (cli.get("editor", out _))
+     new editor().show();
+else new runtime().show();
 
 Environment.Exit(0);

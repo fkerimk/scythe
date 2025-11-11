@@ -5,10 +5,12 @@ namespace scythe;
 #pragma warning disable CS8981
 public unsafe class animation(obj obj) : type(obj) {
     
+    public override string label_icon => icons.animation;
+    public override color label_color => colors.gui_type_animation;
+
     [label("Path")] public string path { get; set; } = "";
 
-    [label("Track")]
-    public int track { get; set {
+    [label("Track")] public int track { get; set {
 
         if (count == -1) field = value;
         else if (count == 0 || value < 0) field = 0;
@@ -16,8 +18,7 @@ public unsafe class animation(obj obj) : type(obj) {
         else field = value;
     } }
 
-    [label("Is Playing")]
-    public bool is_playing { get; set {
+    [label("Is Playing")] public bool is_playing { get; set {
 
         if (!field && value) {
 
@@ -32,8 +33,8 @@ public unsafe class animation(obj obj) : type(obj) {
     [label("Looping")] public bool looping { get; set; } = true;
 
     private int count = -1;
-    private int frame = 0;
-    private float frame_raw = 0f;
+    private int frame;
+    private float frame_raw;
     
     private bool anim_loaded;
     private ModelAnimation* rl_anims;
@@ -46,7 +47,7 @@ public unsafe class animation(obj obj) : type(obj) {
             anim_loaded = true;
         }
 
-        else if (is_playing && obj.parent?.type_class is model model) {
+        else if (is_playing && obj.parent?.type is model model) {
                 
             frame = (int)Math.Floor(frame_raw);
             
@@ -65,7 +66,8 @@ public unsafe class animation(obj obj) : type(obj) {
     }
 
     public override void loop_ui(bool is_editor) {}
-    public override void loop_editor(viewport viewport) { }
+    public override void loop_3d_editor(viewport viewport) { }
+    public override void loop_ui_editor(viewport viewport) { }
 
     public override void quit() {
         

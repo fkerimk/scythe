@@ -21,7 +21,7 @@ public static partial class ext {
         
         return new(value.R, value.G, value.B, value.A);
     }
-    
+  
     public static System.Numerics.Vector4 to_vector4(this color color) {
         
         return new(color.r, color.g, color.b, color.a);
@@ -41,6 +41,6 @@ public static partial class ext {
 
         var bytes = color.to_bytes();
         
-        return ((uint)bytes.x << 24) | ((uint)bytes.y << 16) | ((uint)bytes.z << 8) | (uint)bytes.w;
+        return ((uint)bytes.x << 24) | ((uint)bytes.y << 16) | ((uint)bytes.z << 8) | bytes.w;
     }
 }
