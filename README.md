@@ -12,12 +12,14 @@ Nothing fancy. It’s not designed to take you to space. You can take a look if 
 
 Scythe is licensed under the [LGPL-2.1 license](./LICENSE).
 
+This project uses [C# bindings](https://github.com/raylib-cs/raylib-cs) of [Raylib](https://github.com/raysan5/raylib/), both licensed under [zlib/libpng](https://github.com/raysan5/raylib/blob/master/LICENSE).
+
 ## 👷 Building
 
 > [!CAUTION]  
 > Scythe hasn’t even learned to crawl yet. It’s not mature enough to be of any real use to you. It is recommended for experimental or educational use only.
 
-Make sure you have the .NET 10 SDK packages installed.
+Make sure you have the .NET SDK 10.0+ packages installed.
 
 ```bash
 git clone https://github.com/fkerimk/scythe.git
@@ -36,7 +38,7 @@ dotnet run -editor
 
 ## 🔧 Configuring
 
-The `scythe.ini` file in the project folder comes with all default settings. Scythe first reads the `scythe.ini` file in the working directory; if it’s not found there, it reads the one in the executable directory.
+The [scythe.ini](./scythe.ini) file in the project folder comes with all default settings. Scythe first reads the [scythe.ini](./scythe.ini) file in the working directory; if it’s not found there, it reads the one in the executable directory.
 
 There’s no setting you need to change to run it. You can set the location of the project to be loaded using `mod.path`.
 
@@ -51,9 +53,7 @@ Setting `fps_lock` to `-1` locks the FPS to the refresh rate _(vsync)_. Setting 
 
 ## 🙏 Attributions
 
-"Font Awesome by Dave Gandy - http://fontawesome.io".
+[Font Awesome](http://fontawesome.io) by Dave Gandy.
 
-### Sample character model used for testing skeletal animations:
-
-"Bear Man PSX" (https://skfb.ly/p9SUZ) by Bonvikt is licensed under Creative Commons Attribution (http://creativecommons.org/licenses/by/4.0/).
+[Bear Man PSX](https://skfb.ly/p9SUZ) by Bonvikt, licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
 
