@@ -1,6 +1,5 @@
 ﻿namespace scythe;
 
-#pragma warning disable CS8981
 public abstract class type(obj obj) {
     
     protected readonly obj obj = obj;

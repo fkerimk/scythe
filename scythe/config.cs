@@ -2,8 +2,6 @@
 
 namespace scythe;
 
-#pragma warning disable CS8981
-#pragma warning disable IL2075
 public static class config {
     
     public static class mod {
@@ -38,8 +36,8 @@ public static class config {
         public static bool gen_tangents = true;
     }
 
-    public static void to_config(this ini ini) {
-        
+    public static void to_config( this ini ini) {
+
         foreach (var section in typeof(config).GetNestedTypes(BindingFlags.Public | BindingFlags.Static))
             foreach (var key in section.GetFields(BindingFlags.Public | BindingFlags.Static))
                 key.SetValue(null, ini.read(section.Name, key.Name, key.GetValue(null)!));

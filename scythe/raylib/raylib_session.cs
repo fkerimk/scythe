@@ -39,6 +39,8 @@ internal abstract class raylib_session(int init_width, int init_height, TraceLog
 
         init();
         
+        while (!Raylib.IsWindowReady()) Task.Delay(0);
+        
         while (!Raylib.WindowShouldClose()) {
             
             loop();

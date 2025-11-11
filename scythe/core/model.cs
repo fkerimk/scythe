@@ -3,7 +3,6 @@ using Raylib_cs;
 
 namespace scythe;
 
-#pragma warning disable CS8981
 public class model(obj obj) : type(obj) {
 
     public override string label_icon => icons.model;

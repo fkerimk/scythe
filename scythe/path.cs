@@ -18,6 +18,6 @@ public abstract class path {
 
     public static string process(string path) {
         
-        return path.Replace('\\', '/').TrimStart('/');
+        return path.Replace('\\', '/');
     }
 }

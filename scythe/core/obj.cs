@@ -3,8 +3,6 @@ using System.Reflection;
 
 namespace scythe;
 
-#pragma warning disable CS8981
-#pragma warning disable IL2067
 public class obj {
 
     public string icon => type?.label_icon ?? icons.obj;

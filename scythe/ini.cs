@@ -17,7 +17,7 @@ public class ini : IDisposable {
         data = new(comparer);
 
         is_valid = false;
-
+        
         if (!File.Exists(path)) return;
         
         Dictionary<string, string>? current = null;

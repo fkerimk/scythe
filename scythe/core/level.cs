@@ -2,9 +2,6 @@
 
 namespace scythe;
 
-#pragma warning disable CS8981
-#pragma warning disable IL2067
-#pragma warning disable IL2026
 public class level {
 
     public readonly obj root;

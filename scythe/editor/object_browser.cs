@@ -3,8 +3,6 @@ using ImGuiNET;
 
 namespace scythe;
 
-#pragma warning disable CS8981
-#pragma warning disable IL2075
 public class object_browser() : viewport("Object", ImGuiWindowFlags.NoCollapse) {
     
     public obj? obj;
