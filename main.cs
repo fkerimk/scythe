@@ -19,10 +19,14 @@ if (Directory.Exists(config.mod.path)) Directory.SetCurrentDirectory(config.mod.
 // cli
 cli.init();
 
+path.clear_temp();
+
+#if !DEBUG
 path.include_lib(0, "raylib.dll");
 path.include_lib(1, "libraylib.so");
 path.include_lib(0, "cimgui.dll");
 path.include_lib(1, "libcimgui.so");
+#endif
 
 if (!cli.get("no-splash", out _))
     new splash(1).show();
@@ -31,7 +35,6 @@ if (cli.get("editor", out _))
      new editor().show();
 else new runtime().show();
 
-path.clear_temp();
 
 Environment.Exit(0);
 

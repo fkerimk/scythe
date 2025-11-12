@@ -1,11 +1,10 @@
 #version 330
 
-#define MAX_LIGHTS              4
-#define LIGHT_DIRECTIONAL       0
-#define LIGHT_POINT             1
-#define PI 3.14159265358979323846
+#define max_lights 100
+#define pi 3.14159265358979323846
 
-struct Light {
+// light struct
+struct light {
     int enabled;
     int type;
     vec3 position;
@@ -14,149 +13,189 @@ struct Light {
     float intensity;
 };
 
-// Input vertex attributes (from vertex shader)
-in vec3 fragPosition;
-in vec2 fragTexCoord;
-in vec4 fragColor;
-in vec3 fragNormal;
+uniform light lights[max_lights];
+
+// fragment input (from vs)
+in vec3 frag_pos;
+in vec2 frag_tex_pos;
+in vec4 frag_color;
+in vec3 frag_normal;
 in vec4 shadowPos;
 in mat3 TBN;
 
-// Output fragment color
-out vec4 finalColor;
+// final output
+out vec4 final_color;
 
-// Input uniform values
-uniform int numOfLights;
-uniform sampler2D albedoMap;
-uniform sampler2D mraMap;
-uniform sampler2D normalMap;
-uniform sampler2D emissiveMap; // r: Hight g:emissive
+// uniform input
+uniform int light_count;
+uniform sampler2D albedo_map;
+uniform vec4 albedo_color;
+uniform sampler2D mra_map;
+uniform float metallic_value;
+uniform float roughness_value;
+uniform float aoValue;
+uniform sampler2D normal_map;
+uniform float normalValue;
+uniform sampler2D emissive_map; // r:geight g:emissive
+uniform vec4  emissive_color;
+uniform float emissive_intensity;
+uniform vec3 view_pos;
 
 uniform vec2 tiling;
 uniform vec2 offset;
 
-uniform int useTexAlbedo;
-uniform int useTexNormal;
-uniform int useTexMRA;
-uniform int useTexEmissive;
+uniform int use_tex_albedo;
+uniform int use_tex_normal;
+uniform int use_tex_mra;
+uniform int use_tex_emissive;
+uniform vec3 ambient_color;
+uniform float ambient_intensity;
 
-uniform vec4  albedoColor;
-uniform vec4  emissiveColor;
-uniform float normalValue;
-uniform float metallicValue;
-uniform float roughnessValue;
-uniform float aoValue;
-uniform float emissivePower;
+// reflectivity in 0.0 to 1.0
+vec3 schlick_fresnel(float h_dot_v, vec3 refl) {
 
-// Input lighting values
-uniform Light lights[MAX_LIGHTS];
-uniform vec3 viewPos;
-
-uniform vec3 ambientColor;
-uniform float ambient;
-
-// Reflectivity in range 0.0 to 1.0
-// NOTE: Reflectivity is increased when surface view at larger angle
-vec3 SchlickFresnel(float hDotV,vec3 refl)
-{
-    return refl + (1.0 - refl)*pow(1.0 - hDotV, 5.0);
+    return refl + (1.0 - refl) * pow(1.0 - h_dot_v, 5.0);
 }
 
-float GgxDistribution(float nDotH,float roughness)
-{
-    float a = roughness*roughness*roughness*roughness;
-    float d = nDotH*nDotH*(a - 1.0) + 1.0;
-    d = PI*d*d;
-    return (a/max(d,0.0000001));
+float ggx_distribution(float n_dot_h, float roughness) {
+
+    float a = roughness * roughness * roughness * roughness;
+    float d = n_dot_h * n_dot_h * (a - 1.0) + 1.0;
+
+    d = pi * d * d;
+
+    return (a / max(d, 0.0000001));
 }
 
-float GeomSmith(float nDotV,float nDotL,float roughness)
-{
+float geom_smith(float n_dot_v, float n_dot_l, float roughness) {
+
     float r = roughness + 1.0;
-    float k = r*r/8.0;
+    float k = r * r / 8.0;
     float ik = 1.0 - k;
-    float ggx1 = nDotV/(nDotV*ik + k);
-    float ggx2 = nDotL/(nDotL*ik + k);
-    return ggx1*ggx2;
+
+    float ggx1 = n_dot_v / (n_dot_v * ik + k);
+    float ggx2 = n_dot_l / (n_dot_l * ik + k);
+
+    return ggx1 * ggx2;
 }
 
-vec3 ComputePBR()
-{
-    vec3 albedo = texture(albedoMap,vec2(fragTexCoord.x*tiling.x + offset.x, fragTexCoord.y*tiling.y + offset.y)).rgb;
-    albedo = vec3(albedoColor.x*albedo.x, albedoColor.y*albedo.y, albedoColor.z*albedo.z);
+vec3 compute_pbr() {
+
+    vec3 albedo = texture(albedo_map, vec2(frag_tex_pos.x * tiling.x + offset.x, frag_tex_pos.y * tiling.y + offset.y)).rgb;
+    albedo = vec3(albedo_color.x * albedo.x, albedo_color.y * albedo.y, albedo_color.z * albedo.z);
     
-    float metallic = clamp(metallicValue, 0.0, 1.0);
-    float roughness = clamp(roughnessValue, 0.0, 1.0);
+    float metallic = clamp(metallic_value, 0.0, 1.0);
+    float roughness = clamp(roughness_value, 0.04, 1.0);
     float ao = clamp(aoValue, 0.0, 1.0);
     
-    if (useTexMRA == 1)
-    {
-        vec4 mra = texture(mraMap, vec2(fragTexCoord.x*tiling.x + offset.x, fragTexCoord.y*tiling.y + offset.y));
-        metallic = clamp(mra.r + metallicValue, 0.04, 1.0);
-        roughness = clamp(mra.g + roughnessValue, 0.04, 1.0);
-        ao = (mra.b + aoValue)*0.5;
+    if (use_tex_mra == 1) {
+
+        vec4 mra = texture(mra_map, vec2(frag_tex_pos.x * tiling.x + offset.x, frag_tex_pos.y * tiling.y + offset.y));
+        metallic = clamp(mra.r + metallic_value, 0.04, 1.0);
+        roughness = clamp(mra.g + roughness_value, 0.04, 1.0);
+        ao = clamp(mra.b + aoValue, 0.0, 1.0);
     }
 
-    vec3 N = normalize(fragNormal);
-    if (useTexNormal == 1)
-    {
-        N = texture(normalMap, vec2(fragTexCoord.x*tiling.x + offset.y, fragTexCoord.y*tiling.y + offset.y)).rgb;
-        N = normalize(N*2.0 - 1.0);
-        N = normalize(N*TBN);
+    vec3 n = normalize(frag_normal);
+
+    if (use_tex_normal == 1) {
+
+        n = texture(normal_map, vec2(frag_tex_pos.x * tiling.x + offset.x, frag_tex_pos.y * tiling.y + offset.y)).rgb;
+        n = normalize(n * 2.0 - 1.0);
+        n = normalize(n * TBN);
     }
 
-    vec3 V = normalize(viewPos - fragPosition);
+    vec3 v = normalize(view_pos - frag_pos);
 
     vec3 emissive = vec3(0);
-    emissive = (texture(emissiveMap, vec2(fragTexCoord.x*tiling.x + offset.x, fragTexCoord.y*tiling.y + offset.y)).rgb).g*emissiveColor.rgb*emissivePower*useTexEmissive;
 
-    // return N;//vec3(metallic,metallic,metallic);
-    // If  dia-electric use base reflectivity of 0.04 otherwise ut is a metal use albedo as base reflectivity
-    vec3 baseRefl = mix(vec3(0.04), albedo.rgb, metallic);
-    vec3 lightAccum = vec3(0.0);  // Acumulate lighting lum
+    if (use_tex_emissive == 1) {
 
-    for (int i = 0; i < numOfLights; i++)
-    {
-        vec3 L = normalize(lights[i].position - fragPosition);      // Compute light vector
-        vec3 H = normalize(V + L);                                  // Compute halfway bisecting vector
-        float dist = length(lights[i].position - fragPosition);     // Compute distance to light
-        float attenuation = 1.0/(dist*dist*0.23);                   // Compute attenuation
-        vec3 radiance = lights[i].color.rgb*lights[i].intensity*attenuation; // Compute input radiance, light energy comming in
+        emissive = texture(emissive_map, vec2(frag_tex_pos.x * tiling.x + offset.x, frag_tex_pos.y * tiling.y + offset.y)).g * emissive_color.rgb * emissive_intensity;
+    }
 
-        // Cook-Torrance BRDF distribution function
-        float nDotV = max(dot(N,V), 0.0000001);
-        float nDotL = max(dot(N,L), 0.0000001);
-        float hDotV = max(dot(H,V), 0.0);
-        float nDotH = max(dot(N,H), 0.0);
-        float D = GgxDistribution(nDotH, roughness);    // Larger the more micro-facets aligned to H
-        float G = GeomSmith(nDotV, nDotL, roughness);   // Smaller the more micro-facets shadow
-        vec3 F = SchlickFresnel(hDotV, baseRefl);       // Fresnel proportion of specular reflectance
+    vec3 base_refl = mix(vec3(0.04), albedo.rgb, metallic);
+    vec3 light_accum = vec3(0.0);
 
-        vec3 spec = (D*G*F)/(4.0*nDotV*nDotL);
-        
-        // Difuse and spec light can't be above 1.0
-        // kD = 1.0 - kS  diffuse component is equal 1.0 - spec comonent
-        vec3 kD = vec3(1.0) - F;
-        
-        // Mult kD by the inverse of metallnes, only non-metals should have diffuse light
-        kD *= 1.0 - metallic;
-        lightAccum += ((kD*albedo.rgb/PI + spec)*radiance*nDotL)*lights[i].enabled; // Angle of light has impact on result
+    for (int i = 0; i < light_count; i++) {
+
+        if (lights[i].enabled == 0) continue;
+
+        vec3 l = vec3(0.0);
+        float attenuation = 1.0;
+        float range_attenuation = 1.0;
+
+        // light direction calculation
+        if (lights[i].type == 0) {
+
+            l = normalize(lights[i].position - lights[i].target);
+            attenuation = 1.0;
+            range_attenuation = 1.0;
+
+        } else if (lights[i].type == 1) {
+
+            vec3 toLight = lights[i].position - frag_pos;
+            float dist = length(toLight);
+            l = normalize(toLight);
+            
+            // range: target - position
+            float range = length(lights[i].target - lights[i].position);
+            range_attenuation = smoothstep(range, 0.0, dist);
+            
+            attenuation = range_attenuation / (1.0 + dist * dist * 0.05);
+
+        } else if (lights[i].type == 2) {
+
+            vec3 toLight = lights[i].position - frag_pos;
+            float dist = length(toLight);
+
+            l = normalize(toLight);
+            
+            // range: target - position
+            float range = length(lights[i].target - lights[i].position);
+            range_attenuation = smoothstep(range, 0.0, dist);
+            
+            vec3 spot_dir = normalize(lights[i].target - lights[i].position);
+            float cos_angle = dot(-l, spot_dir);
+            float spot_effect = smoothstep(0.0, 1.0, (cos_angle - 0.5) / max(0.5, 1.0 - 0.5));
+            
+            attenuation = range_attenuation * spot_effect / (1.0 + dist * dist * 0.05);
+        }
+
+        vec3 h = normalize(v + l);
+
+        float n_dot_v = max(dot(n, v), 0.0000001);
+        float n_dot_l = max(dot(n, l), 0.0);
+        float h_dot_v = max(dot(h, v), 0.0);
+        float n_dot_h = max(dot(n, h), 0.0);
+
+        if (n_dot_l <= 0.0) continue;
+
+        float D = ggx_distribution(n_dot_h, roughness);
+        float G = geom_smith(n_dot_v, n_dot_l, roughness);
+        vec3 F = schlick_fresnel(h_dot_v, base_refl);
+
+        vec3 kspec = (D * G * F) / max(4.0 * n_dot_v * n_dot_l, 0.001);
+        vec3 kdiff = (vec3(1.0) - F) * (1.0 - metallic);
+
+        vec3 radiance = lights[i].color.rgb * lights[i].intensity * attenuation;
+        light_accum += (kdiff * albedo.rgb / pi + kspec) * radiance * n_dot_l;
     }
     
-    vec3 ambientFinal = (ambientColor + albedo)*ambient*0.5;
+    vec3 ambientLight = ambient_color * ambient_intensity;
     
-    return (ambientFinal + lightAccum*ao + emissive);
+    return albedo * (light_accum + ambientLight) * ao + emissive;
 }
 
-void main()
-{
-    vec3 color = ComputePBR();
+void main() {
 
-    // HDR tonemapping
-    color = pow(color, color + vec3(1.0));
+    vec3 color = compute_pbr();
+
+    // hdr tonemapping
+    color = color / (color + vec3(1.0));
     
-    // Gamma correction
-    color = pow(color, vec3(1.0/2.2));
+    // gamma correction
+    color = pow(color, vec3(1.0 / 2.2));
 
-    finalColor = vec4(color, 1.0);
+    final_color = vec4(color, 1.0);
 }

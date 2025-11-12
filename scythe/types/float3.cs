@@ -40,7 +40,7 @@ public struct float3(float X, float Y, float Z) : IEquatable<float3> {
     
     public static float3 operator *(float3 a, float3 b) {
         
-        return new(a.x * b.x, a.y * b.x, a.z * b.x);
+        return new(a.x * b.x, a.y * b.y, a.z * b.z);
     }
     
     public static float3 operator /(float3 a, float b) {

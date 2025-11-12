@@ -13,8 +13,13 @@ public class obj {
     public obj? parent;
     public readonly List<obj> children = [];
     public Matrix4x4 matrix = Matrix4x4.Identity;
+    public Matrix4x4 rot_matrix = Matrix4x4.Identity;
     public readonly type? type;
     public bool is_selected;
+    
+    public float3 right => float3.normalize(Vector3.Transform(new(1, 0, 0), rot_matrix).to_float3());
+    public float3 up => float3.normalize(Vector3.Transform(new(0, 1, 0), rot_matrix).to_float3());
+    public float3 fwd => float3.normalize(Vector3.Transform(new(0, 0, 1), rot_matrix).to_float3());
     
     public obj(string name, Type? type, obj? parent = null) {
         

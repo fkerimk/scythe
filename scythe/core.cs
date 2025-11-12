@@ -18,17 +18,16 @@ public static class core {
         lights = [];
 
         shaders.init();
-
-        Raylib.SetShaderValue(shaders.pbr, Raylib.GetShaderLocation(shaders.pbr, "useTexAlbedo"  ), is_editor ? config.editor.pbr_albedo   : config.runtime.pbr_albedo , ShaderUniformDataType.Int);
-        Raylib.SetShaderValue(shaders.pbr, Raylib.GetShaderLocation(shaders.pbr, "useTexNormal"  ), is_editor ? config.editor.pbr_normal   : config.runtime.pbr_normal, ShaderUniformDataType.Int);
-        Raylib.SetShaderValue(shaders.pbr, Raylib.GetShaderLocation(shaders.pbr, "useTexMRA"     ), is_editor ? config.editor.pbr_mra      : config.runtime.pbr_mra, ShaderUniformDataType.Int);
-        Raylib.SetShaderValue(shaders.pbr, Raylib.GetShaderLocation(shaders.pbr, "useTexEmissive"), is_editor ? config.editor.pbr_emissive : config.runtime.pbr_emissive, ShaderUniformDataType.Int);
         
-        const float ambient_intensity = 0;
-        //const float ambient_intensity = 0.1f;
+        const float ambient_intensity = 0.02f;
         var ambient_color = new color(1, 1, 1);
-        Raylib.SetShaderValue(shaders.pbr, Raylib.GetShaderLocation(shaders.pbr, "ambientColor"), ambient_color.to_vector4(), ShaderUniformDataType.Vec3);
-        Raylib.SetShaderValue(shaders.pbr, Raylib.GetShaderLocation(shaders.pbr, "ambient"), ambient_intensity, ShaderUniformDataType.Float);
+
+        Raylib.SetShaderValue(shaders.pbr, Raylib.GetShaderLocation(shaders.pbr, "use_tex_albedo"  ), is_editor ? config.editor.pbr_albedo   : config.runtime.pbr_albedo , ShaderUniformDataType.Int);
+        Raylib.SetShaderValue(shaders.pbr, Raylib.GetShaderLocation(shaders.pbr, "use_tex_normal"  ), is_editor ? config.editor.pbr_normal   : config.runtime.pbr_normal, ShaderUniformDataType.Int);
+        Raylib.SetShaderValue(shaders.pbr, Raylib.GetShaderLocation(shaders.pbr, "use_tex_mra"     ), is_editor ? config.editor.pbr_mra      : config.runtime.pbr_mra, ShaderUniformDataType.Int);
+        Raylib.SetShaderValue(shaders.pbr, Raylib.GetShaderLocation(shaders.pbr, "use_tex_emissive"), is_editor ? config.editor.pbr_emissive : config.runtime.pbr_emissive, ShaderUniformDataType.Int);
+        Raylib.SetShaderValue(shaders.pbr, Raylib.GetShaderLocation(shaders.pbr, "ambient_color"), ambient_color.to_vector4(), ShaderUniformDataType.Vec3);
+        Raylib.SetShaderValue(shaders.pbr, Raylib.GetShaderLocation(shaders.pbr, "ambient_intensity"), ambient_intensity, ShaderUniformDataType.Float);
     }
 
     public static unsafe void loop_3d(bool is_editor) {
@@ -41,7 +40,7 @@ public static class core {
         
         loop_3d_obj(level.root, is_editor);
         
-        Raylib.SetShaderValue(shaders.pbr, shaders.light_count_loc, lights.Count, ShaderUniformDataType.Int);
+        Raylib.SetShaderValue(shaders.pbr, shaders.pbr_light_count, lights.Count, ShaderUniformDataType.Int);
         
         foreach (var light in lights.Values) light.update();
     }

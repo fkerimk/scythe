@@ -35,19 +35,21 @@ public class transform(obj obj) : type(obj) {
     
     public override void loop_3d(bool is_editor) {
 
-        var rotMatrix = Matrix4x4.CreateFromQuaternion(rot);
-        rotMatrix = Matrix4x4.Transpose(rotMatrix);
-
-        obj.parent!.matrix = Raymath.MatrixMultiply(
+        if (obj.parent == null) return;
+        
+        obj.parent.rot_matrix = Matrix4x4.CreateFromQuaternion(rot);
+        
+        obj.parent.matrix = Raymath.MatrixMultiply(
 
             Raymath.MatrixMultiply(
     
                 Raymath.MatrixScale(scale.x, scale.y, scale.z),
-                rotMatrix
+                Matrix4x4.Transpose(obj.parent.rot_matrix)
             ),
 
             Raymath.MatrixTranslate(pos.x, pos.y, pos.z)
         );
+        
     }
 
     public override void loop_ui(bool is_editor) {}
@@ -66,15 +68,10 @@ public class transform(obj obj) : type(obj) {
 
         var ray = Raylib.GetScreenToWorldRay(viewport.relative_mouse_3d, cam.main.rl_cam);
         //Raylib.DrawSphere(ray.Position + ray.Direction * 15, 0.1f, Color.Magenta);
-
-        var rotMatrix = Matrix4x4.CreateFromQuaternion(rot);
-        var right = Vector3.Transform(new Vector3(1, 0, 0), rotMatrix).to_float3();
-        var up = Vector3.Transform(new Vector3(0, 1, 0), rotMatrix).to_float3();
-        var fwd = Vector3.Transform(new Vector3(0, 0, 1), rotMatrix).to_float3();
         
-        axis("x",right, new(0.9f, 0.3f, 0.3f), ray);
-        axis("y",up, new(0.3f, 0.9f, 0.3f), ray);
-        axis("z",fwd, new(0.3f, 0.3f, 0.9f), ray);
+        axis("x", obj.parent.right, new(0.9f, 0.3f, 0.3f), ray);
+        axis("y", obj.parent.up, new(0.3f, 0.9f, 0.3f), ray);
+        axis("z", obj.parent.fwd, new(0.3f, 0.3f, 0.9f), ray);
         
         shaders.end();
     }

@@ -27,9 +27,12 @@ public class model(obj obj) : type(obj) {
             if (is_editor ? !config.editor.no_shade : !config.runtime.no_shade) for (var i = 0; i < rl_model.MaterialCount; i++) {
                 
                 rl_model.Materials[i].Shader = shaders.pbr;
-                rl_model.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Value = 0f;
+                //rl_model.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Value = 0f;
+                //rl_model.Materials[i].Maps[(int)MaterialMapIndex.Roughness].Value = 0.5f;
+                //rl_model.Materials[i].Maps[(int)MaterialMapIndex.Occlusion].Value = 1;
+                rl_model.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Value = 0;
                 rl_model.Materials[i].Maps[(int)MaterialMapIndex.Roughness].Value = 0.5f;
-                rl_model.Materials[i].Maps[(int)MaterialMapIndex.Occlusion].Value = 1;
+                rl_model.Materials[i].Maps[(int)MaterialMapIndex.Occlusion].Value = 1f;
                 rl_model.Materials[i].Maps[(int)MaterialMapIndex.Emission].Color = Color.Black;
 
                 // Default flat normal map (128, 128, 255) = (0, 0, 1) in normalized space
@@ -39,10 +42,10 @@ public class model(obj obj) : type(obj) {
     
                 rl_model.Materials[i].Maps[(int)MaterialMapIndex.Normal].Texture = normalTex;
     
-                var mraImg = Raylib.GenImageColor(1, 1, Color.White);
-                var mraTex = Raylib.LoadTextureFromImage(mraImg);
-                Raylib.UnloadImage(mraImg);
-                rl_model.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Texture = mraTex;
+                //var mraImg = Raylib.GenImageColor(1, 1, Color.White);
+                //var mraTex = Raylib.LoadTextureFromImage(mraImg);
+                //Raylib.UnloadImage(mraImg);
+                //rl_model.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Texture = mraTex;
             }
             
             model_loaded = true;
@@ -53,12 +56,12 @@ public class model(obj obj) : type(obj) {
         // Draw test model - tüm materyalleri set et
         for (var i = 0; i < rl_model.MaterialCount; i++) {
             var emissive_color = Raylib.ColorNormalize(rl_model.Materials[i].Maps[(int)MaterialMapIndex.Emission].Color);
-            Raylib.SetShaderValue(shaders.pbr, shaders.emissiveColorLoc, emissive_color, ShaderUniformDataType.Vec4);
-            Raylib.SetShaderValue(shaders.pbr, shaders.metallicValueLoc, rl_model.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Value, ShaderUniformDataType.Float);
-            Raylib.SetShaderValue(shaders.pbr, shaders.roughnessValueLoc, rl_model.Materials[i].Maps[(int)MaterialMapIndex.Roughness].Value, ShaderUniformDataType.Float);
+            Raylib.SetShaderValue(shaders.pbr, shaders.pbr_emissive_color, emissive_color, ShaderUniformDataType.Vec4);
+            Raylib.SetShaderValue(shaders.pbr, shaders.pbr_metallic_value, rl_model.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Value, ShaderUniformDataType.Float);
+            Raylib.SetShaderValue(shaders.pbr, shaders.pbr_roughness_value, rl_model.Materials[i].Maps[(int)MaterialMapIndex.Roughness].Value, ShaderUniformDataType.Float);
         }
 
-        Raylib.SetShaderValue(shaders.pbr, shaders.textureTilingLoc, new Vector2(0.5f, 0.5f), ShaderUniformDataType.Vec2);
+        Raylib.SetShaderValue(shaders.pbr, shaders.pbr_tiling, new Vector2(0.5f, 0.5f), ShaderUniformDataType.Vec2);
         Raylib.DrawModel(rl_model, Vector3.Zero, 1, color.to_raylib());
     }
 

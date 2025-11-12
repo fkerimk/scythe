@@ -13,9 +13,10 @@ public unsafe class light(obj obj) : type(obj) {
     [label("Type")] public int type { get; set => field = (int)Raymath.Clamp(value, 0, 2); } = 1;
     [label("Color")] public color color { get; set; } = colors.white;
     [label("Intensity")] public float intensity { get; set; } = 2;
+    [label("Range")] public float range { get; set; } = 10;
     
-    private Vector3 pos = Vector3.Zero;
-    private Vector3 target = Vector3.Zero;
+    private float3 pos = float3.zero;
+    private float3 target = float3.zero;
 
     public void update() {
         
@@ -44,16 +45,59 @@ public unsafe class light(obj obj) : type(obj) {
     
         Raymath.MatrixDecompose( obj.parent.matrix, &_position, &_rotation, &_scale);
 
-        pos = _position;
+        pos = _position.to_float3();
+        target = pos + obj.parent.fwd * (type == 0 ? 1 : range);
+        
+        //var a = pos + (Vector3.Normalize(obj.fwd.to_vector3()) * 0.1f).to_float3();
+        //var b = a + obj.fwd * 1.5f;
         
         update();
         
         core.lights[GetHashCode()] = this;
 
+        if (is_selected) {
+            
+            if (type == 1) Raylib.DrawSphereWires(pos.to_vector3(), range, 8, 8, color.to_raylib());
+            
+            else if (type == 2) {
+
+                float sides = 4;
+    
+                var base_center = pos + obj.parent.fwd * range;
+                var cone_radius = range;
+
+                // Cone tabanı
+                for (var i = 0; i < 8; i++) {
+                    
+                    var angle = (i / 8f) * MathF.PI * 2f;
+                    var next_angle = ((i + 1) / 8f) * MathF.PI * 2f;
+
+                    var offset1 = obj.parent.right * MathF.Cos(angle) * cone_radius + obj.parent.up * MathF.Sin(angle) * cone_radius;
+                    var offset2 = obj.parent.right * MathF.Cos(next_angle) * cone_radius + obj.parent.up * MathF.Sin(next_angle) * cone_radius;
+
+                    var point1 = base_center + offset1;
+                    var point2 = base_center + offset2;
+
+                    Raylib.DrawLine3D(point1.to_vector3(), point2.to_vector3(), color.to_raylib());
+                }
+
+                // Cone kenarları
+                for (var i = 0; i < sides; i++) {
+                    
+                    var angle = (i / sides) * MathF.PI * 2f;
+
+                    var offset = obj.parent.right * MathF.Cos(angle) * cone_radius + obj.parent.up * MathF.Sin(angle) * cone_radius;
+                    var point = base_center + offset;
+
+                    Raylib.DrawLine3D(pos.to_vector3(), point.to_vector3(), color.to_raylib());
+                }
+            }
+        }
+        
         if ((!config.runtime.draw_lights || is_editor) && (!config.editor.draw_lights || !is_editor)) return;
         
-        if (enabled) Raylib.DrawSphereEx(pos, 0.1f, 8, 8, color.to_raylib());
-        else Raylib.DrawSphereWires(pos, 0.1f, 8, 8, Raylib.ColorAlpha(color.to_raylib(), 0.3f));
+        if (enabled) Raylib.DrawSphereEx(pos.to_vector3(), 0.1f, 8, 8, color.to_raylib());
+        else Raylib.DrawSphereWires(pos.to_vector3(), 0.1f, 8, 8, Raylib.ColorAlpha(color.to_raylib(), 0.3f));
     }
     
     public override void loop_ui(bool is_editor) {}

@@ -42,7 +42,8 @@ public abstract class path {
     }
 
     public static void clear_temp() {
-        
-        Directory.Delete(tmp_dir, true);
+
+        if (Directory.Exists(tmp_dir))
+            Directory.Delete(tmp_dir, true);
     }
 }

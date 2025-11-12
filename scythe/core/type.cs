@@ -13,4 +13,5 @@ public abstract class type(obj obj) {
     public abstract void loop_ui_editor(viewport viewport);
     public abstract void quit();
 
+    public bool is_selected => (obj.parent != null && (obj.parent.is_selected || obj.is_selected ||  obj.parent.children.Any(_obj => _obj.is_selected)));
 }
