@@ -68,13 +68,31 @@ internal class Level {
             BuildHierarchy((JObject)childData, currentObj);
     }
     
-    public static Obj BuildObject(string name, Obj parent, string? type = null) {
+    public static Obj BuildObject(string name, Obj? parent, string? type = null) {
 
         var typeClass = Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(t => t.Name.Equals(type, StringComparison.OrdinalIgnoreCase));
         
         var obj = new Obj(name, typeClass, parent);
-        obj.set_parent(parent);
+        obj.SetParent(parent);
 
         return obj;
+    }
+
+    public static Obj CloneObject(Obj source) {
+        
+        var typeName = source.Type?.GetType().Name;
+    
+        var clone = BuildObject(source.Name + "_Clone", source.Parent, typeName);
+
+        if (source.Type != null && clone.Type != null) {
+            
+            var data = JsonConvert.SerializeObject(source.Type);
+            JsonConvert.PopulateObject(data, clone.Type);
+        }
+
+        foreach (var childClone in source.Children.ToList().Select(CloneObject))
+            childClone.SetParent(clone);
+
+        return clone;
     }
 }

@@ -26,7 +26,7 @@ internal class LevelBrowser() : Viewport("Level") {
         // drag object
         if (DragObject != null && DragTarget != null) {
 
-            DragObject.set_parent(DragTarget);
+            DragObject.SetParent(DragTarget);
             
             DragObject = null;
             DragTarget = null;

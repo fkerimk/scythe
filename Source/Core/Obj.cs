@@ -1,5 +1,4 @@
-﻿using System.ComponentModel;
-using System.Numerics;
+﻿using System.Numerics;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
@@ -35,10 +34,10 @@ internal class Obj {
         if (Parent == null) return;
         
         Parent.Children.Remove(this);
-        Parent.order_children();
+        Parent.OrderChildren();
     }
     
-    public void set_parent(Obj? obj) {
+    public void SetParent(Obj? obj) {
         
         if (obj == null) return;
         if (obj == this) return;
@@ -48,17 +47,17 @@ internal class Obj {
         obj.Children.Add(this);
         Parent = obj;
 
-        Parent.order_children();
+        Parent.OrderChildren();
     }
 
     private static readonly System.Text.RegularExpressions.Regex NaturalRegex = new(@"(\d+)");
 
-    private void order_children() {
+    private void OrderChildren() {
     
-        Children.Sort((a, b) => natural_compare(a.Name, b.Name));
+        Children.Sort((a, b) => NaturalCompare(a.Name, b.Name));
     }
 
-    private static int natural_compare(string a, string b) {
+    private static int NaturalCompare(string a, string b) {
     
         var tokensA = NaturalRegex.Split(a);
         var tokensB = NaturalRegex.Split(b);

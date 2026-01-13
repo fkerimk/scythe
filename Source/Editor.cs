@@ -122,23 +122,27 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
         Notifications.Draw();
         
         // Shortcuts
-        if (Raylib.IsKeyDown(KeyboardKey.LeftControl) &&  Raylib.IsKeyPressed(KeyboardKey.S)) {
-
-            Core.ActiveLevel?.Save();
-            Notifications.Show("Saved");
-        }
+        if (Raylib.IsKeyDown(KeyboardKey.LeftControl)) {
         
-        if (Raylib.IsKeyDown(KeyboardKey.LeftControl) &&  Raylib.IsKeyPressed(KeyboardKey.Z)) {
+            if (Raylib.IsKeyPressed(KeyboardKey.D)) {
 
-            History.Undo();
-        }
-        
-        if (Raylib.IsKeyDown(KeyboardKey.LeftControl) &&  Raylib.IsKeyPressed(KeyboardKey.Y)) {
+                if (_levelBrowser.SelectedObject != null) {
 
-            History.Redo();
+                    Level.CloneObject(_levelBrowser.SelectedObject);
+                }
+            }
+            
+            if (Raylib.IsKeyPressed(KeyboardKey.S)) {
+
+                Core.ActiveLevel?.Save();
+                Notifications.Show("Saved");
+            }
+            
+            if (Raylib.IsKeyPressed(KeyboardKey.Z)) History.Undo();
+            if (Raylib.IsKeyPressed(KeyboardKey.Y)) History.Redo();
         }
     }
-
+    
     protected override void Quit() {
         
         Core.Quit();

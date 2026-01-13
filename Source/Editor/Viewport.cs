@@ -2,7 +2,7 @@
 using ImGuiNET;
 using Raylib_cs;
 
-public abstract class Viewport(string title) {
+internal abstract class Viewport(string title) {
 
     public CustomStyle? CustomStyle;
     

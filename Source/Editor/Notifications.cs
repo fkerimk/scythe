@@ -35,11 +35,15 @@ internal static class Notifications {
 
             var pos = new int2(X, Y + i * (notification.Height + Spacing));
 
-            var brColor = Colors.GuiFrameBg.ToRaylib();
-            var bgColor = Colors.GuiWindowBg.ToRaylib();
+            var brColor = Colors.Back.ToRaylib();
+            var bgColor = Colors.Black.ToRaylib();
             var fgColor = Colors.Primary.ToRaylib();
 
             notification.Timer += Raylib.GetFrameTime();
+
+            brColor.A = 100;
+            bgColor.A = 150;
+            fgColor.A = 255;
 
             if (notification.Timer > Duration) {
 
@@ -48,9 +52,9 @@ internal static class Notifications {
 
                 pos.x = (int)(status * X);
                 
-                brColor.A = (byte)(status * 255);
-                bgColor.A = (byte)(status * 255);
-                fgColor.A = (byte)(status * 255);
+                brColor.A = (byte)(status * brColor.A);
+                bgColor.A = (byte)(status * bgColor.A);
+                fgColor.A = (byte)(status * fgColor.A);
                 
                 if (fadeProgress > 1) {
 
