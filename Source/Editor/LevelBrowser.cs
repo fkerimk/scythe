@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using System.Reflection;
 using ImGuiNET;
 
 internal class LevelBrowser() : Viewport("Level") {
@@ -87,7 +88,18 @@ internal class LevelBrowser() : Viewport("Level") {
 
             if (ImGui.BeginMenu("Insert")) {
                 
-                if (ImGui.MenuItem("Object")) Level.RecordedBuildObject("object", obj);
+                
+                var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(ObjType)) && !t.IsAbstract);
+
+                foreach (var type in types) {
+                    
+                    if (ImGui.MenuItem(type.Name)) Level.RecordedBuildObject(type.Name, obj, type.Name);
+                }
+                
+                ImGui.Separator();
+                
+                if (ImGui.MenuItem("Object"))
+                    Level.RecordedBuildObject("Object", obj);
                 
                 ImGui.EndMenu();
             }

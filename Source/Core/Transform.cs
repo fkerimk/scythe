@@ -19,7 +19,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
     
     [RecordHistory] [JsonProperty] [Label("Scale")] public float3 Scale { get; set; } = float3.one;
     
-    private Quaternion Rot { get; set; } = Quaternion.Identity;
+    [RecordHistory] [JsonProperty] private Quaternion Rot { get; set; } = Quaternion.Identity;
 
     private int _mode;
     private float _activeMove;
@@ -62,9 +62,9 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
         if (Obj.Parent == null || (!Obj.Parent.IsSelected && !Obj.IsSelected && !Obj.Parent.Children.Any(o => o.IsSelected))) return;
         
-        if (Raylib.IsKeyPressed(KeyboardKey.One)) _mode = 0;
-        if (Raylib.IsKeyPressed(KeyboardKey.Two)) _mode = 1;
-        if (Raylib.IsKeyPressed(KeyboardKey.Three)) _mode = 2;
+        if (Raylib.IsKeyPressed(KeyboardKey.Q)) _mode = 0;
+        if (Raylib.IsKeyPressed(KeyboardKey.W)) _mode = 1;
+        if (Raylib.IsKeyPressed(KeyboardKey.E)) _mode = 2;
         
         Shaders.Begin(Shaders.Transform);
 
