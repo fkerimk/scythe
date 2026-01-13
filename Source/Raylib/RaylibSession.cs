@@ -36,13 +36,13 @@ internal abstract class RaylibSession(int initWidth, int initHeight, params Conf
         
         Raylib.SetExitKey(KeyboardKey.Null);
 
-        init();
+        Init();
         
         while (!Raylib.IsWindowReady()) Task.Delay(0);
         
         while (!Raylib.WindowShouldClose()) {
             
-            loop();
+            Loop();
 
             if (TargetFps == -1) TargetFps = Screen.RefreshRate;
             
@@ -55,14 +55,14 @@ internal abstract class RaylibSession(int initWidth, int initHeight, params Conf
             break;
         }
         
-        quit();
+        Quit();
 
         Raylib.CloseWindow();
     }
 
-    protected abstract void init();
-    protected abstract void loop();
-    protected abstract void quit();
+    protected abstract void Init();
+    protected abstract void Loop();
+    protected abstract void Quit();
 
     protected void resize_window(int2 size) {
         

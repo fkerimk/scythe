@@ -14,6 +14,7 @@ internal static class Core {
         Lights = [];
 
         Shaders.Init();
+        Fonts.LoadRlFonts();
         
         const float ambientIntensity = 0.02f;
         var ambientColor = new Color(1, 1, 1);
@@ -107,6 +108,7 @@ internal static class Core {
     public static void Quit() {
         
         Shaders.Quit();
+        Fonts.UnloadRlFonts();
 
         if (ActiveLevel == null) return;
         

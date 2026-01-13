@@ -2,7 +2,7 @@
 
 internal class Runtime() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, ConfigFlags.AlwaysRunWindow, ConfigFlags.ResizableWindow) {
 
-    protected override void init() {
+    protected override void Init() {
         
         resize_window(new int2(Screen.Width / 2, Screen.Height / 2));
         center_window();
@@ -10,7 +10,7 @@ internal class Runtime() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, ConfigFla
         Core.Init(false);
     }
 
-    protected override void loop() {
+    protected override void Loop() {
         
         TargetFps = Config.Runtime.FpsLock;
         
@@ -31,7 +31,7 @@ internal class Runtime() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, ConfigFla
         if (Config.Runtime.DrawFps) Raylib.DrawText($"{Raylib.GetFPS()}", 10, 10, 20, Colors.Primary.to_raylib());
     }
 
-    protected override void quit() {
+    protected override void Quit() {
         
         Core.Quit();
     }

@@ -118,14 +118,14 @@ internal class LevelBrowser() : Viewport("Level") {
         
         // object icon
         ImGui.SameLine();
-        ImGui.PushFont(Fonts.FontAwesomeSmall);
+        ImGui.PushFont(Fonts.ImFontAwesomeSmall);
         ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 15, ImGui.GetCursorPosY() + 2.5f));
         ImGui.TextColored(obj.Color.to_vector4(), obj.Icon);
         ImGui.PopFont();
 
         // object name
         ImGui.SameLine();
-        ImGui.PushFont(Fonts.MontserratRegular);
+        ImGui.PushFont(Fonts.ImMontserratRegular);
         ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 2.5f, ImGui.GetCursorPosY() - 1.5f));
         ImGui.TextColored(new(1, 1, 1, 1), obj.Name);
         ImGui.PopFont();

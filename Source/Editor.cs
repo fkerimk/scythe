@@ -1,7 +1,6 @@
 ﻿using System.Numerics;
 using System.Runtime.InteropServices;
 using ImGuiNET;
-using Newtonsoft.Json;
 using Raylib_cs;
 using rlImGui_cs;
 
@@ -15,7 +14,7 @@ internal unsafe class Editor() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, Con
     private ProjectBrowser? _projectBrowser;
     private InsertBox? _insertBox;
     
-    protected override void init() {
+    protected override void Init() {
         
         resize_window(new int2(Screen.Width / 2, Screen.Height / 2));
         center_window();
@@ -30,7 +29,7 @@ internal unsafe class Editor() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, Con
         // Generic initials
         Core.Init(true);
         FreeCam.Init();
-        Fonts.Load(_io);
+        Fonts.LoadImFonts(_io);
 
         if (Cam.Main == null) return;
         if (Core.ActiveLevel == null) return;
@@ -48,7 +47,7 @@ internal unsafe class Editor() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, Con
         _insertBox = new InsertBox();
     }
 
-    protected override void loop() {
+    protected override void Loop() {
         
         TargetFps = Config.Editor.FpsLock;
         
@@ -60,7 +59,7 @@ internal unsafe class Editor() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, Con
             _insertBox == null
         ) return;
         
-        // reload viewport render
+        // Reload viewport render
         if (_level3D.TexSize != _level3D.TexTemp) {
                 
             Raylib.UnloadRenderTexture(_level3D.Rt);
@@ -68,27 +67,27 @@ internal unsafe class Editor() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, Con
             _level3D.TexTemp = _level3D.TexSize;
         }
             
-        // render core on viewport
+        // Render core on viewport
         Raylib.BeginTextureMode(_level3D.Rt);
             
         clear(Colors.Game);
 
-        // start camera
+        // Start camera
         FreeCam.Loop(_level3D);
         
         Cam.Main.StartRendering();
             
-        // 3d
+        // 3D
         var grid = new Grid(Cam.Main);
         grid.Draw();
             
         Core.Loop3D(true);
         Core.Loop3DEditor(_level3D);
             
-        // stop camera
+        // Stop camera
         Cam.Main.StopRendering();
             
-        // ui
+        // Ui
         Core.LoopUi(true);
         Core.LoopUiEditor(_level3D);
             
@@ -96,14 +95,14 @@ internal unsafe class Editor() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, Con
 
         Raylib.EndTextureMode();
             
-        // draw raylib
+        // Draw raylib
         Raylib.BeginDrawing();
         clear(new Color(0, 0, 0));
             
         // Draw ImGui
         rlImGui.Begin();
         Style.Push();
-        ImGui.PushFont(Fonts.MontserratRegular);
+        ImGui.PushFont(Fonts.ImMontserratRegular);
         ImGui.DockSpaceOverViewport(ImGui.GetMainViewport().ID);
         _io.MouseDoubleClickTime = 0.2f;
             
@@ -115,19 +114,22 @@ internal unsafe class Editor() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, Con
         _projectBrowser.Draw();
         _insertBox.Draw();
         
-        // Stop i
+        // Stop ImGui
         ImGui.PopFont();
         Style.Pop();
         rlImGui.End();
+
+        Notifications.Draw();
         
-        // shortcuts
+        // Shortcuts
         if (Raylib.IsKeyDown(KeyboardKey.LeftControl) &&  Raylib.IsKeyPressed(KeyboardKey.S)) {
 
             Core.ActiveLevel?.Save();
+            Notifications.Show("Saved");
         }
     }
 
-    protected override void quit() {
+    protected override void Quit() {
         
         Core.Quit();
     }
