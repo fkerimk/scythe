@@ -36,6 +36,20 @@ internal class Obj {
         Parent.Children.Remove(this);
         Parent.OrderChildren();
     }
+
+    public void RecordedDelete() {
+
+        var parent = Parent;
+        
+        History.StartRecording(this, $"Delete {Name}");
+
+        History.ActiveRecord?.UndoAction = () => SetParent(parent);
+        History.ActiveRecord?.RedoAction = Delete;
+        
+        Delete();
+        
+        History.StopRecording();
+    }
     
     public void SetParent(Obj? obj) {
         

@@ -5,32 +5,32 @@ internal static class History {
     private static readonly List<Record> Records = [];
 
     private static int _currentIndex = -1;
-    private static Record? _activeRecord;
-
+    public static Record? ActiveRecord;
+    
     public static void StartRecording(object reference, string? description = null) {
 
-        _activeRecord ??= new Record(description);
+        ActiveRecord ??= new Record(description);
 
-        if (_activeRecord.Objects.All(o => o.Reference != reference)) {
+        if (ActiveRecord.Objects.All(o => o.Reference != reference)) {
             
-            _activeRecord.Objects.Add(new ObjectRecord(reference));
+            ActiveRecord.Objects.Add(new ObjectRecord(reference));
         }
     }
 
     public static void StopRecording() {
         
-        if (_activeRecord == null) return;
+        if (ActiveRecord == null) return;
 
-        foreach (var record in _activeRecord.Objects)
+        foreach (var record in ActiveRecord.Objects)
             record.FinalState = GetState(record.Reference);
         
         if (_currentIndex < Records.Count - 1)
             Records.RemoveRange(_currentIndex + 1, Records.Count - (_currentIndex + 1));
         
-        Records.Add(_activeRecord);
+        Records.Add(ActiveRecord);
 
         _currentIndex = Records.Count - 1;
-        _activeRecord = null;
+        ActiveRecord = null;
     }
     
     private static object[] GetState(object reference) {
@@ -60,11 +60,12 @@ internal static class History {
     public static void Undo() {
         
         if (_currentIndex < 0) return;
-        
         var currentRecord = Records[_currentIndex];
         
         if (currentRecord.Description != null)
             Notifications.Show("Undo " + currentRecord.Description);
+        
+        currentRecord.UndoAction?.Invoke();        
 
         foreach (var record in currentRecord.Objects)
             ApplyState(record.Reference, record.StartState);
@@ -75,25 +76,27 @@ internal static class History {
     public static void Redo() {
         
         if (_currentIndex >= Records.Count - 1) return;
-
         _currentIndex++;
-        
         var currentRecord = Records[_currentIndex];
         
         if (currentRecord.Description != null)
             Notifications.Show("Redo " + currentRecord.Description);
 
+        currentRecord.RedoAction?.Invoke();
+        
         foreach (var record in currentRecord.Objects)
             ApplyState(record.Reference, record.FinalState);
     }
-    
-    private class Record(string? description = null) {
+
+    public class Record(string? description = null) {
 
         public readonly List<ObjectRecord> Objects = [];
         public readonly string? Description = description;
+        
+        public Action? UndoAction, RedoAction;
     }
-    
-    private class ObjectRecord(object reference) {
+
+    public class ObjectRecord(object reference) {
             
         public readonly object Reference = reference;
         public readonly object[] StartState = GetState(reference);

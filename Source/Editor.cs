@@ -128,7 +128,7 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
 
                 if (_levelBrowser.SelectedObject != null) {
 
-                    Level.CloneObject(_levelBrowser.SelectedObject);
+                    Level.RecordedCloneObject(_levelBrowser.SelectedObject);
                 }
             }
             

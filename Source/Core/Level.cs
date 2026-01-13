@@ -78,6 +78,19 @@ internal class Level {
         return obj;
     }
 
+    public static Obj RecordedBuildObject(string name, Obj? parent, string? type = null) {
+        
+        History.StartRecording(parent!,  $"Create {name}");
+        
+        var obj = BuildObject(name, parent, type);
+
+        History.ActiveRecord?.UndoAction = () => obj.Delete();
+        History.ActiveRecord?.RedoAction = () => obj.SetParent(parent);
+        
+        History.StopRecording();
+        return obj;
+    }
+
     public static Obj CloneObject(Obj source) {
         
         var typeName = source.Type?.GetType().Name;
@@ -94,5 +107,18 @@ internal class Level {
             childClone.SetParent(clone);
 
         return clone;
+    }
+
+    public static void RecordedCloneObject(Obj source) {
+        
+        History.StartRecording(source.Parent!, $"Duplicate {source.Name}");
+
+        var clone = CloneObject(source);
+        var parent = source.Parent!;
+
+        History.ActiveRecord?.UndoAction = () => clone.Delete();
+        History.ActiveRecord?.RedoAction = () => clone.SetParent(parent);
+        
+        History.StopRecording();
     }
 }

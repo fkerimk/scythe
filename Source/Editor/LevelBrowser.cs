@@ -32,10 +32,10 @@ internal class LevelBrowser() : Viewport("Level") {
             DragTarget = null;
         }
 
-        // delete object
+        // Delete object
         if (DeleteObject != null) {
             
-            DeleteObject.Delete();
+            DeleteObject.RecordedDelete();
             DeleteObject = null;
         }
         
@@ -87,7 +87,7 @@ internal class LevelBrowser() : Viewport("Level") {
 
             if (ImGui.BeginMenu("Insert")) {
                 
-                if (ImGui.MenuItem("Object")) Level.BuildObject("object", obj);
+                if (ImGui.MenuItem("Object")) Level.RecordedBuildObject("object", obj);
                 
                 ImGui.EndMenu();
             }
