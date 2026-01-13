@@ -1,11 +1,11 @@
 ﻿using Raylib_cs;
 
-internal class Runtime() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, ConfigFlags.AlwaysRunWindow, ConfigFlags.ResizableWindow) {
+internal class Runtime() : RaylibSession(1, 1, [ ConfigFlags.Msaa4xHint, ConfigFlags.AlwaysRunWindow, ConfigFlags.ResizableWindow ], false) {
 
     protected override void Init() {
         
-        resize_window(new int2(Screen.Width / 2, Screen.Height / 2));
-        center_window();
+        ResizeWindow(new int2(Screen.Width / 2, Screen.Height / 2));
+        CenterWindow();
         
         Core.Init(false);
     }
@@ -18,7 +18,7 @@ internal class Runtime() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, ConfigFla
 
         Raylib.BeginDrawing();
             
-        clear(Colors.Game);
+        Clear(Colors.Game);
             
         Cam.Main.StartRendering();
             

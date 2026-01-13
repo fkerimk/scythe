@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using Raylib_cs;
 
-internal class Splash(float duration) : RaylibSession(320, 190, ConfigFlags.UndecoratedWindow) {
+internal class Splash(float duration) : RaylibSession(320, 190, [ ConfigFlags.UndecoratedWindow ]) {
 
     private float _time;
     private Texture2D _art;

@@ -11,12 +11,7 @@ internal static class Config {
         public static string Name = "SCYTHE";
         public static string Path = "";
     }
-
-    public static class Raylib {
-
-        public static string TraceLogLevel = "None";
-    }
-
+    
     public static class Runtime {
         
         public static int FpsLock = -1;
@@ -28,6 +23,7 @@ internal static class Config {
         public static int PbrMra = 1;
         public static int PbrEmissive = 1;
         public static bool GenTangents = true;
+        public static string RaylibLogLevel = "Error";
     }
     
     public static class Editor {
@@ -41,6 +37,12 @@ internal static class Config {
         public static int PbrMra = 1;
         public static int PbrEmissive = 1;
         public static bool GenTangents = true;
+        public static string RaylibLogLevel = "Warning";
+    }
+    
+    public static class Level {
+
+        public static string Formatting = "None";
     }
 
     public static void ToConfig(this Ini ini) {

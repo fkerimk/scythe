@@ -4,7 +4,7 @@ using ImGuiNET;
 using Raylib_cs;
 using rlImGui_cs;
 
-internal unsafe class Editor() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, ConfigFlags.AlwaysRunWindow, ConfigFlags.ResizableWindow) {
+internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, ConfigFlags.AlwaysRunWindow, ConfigFlags.ResizableWindow], true) {
 
     private ImGuiIOPtr _io;
     
@@ -15,9 +15,9 @@ internal unsafe class Editor() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, Con
     private InsertBox? _insertBox;
     
     protected override void Init() {
-        
-        resize_window(new int2(Screen.Width / 2, Screen.Height / 2));
-        center_window();
+
+        ResizeWindow(new int2(Screen.Width / 2, Screen.Height / 2));
+        CenterWindow();
         
         // ImGui setup
         rlImGui.Setup(true, true);
@@ -70,7 +70,7 @@ internal unsafe class Editor() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, Con
         // Render core on viewport
         Raylib.BeginTextureMode(_level3D.Rt);
             
-        clear(Colors.Game);
+        Clear(Colors.Game);
 
         // Start camera
         FreeCam.Loop(_level3D);
@@ -97,7 +97,7 @@ internal unsafe class Editor() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, Con
             
         // Draw raylib
         Raylib.BeginDrawing();
-        clear(new Color(0, 0, 0));
+        Clear(new Color(0, 0, 0));
             
         // Draw ImGui
         rlImGui.Begin();
@@ -109,7 +109,7 @@ internal unsafe class Editor() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, Con
         // Draw elements
         _level3D.Draw();
         _levelBrowser.Draw();
-        _objectBrowser.obj = _levelBrowser.SelectedObject;
+        _objectBrowser.Obj = _levelBrowser.SelectedObject;
         _objectBrowser.Draw();
         _projectBrowser.Draw();
         _insertBox.Draw();
@@ -126,6 +126,16 @@ internal unsafe class Editor() : RaylibSession(1, 1, ConfigFlags.Msaa4xHint, Con
 
             Core.ActiveLevel?.Save();
             Notifications.Show("Saved");
+        }
+        
+        if (Raylib.IsKeyDown(KeyboardKey.LeftControl) &&  Raylib.IsKeyPressed(KeyboardKey.Z)) {
+
+            History.Undo();
+        }
+        
+        if (Raylib.IsKeyDown(KeyboardKey.LeftControl) &&  Raylib.IsKeyPressed(KeyboardKey.Y)) {
+
+            History.Redo();
         }
     }
 

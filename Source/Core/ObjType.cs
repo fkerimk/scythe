@@ -3,7 +3,7 @@
 [JsonObject(MemberSerialization.OptIn)]
 internal abstract class ObjType(Obj obj) {
     
-    [JsonProperty("n")] public string Name => GetType().Name;
+    [JsonProperty] public string Name => GetType().Name;
     
     protected readonly Obj Obj = obj;
 

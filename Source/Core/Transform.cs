@@ -9,15 +9,15 @@ internal class Transform(Obj obj) : ObjType(obj) {
     public override string LabelIcon => Icons.Transform;
     public override Color LabelColor => Colors.GuiTypeTransform;
     
-    [JsonProperty("p")] [Label("Pos")] public float3 Pos { get; set; } = float3.zero;
+    [RecordHistory] [JsonProperty] [Label("Pos")] public float3 Pos { get; set; } = float3.zero;
     
-    [JsonProperty("r")] [Label("Euler")] public float3 Euler { 
+    [RecordHistory] [JsonProperty] [Label("Euler")] public float3 Euler { 
         
         get => Raymath.QuaternionToEuler(Rot).to_float3().to_deg();
         set => Rot = Raymath.QuaternionFromEuler(value.x.DegToRad(), value.y.DegToRad(), value.z.DegToRad());
     }
     
-    [JsonProperty("s")] [Label("Scale")] public float3 Scale { get; set; } = float3.one;
+    [RecordHistory] [JsonProperty] [Label("Scale")] public float3 Scale { get; set; } = float3.one;
     
     private Quaternion Rot { get; set; } = Quaternion.Identity;
 
@@ -182,12 +182,16 @@ internal class Transform(Obj obj) : ObjType(obj) {
             _activeMouseTemp = Raylib.GetMousePosition();
 
             _activeNormal = _mode switch { 2 => axis, _ => normal };
+            
+            History.StartRecording(this, "Transform");
         }
 
         if ((isActive && Raylib.IsMouseButtonReleased(MouseButton.Left)) || Raylib.IsCursorHidden()) {
             
             _activeId = "";
             _activeMove = 0;
+            
+            History.StopRecording();
         }
 
         var targetColor = (!isActive && isHovered && !Raylib.IsCursorHidden()) ? Colors.White : axisColor;

@@ -71,21 +71,27 @@ internal class LevelBrowser() : Viewport("Level") {
         ImGui.PopStyleColor();
         ImGui.PopStyleColor();
         
-        // right click - context
+        // Right click - context
         if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Right))
             ImGui.OpenPopupOnItemClick("context##" + obj.GetHashCode());
         
-        // left click - select
+        // Left click - select
         else if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left)) select_object(obj);
         
-        // object context
+        // Object context
         if (ImGui.BeginPopup("context##" + obj.GetHashCode())) {
     
             ImGui.Text(obj.Name);
             
             ImGui.Separator();
+
+            if (ImGui.BeginMenu("Insert")) {
+                
+                if (ImGui.MenuItem("Object")) Level.BuildObject("object", obj);
+                
+                ImGui.EndMenu();
+            }
             
-            if (ImGui.MenuItem("Insert")) Level.BuildObject("object", obj);
             if (ImGui.MenuItem("Rename")) { }
             if (ImGui.MenuItem("Delete")) DeleteObject = obj;
     

@@ -8,11 +8,11 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
     public override string LabelIcon => Icons.Light;
     public override Color LabelColor => Colors.GuiTypeLight;
 
-    [JsonProperty("e")] [Label("Enabled")] public bool Enabled { get; set; } = true;
-    [JsonProperty("t")] [Label("Type")] public int Type { get; set => field = (int)Raymath.Clamp(value, 0, 2); } = 1;
-    [JsonProperty("c")] [Label("Color")] public Color Color { get; set; } = Colors.White;
-    [JsonProperty("i")] [Label("Intensity")] public float Intensity { get; set; } = 2;
-    [JsonProperty("r")] [Label("Range")] public float Range { get; set; } = 10;
+    [JsonProperty] [Label("Enabled")] public bool Enabled { get; set; } = true;
+    [JsonProperty] [Label("Type")] public int Type { get; set => field = (int)Raymath.Clamp(value, 0, 2); } = 1;
+    [JsonProperty] [Label("Color")] public Color Color { get; set; } = Colors.White;
+    [JsonProperty] [Label("Intensity")] public float Intensity { get; set; } = 2;
+    [JsonProperty] [Label("Range")] public float Range { get; set; } = 10;
     
     private float3 _pos = float3.zero;
     private float3 _target = float3.zero;

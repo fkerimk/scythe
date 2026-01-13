@@ -8,7 +8,7 @@ internal static class Notifications {
         Y = 25,
         Spacing = 10,
         BorderWidth = 2,
-        Size = 25;
+        Size = 20;
     
     private const float 
         Duration = 1f,
@@ -67,10 +67,17 @@ internal static class Notifications {
             var finalPosY = (int)(notification.DrawPosY = Raymath.Lerp(notification.DrawPosY, pos.y, Raylib.GetFrameTime() * 15));
 
             Raylib.DrawRectangle(finalPosX, finalPosY, notification.Width, notification.Height, brColor);
-            Raylib.DrawRectangle(finalPosX + BorderWidth, finalPosY + BorderWidth, notification.Width - BorderWidth * 2,
-                notification.Height - BorderWidth * 2, bgColor);
-            Raylib.DrawTextEx(Fonts.RlMontserratRegular, text,
-                new Vector2(finalPosX + notification.Height / 2f - Size / 2f, finalPosY + notification.Height / 2f - Size / 2f), Size, Size * 0.2f,
+            Raylib.DrawRectangle(
+                finalPosX + BorderWidth, finalPosY + BorderWidth, 
+                notification.Width - BorderWidth * 2,
+                notification.Height - BorderWidth * 2,
+                bgColor);
+            Raylib.DrawTextEx(
+                Fonts.RlMontserratRegular, 
+                text,
+                new Vector2(finalPosX + notification.Height / 2f - Size / 2f, finalPosY + notification.Height / 2f - Size / 2f),
+                Size, 
+                Size * 0.2f,
                 fgColor);
             
             PendingNotifications[i] = notification;
@@ -83,7 +90,7 @@ internal static class Notifications {
     private struct Notification(string text) {
     
         public readonly string Text = text;
-        public readonly int Width = text.Length * (Size + (int)(Size * 0.2f)) / 2 + Size;
+        public readonly int Width = text.Length * (Size + (int)(Size * 0.3f)) / 2 + Size;
         public readonly int Height = Size * 2;
         
         public float

@@ -1,6 +1,6 @@
 ﻿using Raylib_cs;
 
-internal abstract class RaylibSession(int initWidth, int initHeight, params ConfigFlags[] flags) {
+internal abstract class RaylibSession(int initWidth, int initHeight, ConfigFlags[] flags, bool? isEditor = null) {
     
     protected static int Width => Raylib.GetScreenWidth();
     protected static int Height => Raylib.GetScreenHeight();
@@ -9,7 +9,8 @@ internal abstract class RaylibSession(int initWidth, int initHeight, params Conf
 
     internal void Show() {
         
-        if (Enum.TryParse(Config.Raylib.TraceLogLevel, out TraceLogLevel state))
+        if (isEditor == null) Raylib.SetTraceLogLevel(TraceLogLevel.None);
+        else if (Enum.TryParse(isEditor.Value ? Config.Editor.RaylibLogLevel : Config.Runtime.RaylibLogLevel, out TraceLogLevel state))
             Raylib.SetTraceLogLevel(state);
         
         Raylib.ClearWindowState(ConfigFlags.VSyncHint);
@@ -64,17 +65,17 @@ internal abstract class RaylibSession(int initWidth, int initHeight, params Conf
     protected abstract void Loop();
     protected abstract void Quit();
 
-    protected void resize_window(int2 size) {
+    protected void ResizeWindow(int2 size) {
         
         Raylib.SetWindowSize(size.x, size.y);
     }
 
-    protected void center_window() {
+    protected void CenterWindow() {
         
         Raylib.SetWindowPosition((Screen.Width - Width) / 2, (Screen.Height - Height) / 2);
     }
 
-    protected void clear(Color color) {
+    protected void Clear(Color color) {
         
         Raylib.ClearBackground(color.to_raylib());
     }

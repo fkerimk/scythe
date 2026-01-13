@@ -3,53 +3,53 @@ using ImGuiNET;
 
 internal class ObjectBrowser() : Viewport("Object") {
     
-    public Obj? obj;
+    public Obj? Obj;
 
-    private int prop_index;
+    private int _propIndex;
 
     protected override void OnDraw() {
         
-        if (obj == null) return;
+        if (Obj == null) return;
 
-        if (obj.Parent != null) {
+        if (Obj.Parent != null) {
             
             ImGui.PushStyleColor(ImGuiCol.Text, Colors.GuiTextDisabled.to_vector4());
-            ImGui.Text(obj.Parent.Name);
+            ImGui.Text(Obj.Parent.Name);
             ImGui.PopStyleColor();
             ImGui.SameLine();
         }
         
-        ImGui.Text(obj.Name);
+        ImGui.Text(Obj.Name);
         
         ImGui.Spacing();
 
         ImGui.Separator();
         
-        prop_index = 0;
+        _propIndex = 0;
         
-        var type = obj.GetType();
+        var type = Obj.GetType();
 
         foreach (var prop in type.GetProperties()) 
-            draw_property(obj, prop);
+            DrawProperty(Obj, prop);
 
-        if (obj.Type != null) {
+        if (Obj.Type != null) {
             
-            var clas_type = obj.Type.GetType();
+            var clasType = Obj.Type.GetType();
             
-            foreach (var prop in clas_type.GetProperties()) 
-                draw_property(obj.Type, prop);
+            foreach (var prop in clasType.GetProperties()) 
+                DrawProperty(Obj.Type, prop);
         }
     }
 
-    public void draw_property(object target, PropertyInfo prop) {
+    public void DrawProperty(object target, PropertyInfo prop) {
 
-        var id = $"##prop{prop_index}";
+        var id = $"##prop{_propIndex}";
         
-        var label_attr = prop.GetCustomAttribute<Label>();
+        var labelAttr = prop.GetCustomAttribute<Label>();
 
-        if (label_attr == null) return;
+        if (labelAttr == null) return;
         
-        ImGui.Text(label_attr.Value);
+        ImGui.Text(labelAttr.Value);
 
         var value = prop.GetValue(target);
             
@@ -59,61 +59,61 @@ internal class ObjectBrowser() : Viewport("Object") {
 
             if (prop.PropertyType == typeof(string)) {
 
-                var cast_value = (string)value;
+                var castValue = (string)value;
                 ImGui.PushItemWidth(-1);
-                ImGui.InputTextWithHint(id, "object", ref cast_value, 512);
+                ImGui.InputTextWithHint(id, "object", ref castValue, 512);
                 ImGui.PopItemWidth();
-                prop.SetValue(target, cast_value);
+                prop.SetValue(target, castValue);
             }
             
             if (prop.PropertyType == typeof(float3)) {
 
-                var cast_value = (float3)value;
-                var converted_value = cast_value.to_vector3();
+                var castValue = (float3)value;
+                var convertedValue = castValue.to_vector3();
                 ImGui.PushItemWidth(-1);
-                ImGui.InputFloat3(id, ref converted_value);
+                ImGui.InputFloat3(id, ref convertedValue);
                 ImGui.PopItemWidth();
-                prop.SetValue(target, converted_value.to_float3());
+                prop.SetValue(target, convertedValue.to_float3());
             }
             
             if (prop.PropertyType == typeof(Color)) {
 
-                var cast_value = (Color)value;
-                var converted_value = cast_value.to_vector4();
+                var castValue = (Color)value;
+                var convertedValue = castValue.to_vector4();
                 ImGui.PushItemWidth(-1);
-                ImGui.InputFloat4(id, ref converted_value);
+                ImGui.InputFloat4(id, ref convertedValue);
                 ImGui.PopItemWidth();
-                prop.SetValue(target, converted_value.to_color());
+                prop.SetValue(target, convertedValue.to_color());
             }
             
             if (prop.PropertyType == typeof(int)) {
 
-                var cast_value = (int)value;
+                var castValue = (int)value;
                 ImGui.PushItemWidth(-1);
-                ImGui.InputInt(id, ref cast_value);
+                ImGui.InputInt(id, ref castValue);
                 ImGui.PopItemWidth();
-                prop.SetValue(target, cast_value);
+                prop.SetValue(target, castValue);
             }
             
             if (prop.PropertyType == typeof(bool)) {
 
-                var cast_value = (bool)value;
+                var castValue = (bool)value;
                 ImGui.PushItemWidth(-1);
-                ImGui.Checkbox(id, ref cast_value);
+                ImGui.Checkbox(id, ref castValue);
                 ImGui.PopItemWidth();
-                prop.SetValue(target, cast_value);
+                prop.SetValue(target, castValue);
             }
             
             if (prop.PropertyType == typeof(float)) {
 
-                var cast_value = (float)value;
+                var castValue = (float)value;
                 ImGui.PushItemWidth(-1);
-                ImGui.InputFloat(id, ref cast_value);
+                ImGui.InputFloat(id, ref castValue);
                 ImGui.PopItemWidth();
-                prop.SetValue(target, cast_value);
+                prop.SetValue(target, castValue);
             }
         }
         
-        prop_index++;
+        _propIndex++;
     }
 }

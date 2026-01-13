@@ -7,9 +7,9 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
     public override string LabelIcon => Icons.Animation;
     public override Color LabelColor => Colors.GuiTypeAnimation;
 
-    [JsonProperty("f")] [Label("Path")] public string Path { get; set; } = "";
+    [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
     
-    [JsonProperty("t")] [Label("Track")] public int Track { get; set {
+    [JsonProperty] [Label("Track")] public int Track { get; set {
 
         if (_count == -1) field = value;
         else if (_count == 0 || value < 0) field = 0;
@@ -17,7 +17,7 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
         else field = value;
     } }
 
-    [JsonProperty("p")] [Label("Is Playing")] public bool IsPlaying { get; set {
+    [JsonProperty] [Label("Is Playing")] public bool IsPlaying { get; set {
 
         if (!field && value) {
 
@@ -29,7 +29,7 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
         
     } } = true;
 
-    [JsonProperty("l")] [Label("Looping")] public bool Looping { get; set; } = true;
+    [JsonProperty] [Label("Looping")] public bool Looping { get; set; } = true;
 
     private int _count = -1;
     private int _frame;

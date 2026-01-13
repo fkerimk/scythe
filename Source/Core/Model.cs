@@ -8,8 +8,8 @@ internal class Model(Obj obj) : ObjType(obj) {
     public override string LabelIcon => Icons.Model;
     public override Color LabelColor => Colors.GuiTypeModel;
     
-    [JsonProperty("f")] [Label("Path")] public string Path { get; set; } = "";
-    [JsonProperty("c")] [Label("Color")] public Color Color { get; set; } = Colors.White;
+    [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
+    [JsonProperty] [Label("Color")] public Color Color { get; set; } = Colors.White;
 
     public Raylib_cs.Model RlModel;
     private bool _modelLoaded;

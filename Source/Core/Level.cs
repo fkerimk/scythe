@@ -22,7 +22,7 @@ internal class Level {
         var jsonText = File.ReadAllText(PathUtil.Relative(JsonPath));
         var rawData = JObject.Parse(jsonText);
 
-        if (rawData["c"] is not JArray children) return root;
+        if (rawData["Children"] is not JArray children) return root;
         
         foreach (var childData in children)
             BuildHierarchy((JObject)childData, root);
@@ -38,26 +38,31 @@ internal class Level {
             NullValueHandling = NullValueHandling.Ignore,
             TypeNameHandling = TypeNameHandling.None 
         };
-            
-        var json = JsonConvert.SerializeObject(Root, Formatting.None, settings);
+
+        Formatting formatting;
+
+        if (!Enum.TryParse(Config.Level.Formatting, out formatting))
+            formatting = Formatting.None;
+        
+        var json = JsonConvert.SerializeObject(Root,formatting, settings);
 
         File.WriteAllText(JsonPath, json);
     }
     
     private static void BuildHierarchy(JObject data, Obj parent) {
         
-        var name = data["n"]?.ToString() ?? "Object";
+        var name = data["Name"]?.ToString() ?? "Object";
         
-        var typeStr = data["t"]?.Type == JTokenType.Object 
-            ? data["t"]?["n"]?.ToString() 
+        var typeStr = data["Type"]?.Type == JTokenType.Object 
+            ? data["Type"]?["Name"]?.ToString() 
             : null;
 
         var currentObj = BuildObject(name, parent, typeStr);
 
-        if (currentObj.Type != null && data["t"] != null)
-            JsonConvert.PopulateObject(data["t"]!.ToString(), currentObj.Type);
+        if (currentObj.Type != null && data["Type"] != null)
+            JsonConvert.PopulateObject(data["Type"]!.ToString(), currentObj.Type);
 
-        if (data["c"] is not JArray children) return;
+        if (data["Children"] is not JArray children) return;
         
         foreach (var childData in children)
             BuildHierarchy((JObject)childData, currentObj);

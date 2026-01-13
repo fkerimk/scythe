@@ -7,13 +7,13 @@ internal class Obj {
     public string Icon => Type?.LabelIcon ?? Icons.Obj;
     public Color Color => Type?.LabelColor ?? Colors.GuiTypeObject;
     
-    [JsonProperty("n")] [Label("Name")] public string Name { get; set; }
+    [JsonProperty] [Label("Name")] public string Name { get; set; }
 
     public Obj? Parent;
-    [JsonProperty("c")] public readonly List<Obj> Children = [];
+    [JsonProperty] public readonly List<Obj> Children = [];
     public Matrix4x4 Matrix = Matrix4x4.Identity;
     public Matrix4x4 RotMatrix = Matrix4x4.Identity;
-    [JsonProperty("t")] public readonly ObjType? Type;
+    [JsonProperty] public readonly ObjType? Type;
     public bool IsSelected;
     
     public float3 Right => float3.normalize(Vector3.Transform(new(1, 0, 0), RotMatrix).to_float3());
