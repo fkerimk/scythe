@@ -77,6 +77,6 @@ internal abstract class RaylibSession(int initWidth, int initHeight, ConfigFlags
 
     protected void Clear(Color color) {
         
-        Raylib.ClearBackground(color.to_raylib());
+        Raylib.ClearBackground(color.ToRaylib());
     }
 }

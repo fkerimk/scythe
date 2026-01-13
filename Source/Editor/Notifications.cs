@@ -11,8 +11,8 @@ internal static class Notifications {
         Size = 20;
     
     private const float 
-        Duration = 1f,
-        Fadeout = 0.25f;
+        Duration = 0.5f,
+        Fadeout = 0.125f;
     
     private static readonly List<Notification> PendingNotifications = [];
 
@@ -35,9 +35,9 @@ internal static class Notifications {
 
             var pos = new int2(X, Y + i * (notification.Height + Spacing));
 
-            var brColor = Colors.GuiFrameBg.to_raylib();
-            var bgColor = Colors.GuiWindowBg.to_raylib();
-            var fgColor = Colors.Primary.to_raylib();
+            var brColor = Colors.GuiFrameBg.ToRaylib();
+            var bgColor = Colors.GuiWindowBg.ToRaylib();
+            var fgColor = Colors.Primary.ToRaylib();
 
             notification.Timer += Raylib.GetFrameTime();
 

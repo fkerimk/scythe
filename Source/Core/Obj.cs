@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.ComponentModel;
+using System.Numerics;
 using Newtonsoft.Json;
 
 [JsonObject(MemberSerialization.OptIn)]
@@ -7,7 +8,7 @@ internal class Obj {
     public string Icon => Type?.LabelIcon ?? Icons.Obj;
     public Color Color => Type?.LabelColor ?? Colors.GuiTypeObject;
     
-    [JsonProperty] [Label("Name")] public string Name { get; set; }
+    [RecordHistory] [JsonProperty] [Label("Name")] public string Name { get; set; }
 
     public Obj? Parent;
     [JsonProperty] public readonly List<Obj> Children = [];
@@ -16,9 +17,9 @@ internal class Obj {
     [JsonProperty] public readonly ObjType? Type;
     public bool IsSelected;
     
-    public float3 Right => float3.normalize(Vector3.Transform(new(1, 0, 0), RotMatrix).to_float3());
-    public float3 Up => float3.normalize(Vector3.Transform(new(0, 1, 0), RotMatrix).to_float3());
-    public float3 Fwd => float3.normalize(Vector3.Transform(new(0, 0, 1), RotMatrix).to_float3());
+    public float3 Right => float3.normalize(Vector3.Transform(new Vector3(1, 0, 0), RotMatrix).to_float3());
+    public float3 Up => float3.normalize(Vector3.Transform(new Vector3(0, 1, 0), RotMatrix).to_float3());
+    public float3 Fwd => float3.normalize(Vector3.Transform(new Vector3(0, 0, 1), RotMatrix).to_float3());
     
     public Obj(string name, Type? type, Obj? parent = null) {
         

@@ -8,8 +8,8 @@ internal class Model(Obj obj) : ObjType(obj) {
     public override string LabelIcon => Icons.Model;
     public override Color LabelColor => Colors.GuiTypeModel;
     
-    [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
-    [JsonProperty] [Label("Color")] public Color Color { get; set; } = Colors.White;
+    [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
+    [RecordHistory] [JsonProperty] [Label("Color")] public Color Color { get; set; } = Colors.White;
 
     public Raylib_cs.Model RlModel;
     private bool _modelLoaded;
@@ -62,7 +62,7 @@ internal class Model(Obj obj) : ObjType(obj) {
         }
 
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrTiling, new Vector2(0.5f, 0.5f), ShaderUniformDataType.Vec2);
-        Raylib.DrawModel(RlModel, Vector3.Zero, 1, Color.to_raylib());
+        Raylib.DrawModel(RlModel, Vector3.Zero, 1, Color.ToRaylib());
     }
 
     public override void LoopUi(bool isEditor) {}

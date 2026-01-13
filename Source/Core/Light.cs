@@ -8,11 +8,11 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
     public override string LabelIcon => Icons.Light;
     public override Color LabelColor => Colors.GuiTypeLight;
 
-    [JsonProperty] [Label("Enabled")] public bool Enabled { get; set; } = true;
-    [JsonProperty] [Label("Type")] public int Type { get; set => field = (int)Raymath.Clamp(value, 0, 2); } = 1;
-    [JsonProperty] [Label("Color")] public Color Color { get; set; } = Colors.White;
-    [JsonProperty] [Label("Intensity")] public float Intensity { get; set; } = 2;
-    [JsonProperty] [Label("Range")] public float Range { get; set; } = 10;
+    [RecordHistory] [JsonProperty] [Label("Enabled")] public bool Enabled { get; set; } = true;
+    [RecordHistory] [JsonProperty] [Label("Type")] public int Type { get; set => field = (int)Raymath.Clamp(value, 0, 2); } = 1;
+    [RecordHistory] [JsonProperty] [Label("Color")] public Color Color { get; set; } = Colors.White;
+    [RecordHistory] [JsonProperty] [Label("Intensity")] public float Intensity { get; set; } = 2;
+    [RecordHistory] [JsonProperty] [Label("Range")] public float Range { get; set; } = 10;
     
     private float3 _pos = float3.zero;
     private float3 _target = float3.zero;
@@ -53,7 +53,7 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
 
         if (IsSelected) {
 
-            var gizmoColor = Raylib.ColorAlpha(Color.to_raylib(), 0.1f);
+            var gizmoColor = Raylib.ColorAlpha(Color.ToRaylib(), 0.1f);
             
             switch (Type) {
                 
@@ -98,7 +98,7 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
         
         if ((!Config.Runtime.DrawLights || isEditor) && (!Config.Editor.DrawLights || !isEditor)) return;
 
-        Raylib.DrawSphereWires(_pos.to_vector3(), 0.1f, 8, 8, Enabled ? Raylib.ColorAlpha(Color.to_raylib(), 0.8f) : Raylib.ColorAlpha(Color.to_raylib(), 0.2f));
+        Raylib.DrawSphereWires(_pos.to_vector3(), 0.1f, 8, 8, Enabled ? Raylib.ColorAlpha(Color.ToRaylib(), 0.8f) : Raylib.ColorAlpha(Color.ToRaylib(), 0.2f));
     }
     
     public override void LoopUi(bool isEditor) {}

@@ -24,11 +24,11 @@ internal class Grid(Cam cam) {
                 
             var startX = new Vector3(-half, 0, pos);
             var endX = new Vector3(half, 0, pos);
-            Raylib.DrawLine3D(startX, endX, Colors.Grid.to_raylib());
+            Raylib.DrawLine3D(startX, endX, Colors.Grid.ToRaylib());
 
             var startZ = new Vector3(pos, 0, -half);
             var endZ = new Vector3(pos, 0, half);
-            Raylib.DrawLine3D(startZ, endZ, Colors.Grid.to_raylib());
+            Raylib.DrawLine3D(startZ, endZ, Colors.Grid.ToRaylib());
         }
         
         Rlgl.PopMatrix();

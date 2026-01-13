@@ -91,7 +91,7 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
         Core.LoopUi(true);
         Core.LoopUiEditor(_level3D);
             
-        if (Config.Editor.DrawFps) Raylib.DrawText($"{Raylib.GetFPS()}", 10, 10, 20, Colors.Primary.to_raylib());
+        if (Config.Editor.DrawFps) Raylib.DrawText($"{Raylib.GetFPS()}", 10, 10, 20, Colors.Primary.ToRaylib());
 
         Raylib.EndTextureMode();
             

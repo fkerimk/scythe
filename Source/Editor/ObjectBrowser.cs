@@ -57,12 +57,20 @@ internal class ObjectBrowser() : Viewport("Object") {
                 
             ImGui.SameLine();
 
+            var recordedHistory = false;
+            
             if (prop.PropertyType == typeof(string)) {
 
                 var castValue = (string)value;
                 ImGui.PushItemWidth(-1);
                 ImGui.InputTextWithHint(id, "object", ref castValue, 512);
                 ImGui.PopItemWidth();
+
+                if ((string)value != castValue) {
+                    History.StartRecording(target, prop.Name);
+                    recordedHistory = true;
+                }
+                
                 prop.SetValue(target, castValue);
             }
             
@@ -73,6 +81,16 @@ internal class ObjectBrowser() : Viewport("Object") {
                 ImGui.PushItemWidth(-1);
                 ImGui.InputFloat3(id, ref convertedValue);
                 ImGui.PopItemWidth();
+
+                if (
+                    Math.Abs(castValue.x - convertedValue.X) > 0.001f ||
+                    Math.Abs(castValue.y - convertedValue.Y) > 0.001f ||
+                    Math.Abs(castValue.z - convertedValue.Z) > 0.001f
+                ) {
+                    History.StartRecording(target, prop.Name);
+                    recordedHistory = true;
+                }
+                
                 prop.SetValue(target, convertedValue.to_float3());
             }
             
@@ -83,7 +101,18 @@ internal class ObjectBrowser() : Viewport("Object") {
                 ImGui.PushItemWidth(-1);
                 ImGui.InputFloat4(id, ref convertedValue);
                 ImGui.PopItemWidth();
-                prop.SetValue(target, convertedValue.to_color());
+
+                if (
+                    Math.Abs(castValue.R - convertedValue.X) > 0.001f ||
+                    Math.Abs(castValue.G - convertedValue.Y) > 0.001f ||
+                    Math.Abs(castValue.B - convertedValue.Z) > 0.001f ||
+                    Math.Abs(castValue.A - convertedValue.W) > 0.001f
+                ) {
+                    History.StartRecording(target, prop.Name);
+                    recordedHistory = true;
+                }
+                
+                prop.SetValue(target, convertedValue.ToColor());
             }
             
             if (prop.PropertyType == typeof(int)) {
@@ -92,6 +121,12 @@ internal class ObjectBrowser() : Viewport("Object") {
                 ImGui.PushItemWidth(-1);
                 ImGui.InputInt(id, ref castValue);
                 ImGui.PopItemWidth();
+
+                if ((int)value != castValue) {
+                    History.StartRecording(target, prop.Name);
+                    recordedHistory = true;
+                }
+                
                 prop.SetValue(target, castValue);
             }
             
@@ -101,6 +136,12 @@ internal class ObjectBrowser() : Viewport("Object") {
                 ImGui.PushItemWidth(-1);
                 ImGui.Checkbox(id, ref castValue);
                 ImGui.PopItemWidth();
+
+                if ((bool)value != castValue) {
+                    History.StartRecording(target, prop.Name);
+                    recordedHistory = true;
+                }
+                
                 prop.SetValue(target, castValue);
             }
             
@@ -110,8 +151,16 @@ internal class ObjectBrowser() : Viewport("Object") {
                 ImGui.PushItemWidth(-1);
                 ImGui.InputFloat(id, ref castValue);
                 ImGui.PopItemWidth();
+
+                if (Math.Abs((float)value - castValue) > 0.001f) {
+                    History.StartRecording(target, prop.Name);
+                    recordedHistory = true;
+                }
+                
                 prop.SetValue(target, castValue);
             }
+            
+            if (recordedHistory) History.StopRecording();
         }
         
         _propIndex++;

@@ -87,16 +87,16 @@ internal class Transform(Obj obj) : ObjType(obj) {
         var textA = _mode switch { 0 => "pos", 1 => "rot", 2 => "scale", _ => "bruh" };
         var textPosA = new int2(viewport.RelativeMouse.X, viewport.RelativeMouse.Y - 15);
         
-        Raylib.DrawText(textA, textPosA.x - 14, textPosA.y - 19, 20, Colors.Black.to_raylib());
-        Raylib.DrawText(textA, textPosA.x - 15, textPosA.y - 20, 20, Colors.Yellow.to_raylib());
+        Raylib.DrawText(textA, textPosA.x - 14, textPosA.y - 19, 20, Colors.Black.ToRaylib());
+        Raylib.DrawText(textA, textPosA.x - 15, textPosA.y - 20, 20, Colors.Yellow.ToRaylib());
         
         if (_activeMove == 0) return;
         
         var textB = _mode switch { 0 or 2 => $"{_activeMove:F2}m", 1 => $"{_activeMove:F2}°", _ => $"{_activeMove:F2}" }; 
         var textPosB = new int2(viewport.RelativeMouse.X, viewport.RelativeMouse.Y - 15);
             
-        Raylib.DrawText(textB, textPosB.x - 14, textPosB.y - 39, 20, Colors.Black.to_raylib());
-        Raylib.DrawText(textB, textPosB.x - 15, textPosB.y - 40, 20, Colors.Yellow.to_raylib());
+        Raylib.DrawText(textB, textPosB.x - 14, textPosB.y - 39, 20, Colors.Black.ToRaylib());
+        Raylib.DrawText(textB, textPosB.x - 15, textPosB.y - 40, 20, Colors.Yellow.ToRaylib());
     }
 
     private void Axis(string id, float3 axis, float3 normal, Color axisColor, Ray ray) {
@@ -110,7 +110,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
         if (!string.IsNullOrEmpty(_activeId) && _activeId != id) {
             
-            Raylib.DrawLine3D(a.to_vector3(), b.to_vector3(), axisColor.to_raylib());
+            Raylib.DrawLine3D(a.to_vector3(), b.to_vector3(), axisColor.ToRaylib());
             return;
         }
 
@@ -196,7 +196,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
         var targetColor = (!isActive && isHovered && !Raylib.IsCursorHidden()) ? Colors.White : axisColor;
         
-        Raylib.DrawCylinderEx(a.to_vector3(), b.to_vector3(), radius, radius, 1, targetColor.to_raylib());
+        Raylib.DrawCylinderEx(a.to_vector3(), b.to_vector3(), radius, radius, 1, targetColor.ToRaylib());
     }
     
     public override void Quit() {}
