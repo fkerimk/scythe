@@ -38,18 +38,18 @@ dotnet run -editor
 
 ## 🔧 Configuring
 
-The [scythe.ini](./scythe.ini) file in the project folder comes with all default settings. Scythe first reads the [scythe.ini](./scythe.ini) file in the working directory; if it’s not found there, it reads the one in the executable directory.
+The [Scythe.ini](./Scythe.ini) file in the project folder comes with all default settings. Scythe first reads the [Scythe.ini](./scythe.ini) file in the working directory; if it’s not found there, it reads the one in the executable directory.
 
 There’s no setting you need to change to run it. You can set the location of the project to be loaded using `mod.path`.
 
 ```ini
-[mod]
-path="template"
+[Mod]
+Path="Template"
 ```
 
 Make sure the basic resources included with the template are in the necessary locations within the project.
 
-Setting `fps_lock` to `-1` locks the FPS to the refresh rate _(vsync)_. Setting it to 0 makes it unlimited.
+Setting `FpsLock` to `-1` locks the FPS to the refresh rate _(vsync)_. Setting it to 0 makes it unlimited.
 
 ## 🙏 Attributions
 

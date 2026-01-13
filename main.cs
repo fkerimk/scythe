@@ -1,40 +1,32 @@
-﻿using scythe;
+﻿ReadConfig();
 
-// look out for config
-var ini_file = new ini(path.relative("scythe.ini"));
+Cli.Init();
 
-if (!ini_file.is_valid) {
-    
-    ini_file.Dispose();
-    
-    Directory.SetCurrentDirectory(path.exe_dir);
-    ini_file = new(path.relative("scythe.ini"));
-}
+if (!Cli.Get("no-splash", out _))
+    new Splash(1).Show();
 
-// config
-ini_file.to_config();
-
-if (Directory.Exists(config.mod.path)) Directory.SetCurrentDirectory(config.mod.path); else Environment.Exit(1);
-
-// cli
-cli.init();
-
-path.clear_temp();
-
-#if !DEBUG
-path.include_lib(0, "raylib.dll");
-path.include_lib(1, "libraylib.so");
-path.include_lib(0, "cimgui.dll");
-path.include_lib(1, "libcimgui.so");
-#endif
-
-if (!cli.get("no-splash", out _))
-    new splash(1).show();
-
-if (cli.get("editor", out _))
-     new editor().show();
-else new runtime().show();
-
+if (Cli.Get("editor", out _))
+     new Editor().Show();
+else new Runtime().Show();
 
 Environment.Exit(0);
+
+return;
+
+void ReadConfig() {
+    
+    var iniFile = new Ini(PathUtil.Relative("Scythe.ini"));
+
+    if (!iniFile.IsValid) {
+    
+        iniFile.Dispose();
+    
+        Directory.SetCurrentDirectory(PathUtil.ExeDir);
+        iniFile = new Ini(PathUtil.Relative("Scythe.ini"));
+    }
+
+    iniFile.ToConfig();
+
+    if (Directory.Exists(Config.Mod.Path)) Directory.SetCurrentDirectory(Config.Mod.Path); else Environment.Exit(1);
+}
 

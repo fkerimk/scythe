@@ -18,7 +18,9 @@
         <PublishTrimmed>false</PublishTrimmed>
         <TrimMode>link</TrimMode>
       
-        <NoWarn>CS8981;IL2067;IL2026;IL2075;IL2065</NoWarn>
+        <!--
+        <NoWarn>CS8981;IL2067;IL2026;IL2075;IL2065;CS0162</NoWarn>
+        -->
 
     </PropertyGroup>
 
@@ -27,11 +29,6 @@
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
         <PackageReference Include="Raylib-cs" Version="7.0.2" />
         <PackageReference Include="rlImgui-cs" Version="3.2.0" />
-        
-        <EmbeddedResource Include="include/raylib.dll" />
-        <EmbeddedResource Include="include/libraylib.so" />
-        <EmbeddedResource Include="include/cimgui.dll" />
-        <EmbeddedResource Include="include/libcimgui.so" />
         
     </ItemGroup>
     
