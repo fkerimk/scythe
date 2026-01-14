@@ -5,19 +5,21 @@ using Newtonsoft.Json.Linq;
 internal class Level {
 
     public readonly string Name;
+    public readonly string JsonPath;
     public readonly Obj Root;
-
-    public string JsonPath => $"Levels/{Name}.json";
+    public readonly Core Core;
     
-    public Level(string name) {
+    public Level(string name, Core core) {
 
         Name = name;
+        JsonPath = $"Levels/{Name}.json";
         Root = Load();
+        Core = core;
     }
 
     private Obj Load() {
         
-        var root = new Obj("Root", null);
+        var root = new Obj("Root", null, null);
 
         var jsonText = File.ReadAllText(PathUtil.Relative(JsonPath));
         var rawData = JObject.Parse(jsonText);
@@ -49,7 +51,7 @@ internal class Level {
         File.WriteAllText(JsonPath, json);
     }
     
-    private static void BuildHierarchy(JObject data, Obj parent) {
+    private void BuildHierarchy(JObject data, Obj parent) {
         
         var name = data["Name"]?.ToString() ?? "Object";
         
@@ -68,7 +70,7 @@ internal class Level {
             BuildHierarchy((JObject)childData, currentObj);
     }
     
-    public static Obj BuildObject(string name, Obj? parent, string? type = null) {
+    public Obj BuildObject(string name, Obj? parent, string? type) {
 
         var typeClass = Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(t => t.Name.Equals(type, StringComparison.OrdinalIgnoreCase));
         
@@ -78,7 +80,7 @@ internal class Level {
         return obj;
     }
 
-    public static Obj RecordedBuildObject(string name, Obj? parent, string? type = null) {
+    public Obj RecordedBuildObject(string name, Obj? parent, string? type) {
         
         History.StartRecording(parent!,  $"Create {name}");
         
@@ -91,7 +93,7 @@ internal class Level {
         return obj;
     }
 
-    public static Obj CloneObject(Obj source) {
+    public Obj CloneObject(Obj source) {
         
         var typeName = source.Type?.GetType().Name;
     
@@ -109,7 +111,7 @@ internal class Level {
         return clone;
     }
 
-    public static void RecordedCloneObject(Obj source) {
+    public void RecordedCloneObject(Obj source) {
         
         History.StartRecording(source.Parent!, $"Duplicate {source.Name}");
 

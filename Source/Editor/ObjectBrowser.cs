@@ -99,7 +99,8 @@ internal class ObjectBrowser() : Viewport("Object") {
                 var castValue = (Color)value;
                 var convertedValue = castValue.to_vector4();
                 ImGui.PushItemWidth(-1);
-                ImGui.InputFloat4(id, ref convertedValue);
+                //ImGui.InputFloat4(id, ref convertedValue);
+                ImGui.ColorPicker4(id, ref convertedValue, ImGuiColorEditFlags.DisplayRGB);
                 ImGui.PopItemWidth();
 
                 if (

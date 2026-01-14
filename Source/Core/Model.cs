@@ -5,6 +5,8 @@ using Raylib_cs;
 // ReSharper disable once ClassNeverInstantiated.Global
 internal class Model(Obj obj) : ObjType(obj) {
 
+    public override int Priority => 2;
+    
     public override string LabelIcon => Icons.Model;
     public override Color LabelColor => Colors.GuiTypeModel;
     
@@ -14,7 +16,7 @@ internal class Model(Obj obj) : ObjType(obj) {
     public Raylib_cs.Model RlModel;
     private bool _modelLoaded;
     
-    public override unsafe void Loop3D(bool isEditor) {
+    public override unsafe void Loop3D(Core core, bool isEditor) {
 
         if (!_modelLoaded) {
             
@@ -65,9 +67,9 @@ internal class Model(Obj obj) : ObjType(obj) {
         Raylib.DrawModel(RlModel, Vector3.Zero, 1, Color.ToRaylib());
     }
 
-    public override void LoopUi(bool isEditor) {}
-    public override void Loop3DEditor(Viewport viewport) { }
-    public override void LoopUiEditor(Viewport viewport) { }
+    public override void LoopUi(Core core, bool isEditor) {}
+    public override void Loop3DEditor(Core core, Viewport viewport) { }
+    public override void LoopUiEditor(Core core, Viewport viewport) { }
 
     public override void Quit() {
         

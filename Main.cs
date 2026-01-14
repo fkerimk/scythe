@@ -1,4 +1,6 @@
-﻿ReadConfig();
+﻿PathUtil.FirstDir = Environment.CurrentDirectory;
+
+ReadConfig();
 
 Cli.Init();
 

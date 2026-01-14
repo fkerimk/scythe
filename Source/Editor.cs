@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Diagnostics;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using ImGuiNET;
 using Raylib_cs;
@@ -12,7 +13,9 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
     private LevelBrowser? _levelBrowser;
     private ObjectBrowser? _objectBrowser;
     private ProjectBrowser? _projectBrowser;
-    private InsertBox? _insertBox;
+
+    public Core Core;
+    public FreeCam FreeCam;
     
     protected override void Init() {
 
@@ -27,11 +30,11 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
         _io.NativePtr->IniFilename = (byte*)Marshal.StringToHGlobalAnsi("Layouts/User.ini").ToPointer();
         
         // Generic initials
-        Core.Init(true);
-        FreeCam.Init();
+        Core = new Core(true, new Cam());
+        Core.ActiveLevel = new Level("Main", Core);
+        FreeCam = new FreeCam(Core.ActiveCamera);
         Fonts.LoadImFonts(_io);
 
-        if (Cam.Main == null) return;
         if (Core.ActiveLevel == null) return;
         
         // Viewports
@@ -41,23 +44,20 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
             SeparatorTextPadding = new Vector2(0, 0)
         }};
         
-        _levelBrowser = new LevelBrowser();
+        _levelBrowser = new LevelBrowser(this);
         _objectBrowser = new ObjectBrowser();
         _projectBrowser = new ProjectBrowser();
-        _insertBox = new InsertBox();
     }
 
-    protected override void Loop() {
+    protected override bool Loop() {
         
         TargetFps = Config.Editor.FpsLock;
         
-        if (Cam.Main == null ||
-            _level3D == null ||
+        if (_level3D == null ||
             _levelBrowser == null ||
             _objectBrowser == null ||
-            _projectBrowser == null ||
-            _insertBox == null
-        ) return;
+            _projectBrowser == null
+        ) return false;
         
         // Reload viewport render
         if (_level3D.TexSize != _level3D.TexTemp) {
@@ -75,17 +75,17 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
         // Start camera
         FreeCam.Loop(_level3D);
         
-        Cam.Main.StartRendering();
+        Core.ActiveCamera.StartRendering();
             
         // 3D
-        var grid = new Grid(Cam.Main);
+        var grid = new Grid(Core.ActiveCamera);
         grid.Draw();
             
         Core.Loop3D(true);
         Core.Loop3DEditor(_level3D);
             
         // Stop camera
-        Cam.Main.StopRendering();
+        Core.ActiveCamera.StopRendering();
             
         // Ui
         Core.LoopUi(true);
@@ -112,7 +112,6 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
         _objectBrowser.Obj = _levelBrowser.SelectedObject;
         _objectBrowser.Draw();
         _projectBrowser.Draw();
-        _insertBox.Draw();
         
         // Stop ImGui
         ImGui.PopFont();
@@ -128,7 +127,7 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
 
                 if (_levelBrowser.SelectedObject != null) {
 
-                    Level.RecordedCloneObject(_levelBrowser.SelectedObject);
+                    Core.ActiveLevel?.RecordedCloneObject(_levelBrowser.SelectedObject);
                 }
             }
             
@@ -141,6 +140,36 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
             if (Raylib.IsKeyPressed(KeyboardKey.Z)) History.Undo();
             if (Raylib.IsKeyPressed(KeyboardKey.Y)) History.Redo();
         }
+
+        if (Raylib.IsKeyPressed(KeyboardKey.Delete)) {
+
+            if (_levelBrowser.SelectedObject != null)
+                _levelBrowser.DeleteObject = _levelBrowser.SelectedObject;
+        }
+
+        if (Raylib.IsKeyPressed(KeyboardKey.F5)) {
+
+            var currentPath = Process.GetCurrentProcess().MainModule?.FileName;
+
+            if (!string.IsNullOrEmpty(currentPath)) {
+                
+                Console.WriteLine(currentPath);
+
+                var psi = new ProcessStartInfo {
+                    
+                    FileName = currentPath,
+                    Arguments = "-no-splash",
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    WorkingDirectory = PathUtil.FirstDir
+                };
+
+                using var process = Process.Start(psi);
+                process?.WaitForExit();
+            }
+        }
+
+        return !Raylib.WindowShouldClose();
     }
     
     protected override void Quit() {

@@ -1,1 +1,119 @@
-{"Children":[{"Children":[{"Children":[{"Children":[],"Type":{"Path":"BearMan","Track":2,"IsPlaying":true,"Looping":true,"Name":"Animation"},"Name":"Animation"}],"Type":{"Path":"BearMan","Color":{},"Name":"Model"},"Name":"Model"},{"Children":[],"Type":{"Scale":{"x":1.0,"y":1.0,"z":1.0},"Rot":{"W":1.0,"IsIdentity":true},"Name":"Transform"},"Name":"Transform"}],"Name":"Bear Man"},{"Children":[{"Children":[],"Type":{"Path":"Cube","Color":{},"Name":"Model"},"Name":"Model"},{"Children":[],"Type":{"Scale":{"x":2.0,"y":0.2,"z":2.0},"Rot":{"W":1.0,"IsIdentity":true},"Name":"Transform"},"Name":"Transform"}],"Name":"Cube"},{"Children":[{"Children":[],"Type":{"Enabled":true,"Type":1,"Color":{},"Intensity":5.0,"Range":10.0,"Name":"Light"},"Name":"Light"},{"Children":[],"Type":{"Pos":{"y":3.0,"z":1.0},"Scale":{"x":1.0,"y":1.0,"z":1.0},"Rot":{"W":1.0,"IsIdentity":true},"Name":"Transform"},"Name":"Transform"}],"Name":"Point Light"}],"Name":"Root"}
+{
+  "Children": [
+    {
+      "Children": [
+        {
+          "Children": [],
+          "Type": {
+            "Euler": {
+              "x": -89.99998
+            },
+            "Scale": {
+              "x": 100.0,
+              "y": 100.0,
+              "z": 100.0
+            },
+            "Rot": {
+              "X": -0.70710665,
+              "W": 0.70710695
+            },
+            "Name": "Transform"
+          },
+          "Name": "Transform"
+        },
+        {
+          "Children": [
+            {
+              "Children": [],
+              "Type": {
+                "Path": "BearMan",
+                "IsPlaying": true,
+                "Looping": true,
+                "Name": "Animation"
+              },
+              "Name": "Animation"
+            }
+          ],
+          "Type": {
+            "Path": "BearMan",
+            "Color": {},
+            "Name": "Model"
+          },
+          "Name": "Model"
+        }
+      ],
+      "Name": "Bear Man"
+    },
+    {
+      "Children": [
+        {
+          "Children": [],
+          "Type": {
+            "Scale": {
+              "x": 2.0,
+              "y": 0.2,
+              "z": 2.0
+            },
+            "Rot": {
+              "W": 1.0,
+              "IsIdentity": true
+            },
+            "Name": "Transform"
+          },
+          "Name": "Transform"
+        },
+        {
+          "Children": [],
+          "Type": {
+            "Path": "Cube",
+            "Color": {},
+            "Name": "Model"
+          },
+          "Name": "Model"
+        }
+      ],
+      "Name": "Cube"
+    },
+    {
+      "Children": [
+        {
+          "Children": [],
+          "Type": {
+            "Pos": {
+              "y": 3.0,
+              "z": 1.0
+            },
+            "Scale": {
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
+            },
+            "Rot": {
+              "W": 1.0,
+              "IsIdentity": true
+            },
+            "Name": "Transform"
+          },
+          "Name": "Transform"
+        },
+        {
+          "Children": [],
+          "Type": {
+            "Enabled": true,
+            "Type": 1,
+            "Color": {
+              "R": 0.722973,
+              "B": 0.9887691
+            },
+            "Intensity": 5.0,
+            "Range": 10.0,
+            "Name": "Light"
+          },
+          "Name": "Light"
+        }
+      ],
+      "Name": "Point Light"
+    }
+  ],
+  "Name": "Root"
+}

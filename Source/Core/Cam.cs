@@ -3,8 +3,6 @@ using Raylib_cs;
 
 internal class Cam {
 
-    public static Cam? Main;
-    
     public Camera3D RlCam = new() {
             
         Projection = CameraProjection.Perspective,

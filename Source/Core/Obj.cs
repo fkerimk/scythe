@@ -11,16 +11,18 @@ internal class Obj {
 
     public Obj? Parent;
     [JsonProperty] public readonly List<Obj> Children = [];
+    [JsonProperty] public readonly ObjType? Type;
+    
     public Matrix4x4 Matrix = Matrix4x4.Identity;
     public Matrix4x4 RotMatrix = Matrix4x4.Identity;
-    [JsonProperty] public readonly ObjType? Type;
-    public bool IsSelected;
     
     public float3 Right => float3.normalize(Vector3.Transform(new Vector3(1, 0, 0), RotMatrix).to_float3());
     public float3 Up => float3.normalize(Vector3.Transform(new Vector3(0, 1, 0), RotMatrix).to_float3());
     public float3 Fwd => float3.normalize(Vector3.Transform(new Vector3(0, 0, 1), RotMatrix).to_float3());
     
-    public Obj(string name, Type? type, Obj? parent = null) {
+    public bool IsSelected;
+    
+    public Obj(string name, Type? type, Obj? parent) {
         
         Name = name;
         Parent = parent;

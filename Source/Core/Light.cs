@@ -17,14 +17,14 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
     private float3 _pos = float3.zero;
     private float3 _target = float3.zero;
 
-    public void Update() {
+    public void Update(Core core) {
         
-        var enabledLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].enabled");
-        var typeLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].type");
-        var posLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].position");
-        var targetLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].target");
-        var colorLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].color");
-        var intensityLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].intensity");
+        var enabledLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{core.Lights.Count}].enabled");
+        var typeLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{core.Lights.Count}].type");
+        var posLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{core.Lights.Count}].position");
+        var targetLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{core.Lights.Count}].target");
+        var colorLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{core.Lights.Count}].color");
+        var intensityLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{core.Lights.Count}].intensity");
         
         Raylib.SetShaderValue(Shaders.Pbr, enabledLoc, Enabled ? 1 : 0, ShaderUniformDataType.Int);
         Raylib.SetShaderValue(Shaders.Pbr, typeLoc, Type, ShaderUniformDataType.Int);
@@ -34,7 +34,7 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
         Raylib.SetShaderValue(Shaders.Pbr, intensityLoc, Intensity, ShaderUniformDataType.Float);
     }
     
-    public override void Loop3D(bool isEditor) {
+    public override void Loop3D(Core core, bool isEditor) {
 
         if (Obj.Parent == null) return; 
         
@@ -47,13 +47,13 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
         _pos = position.to_float3();
         _target = _pos + Obj.Parent.Fwd * (Type == 0 ? 1 : Range);
         
-        Update();
+        Update(core);
         
-        Core.Lights[GetHashCode()] = this;
+        core.Lights[GetHashCode()] = this;
 
         if (IsSelected) {
 
-            var gizmoColor = Raylib.ColorAlpha(Color.ToRaylib(), 0.1f);
+            var gizmoColor = Raylib.ColorAlpha(Color.ToRaylib(), 0.2f);
             
             switch (Type) {
                 
@@ -101,10 +101,10 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
         Raylib.DrawSphereWires(_pos.to_vector3(), 0.1f, 8, 8, Enabled ? Raylib.ColorAlpha(Color.ToRaylib(), 0.8f) : Raylib.ColorAlpha(Color.ToRaylib(), 0.2f));
     }
     
-    public override void LoopUi(bool isEditor) {}
+    public override void LoopUi(Core core, bool isEditor) {}
     
-    public override void Loop3DEditor(Viewport viewport) { }
-    public override void LoopUiEditor(Viewport viewport) { }
+    public override void Loop3DEditor(Core core, Viewport viewport) { }
+    public override void LoopUiEditor(Core core, Viewport viewport) { }
 
     public override void Quit() { }
 }

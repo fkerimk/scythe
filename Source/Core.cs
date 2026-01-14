@@ -1,15 +1,16 @@
 ﻿using System.Numerics;
 using Raylib_cs;
 
-internal static class Core {
+internal class Core {
 
-    public static Level? ActiveLevel;
-    public static Dictionary<int, Light> Lights = [];
+    public Level? ActiveLevel;
+    public Cam ActiveCamera;
     
-    public static void Init(bool isEditor) {
+    public readonly Dictionary<int, Light> Lights;
+    
+    public Core (bool isEditor, Cam cam) {
 
-        ActiveLevel = new Level("Main");
-        Cam.Main = new Cam();
+        ActiveCamera = cam;
 
         Lights = [];
 
@@ -27,85 +28,77 @@ internal static class Core {
         Raylib.SetShaderValue(Shaders.Pbr, Raylib.GetShaderLocation(Shaders.Pbr, "ambient_intensity"), ambientIntensity, ShaderUniformDataType.Float);
     }
 
-    public static unsafe void Loop3D(bool isEditor) {
+    public unsafe void Loop3D(bool isEditor) {
 
         if (ActiveLevel == null) return;
-        if (Cam.Main == null) return;
         
         Lights.Clear();
-        Raylib.SetShaderValue(Shaders.Pbr, Shaders.Pbr.Locs[(int)ShaderLocationIndex.VectorView], Cam.Main.Pos, ShaderUniformDataType.Vec3);
+        Raylib.SetShaderValue(Shaders.Pbr, Shaders.Pbr.Locs[(int)ShaderLocationIndex.VectorView], ActiveCamera.Pos, ShaderUniformDataType.Vec3);
         
         Loop3DObj(ActiveLevel.Root, isEditor);
         
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrLightCount, Lights.Count, ShaderUniformDataType.Int);
         
-        foreach (var light in Lights.Values) light.Update();
+        foreach (var light in Lights.Values) light.Update(this);
     }
     
-    private static void Loop3DObj(Obj obj, bool isEditor, int index = 0) {
+    private void Loop3DObj(Obj obj, bool isEditor, int index = 0) {
         
         obj.Matrix = Matrix4x4.Identity;
-        obj.Type?.Loop3D(isEditor);
+        obj.Type?.Loop3D(this, isEditor);
 
-        foreach (var priority in new[] { 0, 1, 2, 3, 4 }) {
-            
-            foreach (var child in from child in obj.Children let sortOrder = child.Type switch {
-                         
-                Transform => 0,
-                Animation => 1,
-                Model => 2,
-                _ => 4
-
-            } where sortOrder == priority select child) Loop3DObj(child, isEditor, index + 1);
-        }
+        obj.Children.Sort(ObjType.Comparer.Instance);
+        
+        foreach (var child in obj.Children)
+            Loop3DObj(child, isEditor, index + 1);
     }
 
-    public static void LoopUi(bool isEditor) {
+    public void LoopUi(bool isEditor) {
 
         if (ActiveLevel == null) return;
         
         LoopUiObj(ActiveLevel.Root, isEditor);
     }
     
-    private static void LoopUiObj(Obj obj, bool isEditor, int index = 0) {
+    private void LoopUiObj(Obj obj, bool isEditor, int index = 0) {
         
-        obj.Type?.LoopUi(isEditor);
+        obj.Type?.LoopUi(this, isEditor);
         
         foreach (var child in obj.Children)
             LoopUiObj(child, isEditor, index + 1);
     }
 
-    public static void Loop3DEditor(Viewport viewport) {
+    public void Loop3DEditor(Viewport viewport) {
 
         if (ActiveLevel == null) return;
         
         Loop3DEditorObj(ActiveLevel.Root, viewport);
     }
     
-    private static void Loop3DEditorObj(Obj obj, Viewport viewport, int index = 0) {
+    private void Loop3DEditorObj(Obj obj, Viewport viewport, int index = 0) {
         
-        obj.Type?.Loop3DEditor(viewport);
+        obj.Type?.Loop3DEditor(this, viewport);
         
         foreach (var child in obj.Children)
             Loop3DEditorObj(child, viewport, index + 1);
     }
     
-    public static void LoopUiEditor(Viewport viewport) {
+    public void LoopUiEditor(Viewport viewport) {
 
         if (ActiveLevel == null) return;
         
         LoopUiEditorObj(ActiveLevel.Root, viewport);
     }
     
-    private static void LoopUiEditorObj(Obj obj, Viewport viewport, int index = 0) {
+    private void LoopUiEditorObj(Obj obj, Viewport viewport, int index = 0) {
         
-        obj.Type?.LoopUiEditor(viewport);
+        obj.Type?.LoopUiEditor(this, viewport);
         
         foreach (var child in obj.Children)
             LoopUiEditorObj(child, viewport, index + 1);
     }
 
-    public static void Quit() {
+    public void Quit() {
         
         Shaders.Quit();
         Fonts.UnloadRlFonts();

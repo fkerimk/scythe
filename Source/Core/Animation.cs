@@ -4,6 +4,8 @@ using Raylib_cs;
 // ReSharper disable once ClassNeverInstantiated.Global
 internal unsafe class Animation(Obj obj) : ObjType(obj) {
     
+    public override int Priority => 1;
+    
     public override string LabelIcon => Icons.Animation;
     public override Color LabelColor => Colors.GuiTypeAnimation;
 
@@ -38,15 +40,17 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
     private bool _animLoaded;
     private ModelAnimation* _rlAnims;
     
-    public override void Loop3D(bool isEditor) {
+    public override void Loop3D(Core core, bool isEditor) {
         
         if (!_animLoaded) {
 
             _rlAnims = Raylib.LoadModelAnimations(PathUtil.Relative($"Models/{Path}.glb"), ref _count);
             _animLoaded = true;
+            
+            Track = (int)Raymath.Clamp(Track, 0, _count);
         }
-
-        else if (IsPlaying && Obj.Parent?.Type is Model model) {
+        
+        else if (_count != -1 && IsPlaying && Obj.Parent?.Type is Model model) {
                 
             _frame = (int)Math.Floor(_frameRaw);
             
@@ -64,9 +68,9 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
         }
     }
 
-    public override void LoopUi(bool isEditor) {}
-    public override void Loop3DEditor(Viewport viewport) { }
-    public override void LoopUiEditor(Viewport viewport) { }
+    public override void LoopUi(Core core, bool isEditor) {}
+    public override void Loop3DEditor(Core core, Viewport viewport) { }
+    public override void LoopUiEditor(Core core, Viewport viewport) { }
 
     public override void Quit() {
         

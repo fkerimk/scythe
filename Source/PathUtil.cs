@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 
 internal abstract class PathUtil {
 
+    public static string FirstDir;
     public static string Dir => Environment.CurrentDirectory;
     public static string ExeDir => AppContext.BaseDirectory;
     public static string TmpDir => Path.Combine(Path.GetTempPath(), "scythe");

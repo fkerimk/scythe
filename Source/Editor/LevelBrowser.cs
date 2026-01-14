@@ -2,7 +2,7 @@
 using System.Reflection;
 using ImGuiNET;
 
-internal class LevelBrowser() : Viewport("Level") {
+internal class LevelBrowser(Editor editor) : Viewport("Level") {
 
     // cache
     public Obj? DragObject;
@@ -13,7 +13,7 @@ internal class LevelBrowser() : Viewport("Level") {
 
     protected override void OnDraw() {
 
-        if (Core.ActiveLevel == null) return;
+        if (editor.Core.ActiveLevel == null) return;
         
         ImGui.BeginChild("scroll", new Vector2(0, 0));
         
@@ -35,20 +35,24 @@ internal class LevelBrowser() : Viewport("Level") {
 
         // Delete object
         if (DeleteObject != null) {
+
+            if (DeleteObject != editor.Core.ActiveLevel.Root) {
+                
+                DeleteObject.RecordedDelete();
+            }
             
-            DeleteObject.RecordedDelete();
             DeleteObject = null;
         }
         
         // draw objects
-        draw_object(Core.ActiveLevel.Root);
+        draw_object(editor.Core.ActiveLevel.Root);
         
         ImGui.EndChild();
     }
 
     private bool draw_object(Obj obj, int indent = 0) {
 
-        if (Core.ActiveLevel == null) return true;
+        if (editor.Core.ActiveLevel == null) return true;
         
         // tree node
         var isOpen = ImGui.GetStateStorage().GetInt(ImGui.GetID(" ##" + obj.GetHashCode()), 1) != 0;
@@ -77,7 +81,7 @@ internal class LevelBrowser() : Viewport("Level") {
             ImGui.OpenPopupOnItemClick("context##" + obj.GetHashCode());
         
         // Left click - select
-        else if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left)) select_object(obj);
+        else if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left)) SelectObject(obj);
         
         // Object context
         if (ImGui.BeginPopup("context##" + obj.GetHashCode())) {
@@ -88,19 +92,77 @@ internal class LevelBrowser() : Viewport("Level") {
 
             if (ImGui.BeginMenu("Insert")) {
                 
-                
                 var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(ObjType)) && !t.IsAbstract);
 
-                foreach (var type in types) {
+                if (ImGui.MenuItem("Object")) editor.Core.ActiveLevel.RecordedBuildObject("Object", obj, null);
+
+                ImGui.Separator();
+                
+                if (ImGui.BeginMenu("Lighting")) {
                     
-                    if (ImGui.MenuItem(type.Name)) Level.RecordedBuildObject(type.Name, obj, type.Name);
+                    if (ImGui.MenuItem("Directional Light")) {
+                            
+                        var lightParent = editor.Core.ActiveLevel.RecordedBuildObject("Directional Light", obj, null);
+                        var light = editor.Core.ActiveLevel.BuildObject("Light", lightParent, "Light").Type as Light;
+                        editor.Core.ActiveLevel.BuildObject("Transform", lightParent, "Transform");
+                        light?.Type = 0;
+                        SelectObject(lightParent);
+                    }
+                
+                    if (ImGui.MenuItem("Point Light")) {
+                            
+                        var lightParent = editor.Core.ActiveLevel.RecordedBuildObject("Point Light", obj, null);
+                        var light = editor.Core.ActiveLevel.BuildObject("Light", lightParent, "Light").Type as Light;
+                        editor.Core.ActiveLevel.BuildObject("Transform", lightParent, "Transform");
+                        light?.Type = 1;
+                        SelectObject(lightParent);
+                    }
+                
+                    if (ImGui.MenuItem("Spot Light")) {
+                            
+                        var lightParent = editor.Core.ActiveLevel.RecordedBuildObject("Spot Light", obj, null);
+                        var light = editor.Core.ActiveLevel.BuildObject("Light", lightParent, "Light").Type as Light;
+                        editor.Core.ActiveLevel.BuildObject("Transform", lightParent, "Transform");
+                        light?.Type = 2;
+                        SelectObject(lightParent);
+                    }
+                    
+                    ImGui.EndMenu();
+                }
+                
+                if (ImGui.BeginMenu("Models")) {
+
+                    var modelPaths = Directory.GetFiles(PathUtil.Relative("Models"));
+
+                    foreach (var modelPath in modelPaths) {
+
+                        var modelFileName = Path.GetFileNameWithoutExtension(modelPath);
+                        if (!ImGui.MenuItem(modelFileName)) continue;
+                        
+                        var parentObj = editor.Core.ActiveLevel.RecordedBuildObject(modelFileName, obj, null);
+                        var model = editor.Core.ActiveLevel.BuildObject("Model", parentObj, "Model").Type as Model;
+                        editor.Core.ActiveLevel.BuildObject("Transform", parentObj, "Transform");
+                        model?.Path = modelFileName;
+                        SelectObject(parentObj);
+                    }
+                    
+                    ImGui.EndMenu();
                 }
                 
                 ImGui.Separator();
                 
-                if (ImGui.MenuItem("Object"))
-                    Level.RecordedBuildObject("Object", obj);
-                
+                if (ImGui.BeginMenu("Types")) {
+                    
+                    foreach (var type in types) {
+                        
+                        if (!ImGui.MenuItem(type.Name)) continue;
+                        var builtObject = editor.Core.ActiveLevel.RecordedBuildObject(type.Name, obj, type.Name);
+                        SelectObject(builtObject);
+                    }
+                    
+                    ImGui.EndMenu();
+                }
+
                 ImGui.EndMenu();
             }
             
@@ -162,7 +224,7 @@ internal class LevelBrowser() : Viewport("Level") {
         return true;
     }
 
-    public void select_object(Obj? obj) {
+    public void SelectObject(Obj? obj) {
         
         SelectedObject?.IsSelected = false;
         SelectedObject = obj;

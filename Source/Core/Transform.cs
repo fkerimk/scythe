@@ -6,6 +6,8 @@ using Raylib_cs;
 #pragma warning disable CS8981
 internal class Transform(Obj obj) : ObjType(obj) {
     
+    public override int Priority => 0;
+
     public override string LabelIcon => Icons.Transform;
     public override Color LabelColor => Colors.GuiTypeTransform;
     
@@ -32,8 +34,10 @@ internal class Transform(Obj obj) : ObjType(obj) {
     private float3 _activeNormal;
 
     private const float MoveSnap = 0.2f;
+
+    private bool _canUseShortcuts;
     
-    public override void Loop3D(bool isEditor) {
+    public override void Loop3D(Core core, bool isEditor) {
 
         if (Obj.Parent == null) return;
         
@@ -52,37 +56,44 @@ internal class Transform(Obj obj) : ObjType(obj) {
         
     }
 
-    public override void LoopUi(bool isEditor) {}
+    public override void LoopUi(Core core, bool isEditor) {}
 
-    public override void Loop3DEditor(Viewport viewport) {
+    public override void Loop3DEditor(Core core, Viewport viewport) {
         
-        if (Cam.Main == null||
+        if (core.ActiveCamera == null||
             viewport is not Level3D level3d
         ) return;
 
         if (Obj.Parent == null || (!Obj.Parent.IsSelected && !Obj.IsSelected && !Obj.Parent.Children.Any(o => o.IsSelected))) return;
         
-        if (Raylib.IsKeyPressed(KeyboardKey.Q)) _mode = 0;
-        if (Raylib.IsKeyPressed(KeyboardKey.W)) _mode = 1;
-        if (Raylib.IsKeyPressed(KeyboardKey.E)) _mode = 2;
+        if (_canUseShortcuts && _activeMove == 0) {
+        
+            if (Raylib.IsKeyPressed(KeyboardKey.Q)) _mode = 0;
+            if (Raylib.IsKeyPressed(KeyboardKey.W)) _mode = 1;
+            if (Raylib.IsKeyPressed(KeyboardKey.E)) _mode = 2;
+        }
         
         Shaders.Begin(Shaders.Transform);
 
-        var ray = Raylib.GetScreenToWorldRay(level3d.RelativeMouse3D, Cam.Main.RlCam);
+        var ray = Raylib.GetScreenToWorldRay(level3d.RelativeMouse3D, core.ActiveCamera.RlCam);
         //Raylib.DrawSphere(ray.Position + ray.Direction * 15, 0.1f, Color.Magenta);
         
-        Axis("x", new float3(1, 0, 0), Obj.Parent.Right, new Color(0.9f, 0.3f, 0.3f), ray);
-        Axis("y", new float3(0, 1, 0), Obj.Parent.Up, new Color(0.3f, 0.9f, 0.3f), ray);
-        Axis("z", new float3(0, 0, 1), Obj.Parent.Fwd, new Color(0.3f, 0.3f, 0.9f), ray);
+        Axis(core, "x", new float3(1, 0, 0), Obj.Parent.Right, new Color(0.9f, 0.3f, 0.3f), ray);
+        Axis(core, "y", new float3(0, 1, 0), Obj.Parent.Up, new Color(0.3f, 0.9f, 0.3f), ray);
+        Axis(core, "z", new float3(0, 0, 1), Obj.Parent.Fwd, new Color(0.3f, 0.3f, 0.9f), ray);
         
         Shaders.End();
     }
 
-    public override void LoopUiEditor(Viewport viewport) {
+    public override void LoopUiEditor(Core core, Viewport viewport) {
+
+        _canUseShortcuts = false;
         
         if (Raylib.IsCursorHidden()) return;
         
         if (Obj.Parent == null || (!Obj.Parent.IsSelected && !Obj.IsSelected && !Obj.Parent.Children.Any(o => o.IsSelected))) return;
+
+        _canUseShortcuts = true;
         
         var textA = _mode switch { 0 => "pos", 1 => "rot", 2 => "scale", _ => "bruh" };
         var textPosA = new int2(viewport.RelativeMouse.X, viewport.RelativeMouse.Y - 15);
@@ -99,10 +110,8 @@ internal class Transform(Obj obj) : ObjType(obj) {
         Raylib.DrawText(textB, textPosB.x - 15, textPosB.y - 40, 20, Colors.Yellow.ToRaylib());
     }
 
-    private void Axis(string id, float3 axis, float3 normal, Color axisColor, Ray ray) {
+    private void Axis(Core core, string id, float3 axis, float3 normal, Color axisColor, Ray ray) {
 
-        if (Cam.Main == null) return;
-        
         var isActive = _activeId == id;
         
         var a = Pos + (Vector3.Normalize(normal.to_vector3()) * 0.1f).to_float3();
@@ -124,12 +133,12 @@ internal class Transform(Obj obj) : ObjType(obj) {
                 
             var drag = _mode switch {
                 
-                0 or 2 => Cam.Main.Right * diff.X + Cam.Main.Up * -diff.Y,
-                1 => Cam.Main.Up * diff.X + Cam.Main.Right * diff.Y,
+                0 or 2 => core.ActiveCamera.Right * diff.X + core.ActiveCamera.Up * -diff.Y,
+                1 => core.ActiveCamera.Up * diff.X + core.ActiveCamera.Right * diff.Y,
                 _ => float3.zero
             };
 
-            var camDistance = Vector3.Distance(_activePos.to_vector3(), Cam.Main.Pos.to_vector3());
+            var camDistance = Vector3.Distance(_activePos.to_vector3(), core.ActiveCamera.Pos.to_vector3());
             var move = Vector3.Dot(drag.to_vector3(), _activeNormal.to_vector3()) * camDistance * 0.25f;
 
             _activeMove = _mode switch {

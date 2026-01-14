@@ -12,7 +12,7 @@ internal class Splash(float duration) : RaylibSession(320, 190, [ ConfigFlags.Un
         _art = Raylib.LoadTexture(PathUtil.Relative("Images/Splash.png"));
     }
 
-    protected override void Loop() {
+    protected override bool Loop() {
         
         Raylib.BeginDrawing();
                 
@@ -22,7 +22,9 @@ internal class Splash(float duration) : RaylibSession(320, 190, [ ConfigFlags.Un
 
         _time += Raylib.GetFrameTime();
 
-        if (_time >= duration) CloseWindow = true;
+        if (_time >= duration) return false;
+        
+        return true;
     }
 
     protected override void Quit() {}

@@ -5,10 +5,9 @@ internal abstract class RaylibSession(int initWidth, int initHeight, ConfigFlags
     protected static int Width => Raylib.GetScreenWidth();
     protected static int Height => Raylib.GetScreenHeight();
     protected static int TargetFps = -1;
-    protected static bool CloseWindow;
-
+    
     internal void Show() {
-        
+    
         if (isEditor == null) Raylib.SetTraceLogLevel(TraceLogLevel.None);
         else if (Enum.TryParse(isEditor.Value ? Config.Editor.RaylibLogLevel : Config.Runtime.RaylibLogLevel, out TraceLogLevel state))
             Raylib.SetTraceLogLevel(state);
@@ -32,7 +31,7 @@ internal abstract class RaylibSession(int initWidth, int initHeight, ConfigFlags
 
         foreach (var flag in flags)
             Raylib.SetConfigFlags(flag);
-        
+    
         Raylib.InitWindow(initWidth, initHeight, Config.Mod.Name);
         
         Raylib.SetExitKey(KeyboardKey.Null);
@@ -40,20 +39,18 @@ internal abstract class RaylibSession(int initWidth, int initHeight, ConfigFlags
         Init();
         
         while (!Raylib.IsWindowReady()) Task.Delay(0);
+
+        bool continueLoop = true;
         
-        while (!Raylib.WindowShouldClose()) {
+        while (!Raylib.WindowShouldClose() && continueLoop) {
             
-            Loop();
+            continueLoop = Loop();
 
             if (TargetFps == -1) TargetFps = Screen.RefreshRate;
             
             Raylib.SetTargetFPS(TargetFps);
             
             Raylib.EndDrawing();
-
-            if (!CloseWindow) continue;
-            CloseWindow = false;
-            break;
         }
         
         Quit();
@@ -62,7 +59,7 @@ internal abstract class RaylibSession(int initWidth, int initHeight, ConfigFlags
     }
 
     protected abstract void Init();
-    protected abstract void Loop();
+    protected abstract bool Loop();
     protected abstract void Quit();
 
     protected void ResizeWindow(int2 size) {

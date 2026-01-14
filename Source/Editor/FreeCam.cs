@@ -1,25 +1,27 @@
 using System.Numerics;
 using Raylib_cs;
 
-internal static class FreeCam {
+internal class FreeCam {
     
     private const float Sens = 0.003f;
     private const float Clamp = 1.55f;
     private const float Speed = 15;
     
-    private static Vector2 _rot;
+    private Vector2 _rot;
     
-    private static bool _isLocked;
-    private static int2 _lockPos;
+    private bool _isLocked;
+    private int2 _lockPos;
 
-    public static void Init() {
+    public Cam Camera;
 
-        if (Cam.Main == null) return;
-        
-        set_from_target(Cam.Main.Pos, Cam.Main.Target);
+    public FreeCam (Cam cam) {
+
+        Camera = cam;
+
+        SetFromTarget(Camera.Pos, Camera.Target);
     }
     
-    public static void Loop(Viewport viewport) {
+    public void Loop(Viewport viewport) {
         
         var center = viewport.WindowPos.to_int2() + viewport.ContentRegion.to_int2() / 2;
         
@@ -47,9 +49,7 @@ internal static class FreeCam {
         Raylib.SetMousePosition(_lockPos.x, _lockPos.y);
     }
 
-    private static void Rotation() {
-        
-        if (Cam.Main == null) return;
+    private void Rotation() {
         
         var input = Raylib.GetMouseDelta();
 
@@ -63,13 +63,11 @@ internal static class FreeCam {
             MathF.Cos(_rot.X) * MathF.Cos(_rot.Y)
         );
 
-        Cam.Main.Target = Cam.Main.Pos + forward;
+        Camera.Target = Camera.Pos + forward;
     }
 
-    private static void Movement() {
+    private void Movement() {
 
-        if (Cam.Main == null) return;
-        
         var input = float3.zero;
 
         if (Raylib.IsKeyDown(KeyboardKey.W)) input.z += 1;
@@ -79,16 +77,16 @@ internal static class FreeCam {
         if (Raylib.IsKeyDown(KeyboardKey.E)) input.y += 1;
         if (Raylib.IsKeyDown(KeyboardKey.Q)) input.y -= 1;
         
-        Cam.Main.Pos += (Cam.Main.Up * input.y + Cam.Main.Right * input.x + Cam.Main.Fwd * input.z) * Speed * Raylib.GetFrameTime();
+        Camera.Pos += (Camera.Up * input.y + Camera.Right * input.x + Camera.Fwd * input.z) * Speed * Raylib.GetFrameTime();
     }
 
-    private static void set_from_target(float3 pos, float3 target) {
+    private void SetFromTarget(float3 pos, float3 target) {
         
         var dir = float3.normalize(target - pos);
 
         var vertical = MathF.Asin(dir.y);
         var horizontal = MathF.Atan2(dir.x, dir.z);
 
-        _rot = new(vertical, horizontal);
+        _rot = new Vector2(vertical, horizontal);
     }
 }
