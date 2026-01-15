@@ -45,14 +45,32 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
         }
         
         // draw objects
-        draw_object(editor.Core.ActiveLevel.Root);
+        DrawObject(editor.Core.ActiveLevel.Root);
         
         ImGui.EndChild();
     }
 
-    private bool draw_object(Obj obj, int indent = 0) {
+    private bool IsAncestorOf(Obj ancestor, Obj target) {
+
+        var current = target.Parent;
+
+        while (current != null) {
+            
+            if (current == ancestor) return true;
+            current = current.Parent;
+        }
+        
+        return false;
+    }
+
+    private bool DrawObject(Obj obj, int indent = 0) {
 
         if (editor.Core.ActiveLevel == null) return true;
+
+        if (SelectedObject != null && IsAncestorOf(obj, SelectedObject)) {
+            
+            ImGui.SetNextItemOpen(true);
+        }
         
         // tree node
         var isOpen = ImGui.GetStateStorage().GetInt(ImGui.GetID(" ##" + obj.GetHashCode()), 1) != 0;
@@ -132,17 +150,20 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
                 
                 if (ImGui.BeginMenu("Models")) {
 
-                    var modelPaths = Directory.GetFiles(PathUtil.Relative("Models"));
+                    var modelPaths = Directory.GetFiles(PathUtil.Relative("Models"), "*.*", SearchOption.AllDirectories);
 
                     foreach (var modelPath in modelPaths) {
 
-                        var modelFileName = Path.GetFileNameWithoutExtension(modelPath);
-                        if (!ImGui.MenuItem(modelFileName)) continue;
+                        if (Path.GetExtension(modelPath) != ".iqm") continue;
                         
-                        var parentObj = editor.Core.ActiveLevel.RecordedBuildObject(modelFileName, obj, null);
+                        var path = modelPath.TrimStart(PathUtil.Relative("Models")+"\\")[..^4].ToString().Replace('\\', '/');
+                        
+                        if (!ImGui.MenuItem(path)) continue;
+                        
+                        var parentObj = editor.Core.ActiveLevel.RecordedBuildObject(path, obj, null);
                         var model = editor.Core.ActiveLevel.BuildObject("Model", parentObj, "Model").Type as Model;
                         editor.Core.ActiveLevel.BuildObject("Transform", parentObj, "Transform");
-                        model?.Path = modelFileName;
+                        model?.Path = path;
                         SelectObject(parentObj);
                     }
                     
@@ -156,7 +177,17 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
                     foreach (var type in types) {
                         
                         if (!ImGui.MenuItem(type.Name)) continue;
+                        
                         var builtObject = editor.Core.ActiveLevel.RecordedBuildObject(type.Name, obj, type.Name);
+
+                        if (builtObject.Type is Animation animation) {
+
+                            if (builtObject.Parent?.Type is Model model) {
+
+                                animation.Path = model.Path;
+                            }
+                        }
+                        
                         SelectObject(builtObject);
                     }
                     
@@ -213,7 +244,7 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
         // draw child nodes
         if (!tree) return true;
         
-        if (obj.Children.Any(child => !draw_object(child, indent + 1))) {
+        if (obj.Children.Any(child => !DrawObject(child, indent + 1))) {
             
             ImGui.TreePop();
             return false;

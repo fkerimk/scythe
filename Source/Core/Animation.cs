@@ -43,8 +43,12 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
     public override void Loop3D(Core core, bool isEditor) {
         
         if (!_animLoaded) {
+            
+            var path = PathUtil.Relative($"Models/{Path}.iqm");
+            
+            if (!File.Exists(path)) return;
 
-            _rlAnims = Raylib.LoadModelAnimations(PathUtil.Relative($"Models/{Path}.glb"), ref _count);
+            _rlAnims = Raylib.LoadModelAnimations(path, ref _count);
             _animLoaded = true;
             
             Track = (int)Raymath.Clamp(Track, 0, _count);

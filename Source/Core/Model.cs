@@ -19,8 +19,12 @@ internal class Model(Obj obj) : ObjType(obj) {
     public override unsafe void Loop3D(Core core, bool isEditor) {
 
         if (!_modelLoaded) {
+
+            var path = PathUtil.Relative($"Models/{Path}.iqm");
             
-            RlModel = Raylib.LoadModel(PathUtil.Relative($"Models/{Path}.glb"));
+            if (!File.Exists(path)) return;
+            
+            RlModel = Raylib.LoadModel(path);
             
             if (isEditor ? Config.Editor.GenTangents : Config.Runtime.GenTangents)
                 for (var m = 0; m < RlModel.MeshCount; m++)

@@ -6,16 +6,16 @@
           "Children": [],
           "Type": {
             "Euler": {
-              "x": -89.99998
+              "x": -89.99999
             },
             "Scale": {
-              "x": 100.0,
-              "y": 100.0,
-              "z": 100.0
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
             },
             "Rot": {
-              "X": -0.70710665,
-              "W": 0.70710695
+              "X": -0.70710677,
+              "W": 0.70710677
             },
             "Name": "Transform"
           },
@@ -26,7 +26,7 @@
             {
               "Children": [],
               "Type": {
-                "Path": "BearMan",
+                "Path": "BearMan/BearMan",
                 "IsPlaying": true,
                 "Looping": true,
                 "Name": "Animation"
@@ -35,7 +35,7 @@
             }
           ],
           "Type": {
-            "Path": "BearMan",
+            "Path": "BearMan/BearMan",
             "Color": {},
             "Name": "Model"
           },
