@@ -32,7 +32,12 @@ internal abstract class RaylibSession(int initWidth, int initHeight, ConfigFlags
         foreach (var flag in flags)
             Raylib.SetConfigFlags(flag);
     
+        
         Raylib.InitWindow(initWidth, initHeight, Config.Mod.Name);
+
+        var img = Raylib.LoadImage(PathUtil.Relative("Icon/Black.png"));
+        Raylib.SetWindowIcon(img);
+        Raylib.UnloadImage(img);
         
         Raylib.SetExitKey(KeyboardKey.Null);
 
@@ -61,11 +66,6 @@ internal abstract class RaylibSession(int initWidth, int initHeight, ConfigFlags
     protected abstract void Init();
     protected abstract bool Loop();
     protected abstract void Quit();
-
-    protected void ResizeWindow(int2 size) {
-        
-        Raylib.SetWindowSize(size.x, size.y);
-    }
 
     protected void CenterWindow() {
         

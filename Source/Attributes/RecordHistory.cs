@@ -1,2 +1,2 @@
 ﻿[AttributeUsage(AttributeTargets.Property)]
-public class RecordHistory: Attribute { }
+internal class RecordHistoryAttribute: Attribute { }

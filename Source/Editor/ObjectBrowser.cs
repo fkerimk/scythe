@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Numerics;
+using System.Reflection;
 using ImGuiNET;
 
 internal class ObjectBrowser() : Viewport("Object") {
@@ -45,7 +46,7 @@ internal class ObjectBrowser() : Viewport("Object") {
 
         var id = $"##prop{_propIndex}";
         
-        var labelAttr = prop.GetCustomAttribute<Label>();
+        var labelAttr = prop.GetCustomAttribute<LabelAttribute>();
 
         if (labelAttr == null) return;
         
@@ -74,24 +75,24 @@ internal class ObjectBrowser() : Viewport("Object") {
                 prop.SetValue(target, castValue);
             }
             
-            if (prop.PropertyType == typeof(float3)) {
+            if (prop.PropertyType == typeof(Vector3)) {
 
-                var castValue = (float3)value;
-                var convertedValue = castValue.to_vector3();
+                var castValue = (Vector3)value;
+                var convertedValue = castValue;
                 ImGui.PushItemWidth(-1);
                 ImGui.InputFloat3(id, ref convertedValue);
                 ImGui.PopItemWidth();
 
                 if (
-                    Math.Abs(castValue.x - convertedValue.X) > 0.001f ||
-                    Math.Abs(castValue.y - convertedValue.Y) > 0.001f ||
-                    Math.Abs(castValue.z - convertedValue.Z) > 0.001f
+                    Math.Abs(castValue.X - convertedValue.X) > 0.001f ||
+                    Math.Abs(castValue.Y - convertedValue.Y) > 0.001f ||
+                    Math.Abs(castValue.Z - convertedValue.Z) > 0.001f
                 ) {
                     History.StartRecording(target, prop.Name);
                     recordedHistory = true;
                 }
                 
-                prop.SetValue(target, convertedValue.to_float3());
+                prop.SetValue(target, convertedValue);
             }
             
             if (prop.PropertyType == typeof(Color)) {

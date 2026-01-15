@@ -11,15 +11,15 @@ internal class Transform(Obj obj) : ObjType(obj) {
     public override string LabelIcon => Icons.Transform;
     public override Color LabelColor => Colors.GuiTypeTransform;
     
-    [RecordHistory] [JsonProperty] [Label("Pos")] public float3 Pos { get; set; } = float3.zero;
+    [RecordHistory] [JsonProperty] [Label("Pos")] public Vector3 Pos { get; set; } = Vector3.Zero;
     
-    [RecordHistory] [JsonProperty] [Label("Euler")] public float3 Euler { 
+    [RecordHistory] [JsonProperty] [Label("Euler")] public Vector3 Euler { 
         
-        get => Raymath.QuaternionToEuler(Rot).to_float3().to_deg();
-        set => Rot = Raymath.QuaternionFromEuler(value.x.DegToRad(), value.y.DegToRad(), value.z.DegToRad());
+        get => Raymath.QuaternionToEuler(Rot).ToDeg();
+        set => Rot = Raymath.QuaternionFromEuler(value.X.DegToRad(), value.Y.DegToRad(), value.Z.DegToRad());
     }
     
-    [RecordHistory] [JsonProperty] [Label("Scale")] public float3 Scale { get; set; } = float3.one;
+    [RecordHistory] [JsonProperty] [Label("Scale")] public Vector3 Scale { get; set; } = Vector3.One;
     
     [RecordHistory] [JsonProperty] private Quaternion Rot { get; set; } = Quaternion.Identity;
 
@@ -28,10 +28,10 @@ internal class Transform(Obj obj) : ObjType(obj) {
     
     private string _activeId = "";
     private Vector2 _activeMouseTemp;
-    private float3 _activePos;
-    private float3 _activeScale;
+    private Vector3 _activePos;
+    private Vector3 _activeScale;
     private Quaternion _activeRot = Quaternion.Identity;
-    private float3 _activeNormal;
+    private Vector3 _activeNormal;
 
     private const float MoveSnap = 0.2f;
 
@@ -49,11 +49,11 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
             Raymath.MatrixMultiply(
     
-                Raymath.MatrixScale(Scale.x, Scale.y, Scale.z),
+                Raymath.MatrixScale(Scale.X, Scale.Y, Scale.Z),
                 Matrix4x4.Transpose(Obj.Parent.RotMatrix)
             ),
 
-            Raymath.MatrixTranslate(Pos.x, Pos.y, Pos.z)
+            Raymath.MatrixTranslate(Pos.X, Pos.Y, Pos.Z)
         );
         
     }
@@ -77,12 +77,12 @@ internal class Transform(Obj obj) : ObjType(obj) {
         
         Shaders.Begin(Shaders.Transform);
 
-        var ray = Raylib.GetScreenToWorldRay(level3d.RelativeMouse3D, core.ActiveCamera.RlCam);
+        var ray = Raylib.GetScreenToWorldRay(level3d.RelativeMouse3D, core.ActiveCamera.Raylib);
         //Raylib.DrawSphere(ray.Position + ray.Direction * 15, 0.1f, Color.Magenta);
         
-        Axis(core, "x", new float3(1, 0, 0), Obj.Parent.Right, new Color(0.9f, 0.3f, 0.3f), ray);
-        Axis(core, "y", new float3(0, 1, 0), Obj.Parent.Up, new Color(0.3f, 0.9f, 0.3f), ray);
-        Axis(core, "z", new float3(0, 0, 1), Obj.Parent.Fwd, new Color(0.3f, 0.3f, 0.9f), ray);
+        Axis(core, "x", Vector3.UnitX, Obj.Parent.Right, new Color(0.9f, 0.3f, 0.3f), ray);
+        Axis(core, "y", Vector3.UnitY, Obj.Parent.Up, new Color(0.3f, 0.9f, 0.3f), ray);
+        Axis(core, "z", Vector3.UnitZ, Obj.Parent.Fwd, new Color(0.3f, 0.3f, 0.9f), ray);
         
         Shaders.End();
     }
@@ -98,30 +98,32 @@ internal class Transform(Obj obj) : ObjType(obj) {
         _canUseShortcuts = true;
         
         var textA = _mode switch { 0 => "pos", 1 => "rot", 2 => "scale", _ => "bruh" };
-        var textPosA = new int2(viewport.RelativeMouse.X, viewport.RelativeMouse.Y - 15);
+        var textPosA = new Vector2(viewport.RelativeMouse.X, viewport.RelativeMouse.Y - 15);
         
-        Raylib.DrawText(textA, textPosA.x - 14, textPosA.y - 19, 20, Colors.Black.ToRaylib());
-        Raylib.DrawText(textA, textPosA.x - 15, textPosA.y - 20, 20, Colors.Yellow.ToRaylib());
+        Raylib.DrawText(textA, (int)textPosA.X - 14, (int)textPosA.Y - 19, 20, Colors.Black.ToRaylib());
+        Raylib.DrawText(textA, (int)textPosA.X - 15, (int)textPosA.Y - 20, 20, Colors.Yellow.ToRaylib());
         
         if (_activeMove == 0) return;
         
         var textB = _mode switch { 0 or 2 => $"{_activeMove:F2}m", 1 => $"{_activeMove:F2}°", _ => $"{_activeMove:F2}" }; 
-        var textPosB = new int2(viewport.RelativeMouse.X, viewport.RelativeMouse.Y - 15);
+        var textPosB = new Vector2(viewport.RelativeMouse.X, viewport.RelativeMouse.Y - 15);
             
-        Raylib.DrawText(textB, textPosB.x - 14, textPosB.y - 39, 20, Colors.Black.ToRaylib());
-        Raylib.DrawText(textB, textPosB.x - 15, textPosB.y - 40, 20, Colors.Yellow.ToRaylib());
+        Raylib.DrawText(textB, (int)textPosB.X - 14, (int)textPosB.Y - 39, 20, Colors.Black.ToRaylib());
+        Raylib.DrawText(textB, (int)textPosB.X - 15, (int)textPosB.Y - 40, 20, Colors.Yellow.ToRaylib());
     }
 
-    private void Axis(Core core, string id, float3 axis, float3 normal, Color axisColor, Ray ray) {
+    private void Axis(Core core, string id, Vector3 axis, Vector3 normal, Color axisColor, Ray ray) {
 
+        if (core.ActiveCamera == null) return;
+        
         var isActive = _activeId == id;
         
-        var a = Pos + (Vector3.Normalize(normal.to_vector3()) * 0.1f).to_float3();
+        var a = Pos + (Vector3.Normalize(normal) * 0.1f);
         var b = a + normal * 1.5f;
 
         if (!string.IsNullOrEmpty(_activeId) && _activeId != id) {
             
-            Raylib.DrawLine3D(a.to_vector3(), b.to_vector3(), axisColor.ToRaylib());
+            Raylib.DrawLine3D(a, b, axisColor.ToRaylib());
             return;
         }
 
@@ -137,11 +139,11 @@ internal class Transform(Obj obj) : ObjType(obj) {
                 
                 0 or 2 => core.ActiveCamera.Right * diff.X + core.ActiveCamera.Up * -diff.Y,
                 1 => core.ActiveCamera.Up * diff.X + core.ActiveCamera.Right * diff.Y,
-                _ => float3.zero
+                _ => Vector3.Zero
             };
 
-            var camDistance = Vector3.Distance(_activePos.to_vector3(), core.ActiveCamera.Pos.to_vector3());
-            var move = Vector3.Dot(drag.to_vector3(), _activeNormal.to_vector3()) * camDistance * 0.25f;
+            var camDistance = Vector3.Distance(_activePos, core.ActiveCamera.Position);
+            var move = Vector3.Dot(drag, _activeNormal) * camDistance * 0.25f;
 
             _activeMove = _mode switch {
                     
@@ -156,7 +158,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
                 case 0: newPos = _activePos + _activeNormal * _activeMove; break;
                 
                 case 1:
-                    var normalQ = Quaternion.CreateFromAxisAngle(_activeNormal.to_vector3(), _activeMove.DegToRad());
+                    var normalQ = Quaternion.CreateFromAxisAngle(_activeNormal, _activeMove.DegToRad());
                     newRot = normalQ * _activeRot;
                     break;
                 
@@ -175,10 +177,10 @@ internal class Transform(Obj obj) : ObjType(obj) {
         
         for (var i = 0; i < rayQuality + 1; i++) {
 
-            var step = Vector3.Lerp(a.to_vector3(), b.to_vector3(), 1f / rayQuality * i).to_float3();
+            var step = Vector3.Lerp(a, b, 1f / rayQuality * i);
 
             //Raylib.DrawSphere(step.to_vector3(), ray_radius, axis_color.to_raylib());
-            if (Raylib.GetRayCollisionSphere(ray, step.to_vector3(), rayRadius).Hit)
+            if (Raylib.GetRayCollisionSphere(ray, step, rayRadius).Hit)
                 isHovered = true;
         }
         
@@ -207,7 +209,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
         var targetColor = (!isActive && isHovered && !Raylib.IsCursorHidden()) ? Colors.White : axisColor;
         
-        Raylib.DrawCylinderEx(a.to_vector3(), b.to_vector3(), radius, radius, 1, targetColor.ToRaylib());
+        Raylib.DrawCylinderEx(a, b, radius, radius, 1, targetColor.ToRaylib());
     }
     
     public override void Quit() {}

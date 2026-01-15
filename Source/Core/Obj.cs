@@ -17,9 +17,9 @@ internal class Obj {
     public Matrix4x4 Matrix = Matrix4x4.Identity;
     public Matrix4x4 RotMatrix = Matrix4x4.Identity;
     
-    public float3 Right => float3.normalize(Vector3.Transform(new Vector3(1, 0, 0), RotMatrix).to_float3());
-    public float3 Up => float3.normalize(Vector3.Transform(new Vector3(0, 1, 0), RotMatrix).to_float3());
-    public float3 Fwd => float3.normalize(Vector3.Transform(new Vector3(0, 0, 1), RotMatrix).to_float3());
+    public Vector3 Right => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitX, RotMatrix));
+    public Vector3 Up => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitY, RotMatrix));
+    public Vector3 Fwd => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitZ, RotMatrix));
     
     public bool IsSelected;
     

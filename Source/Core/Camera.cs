@@ -1,32 +1,28 @@
-﻿
-using System.Numerics;
+﻿using System.Numerics;
 using Raylib_cs;
 
-internal class Camera(Obj obj) : ObjType(obj) {
+internal class Camera(Obj obj, Camera3D cam) : ObjType(obj) {
     
     public override string LabelIcon => Icons.Camera;
     public override Color LabelColor => Colors.GuiTypeCamera;
 
-    public Cam? Cam;
-
-    public override bool Load(Core core, bool isEditor) {
-
-        Cam = new Cam();
-        return true;
-    }
+    public Camera3D Cam = cam;
+    
+    public override bool Load(Core core, bool isEditor) => true;
 
     public override void Loop3D(Core core, bool isEditor) {
 
         var pos = Vector3.Zero;
         var rot= Quaternion.Identity;
-        var scale = Vector3.One;
         
-        obj.Parent?.DecomposeMatrix(out pos, out rot, out scale);
+        obj.Parent?.DecomposeMatrix(out pos, out rot, out _);
         
         var forward = Vector3.Transform(Vector3.UnitZ, rot);
 
-        Cam?.Pos = pos.to_float3();
-        Cam?.Target = (pos + forward).to_float3();
+        Cam.Position = pos;
+        Cam.Target = (pos + forward);
+
+        Cam.DrawCameraFrustum(Raylib.ColorAlpha(Raylib_cs.Color.White, IsSelected ? 1 : 0.3f));
     }
 
     public override void LoopUi(Core core, bool isEditor) {

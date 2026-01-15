@@ -1,5 +1,5 @@
 ﻿[AttributeUsage(AttributeTargets.Property)]
-internal class Label(string value) : Attribute {
+internal class LabelAttribute(string value) : Attribute {
     
     public string Value { get; } = value;
 }

@@ -1,21 +1,19 @@
 ﻿using System.Numerics;
 using Raylib_cs;
 
-internal class Grid(Cam cam) {
+internal class Grid(Camera3D? camera) {
 
     public void Draw() {
         
-        var gridPos = new float3(
-            (int)cam.Pos.x, 0,
-            (int)cam.Pos.z
-        );
+        if (camera == null) return;
+        
+        var gridPos = new Vector3((int)camera.Position.X, 0, (int)camera.Position.Z);
             
         Rlgl.PushMatrix();
-        Rlgl.Translatef(gridPos.x, gridPos.y, gridPos.z);
+        Rlgl.Translatef(gridPos.X, gridPos.Y, gridPos.Z);
 
         const int slices = 100;
         const float spacing = 1f;
-        
         const float half = slices * spacing;
 
         for (var i = 0; i <= slices * 2; i++) {

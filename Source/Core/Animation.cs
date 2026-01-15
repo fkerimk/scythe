@@ -37,7 +37,6 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
     private int _frame;
     private float _frameRaw;
     
-    private bool _animLoaded;
     private ModelAnimation* _rlAnims;
 
     public override bool Load(Core core, bool isEditor) {

@@ -14,7 +14,6 @@ internal class Model(Obj obj) : ObjType(obj) {
     [RecordHistory] [JsonProperty] [Label("Color")] public Color Color { get; set; } = Colors.White;
 
     public Raylib_cs.Model RlModel;
-    private bool _modelLoaded;
 
     public override unsafe bool Load(Core core, bool isEditor) {
         

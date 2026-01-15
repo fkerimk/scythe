@@ -14,12 +14,12 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
     private ObjectBrowser? _objectBrowser;
     private ProjectBrowser? _projectBrowser;
 
-    public Core Core;
-    public FreeCam FreeCam;
+    public Core? Core;
+    private FreeCam? _freeCam;
     
     protected override void Init() {
 
-        ResizeWindow(new int2(Screen.Width / 2, Screen.Height / 2));
+        Raylib.SetWindowSize(Screen.Width / 2, Screen.Height / 2);
         CenterWindow();
         
         // ImGui setup
@@ -32,12 +32,12 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
         // Init Core
         Core = new Core(true) {
             
-            ActiveCamera = new Cam()
+            ActiveCamera = new Camera3D()
         };
         
         Core.ActiveLevel = new Level("Main", Core);
         
-        FreeCam = new FreeCam(Core.ActiveCamera);
+        _freeCam = new FreeCam(Core.ActiveCamera);
         Fonts.LoadImFonts(_io);
 
         if (Core.ActiveLevel == null) return;
@@ -55,6 +55,8 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
     }
 
     protected override bool Loop() {
+
+        if (Core == null) return true;
         
         Core.Load(true);
         
@@ -80,9 +82,9 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
         Clear(Colors.Game);
 
         // Start camera
-        FreeCam.Loop(_level3D);
+        _freeCam?.Loop(_level3D);
         
-        Core.ActiveCamera.StartRendering();
+        Core.ActiveCamera?.StartRendering();
             
         // 3D
         var grid = new Grid(Core.ActiveCamera);
@@ -92,7 +94,7 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
         Core.Loop3DEditor(_level3D);
             
         // Stop camera
-        Core.ActiveCamera.StopRendering();
+        Core.ActiveCamera?.StopRendering();
             
         // Ui
         Core.LoopUi(true);
@@ -181,6 +183,6 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
     
     protected override void Quit() {
         
-        Core.Quit();
+        Core?.Quit();
     }
 }

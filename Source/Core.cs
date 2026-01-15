@@ -4,7 +4,7 @@ using Raylib_cs;
 internal class Core {
 
     public Level? ActiveLevel;
-    public Cam? ActiveCamera;
+    public Camera3D? ActiveCamera;
     
     public readonly Dictionary<int, Light> Lights;
     
@@ -50,7 +50,7 @@ internal class Core {
         if (ActiveLevel == null) return;
         
         Lights.Clear();
-        Raylib.SetShaderValue(Shaders.Pbr, Shaders.Pbr.Locs[(int)ShaderLocationIndex.VectorView], ActiveCamera?.Pos ?? float3.zero, ShaderUniformDataType.Vec3);
+        Raylib.SetShaderValue(Shaders.Pbr, Shaders.Pbr.Locs[(int)ShaderLocationIndex.VectorView], ActiveCamera?.Position ?? Vector3.Zero, ShaderUniformDataType.Vec3);
         
         Loop3DObj(ActiveLevel.Root, isEditor);
         

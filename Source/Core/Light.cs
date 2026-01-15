@@ -15,8 +15,8 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
     [RecordHistory] [JsonProperty] [Label("Intensity")] [DefaultValue(2)] public float Intensity { get; set; }
     [RecordHistory] [JsonProperty] [Label("Range")] [DefaultValue(10)] public float Range { get; set; }
     
-    private float3 _pos = float3.zero;
-    private float3 _target = float3.zero;
+    private Vector3 _pos = Vector3.Zero;
+    private Vector3 _target = Vector3.Zero;
 
     public void Update(Core core) {
         
@@ -47,7 +47,7 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
     
         Raymath.MatrixDecompose( Obj.Parent.Matrix, &position, &rotation, &scale);
 
-        _pos = position.to_float3();
+        _pos = position;
         _target = _pos + Obj.Parent.Fwd * (Type == 0 ? 1 : Range);
         
         Update(core);
@@ -56,11 +56,11 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
 
         if (IsSelected) {
 
-            var gizmoColor = Raylib.ColorAlpha(Color.ToRaylib(), 0.2f);
+            var gizmoColor = Raylib.ColorAlpha(Color.ToRaylib(), 0.3f);
             
             switch (Type) {
                 
-                case 1: Raylib.DrawSphereWires(_pos.to_vector3(), Range, 8, 8, gizmoColor); break;
+                case 1: Raylib.DrawSphereWires(_pos, Range, 8, 8, gizmoColor); break;
                 
                 case 2: {
                     
@@ -78,7 +78,7 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
                         var point1 = baseCenter + offset1;
                         var point2 = baseCenter + offset2;
 
-                        Raylib.DrawLine3D(point1.to_vector3(), point2.to_vector3(), gizmoColor);
+                        Raylib.DrawLine3D(point1, point2, gizmoColor);
                     }
 
                     // sides
@@ -91,7 +91,7 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
                         var offset = Obj.Parent.Right * MathF.Cos(angle) * coneRadius + Obj.Parent.Up * MathF.Sin(angle) * coneRadius;
                         var point = baseCenter + offset;
 
-                        Raylib.DrawLine3D(_pos.to_vector3(), point.to_vector3(), gizmoColor);
+                        Raylib.DrawLine3D(_pos, point, gizmoColor);
                     }
 
                     break;
@@ -101,7 +101,7 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
         
         if ((!Config.Runtime.DrawLights || isEditor) && (!Config.Editor.DrawLights || !isEditor)) return;
 
-        Raylib.DrawSphereWires(_pos.to_vector3(), 0.1f, 8, 8, Enabled ? Raylib.ColorAlpha(Color.ToRaylib(), 0.8f) : Raylib.ColorAlpha(Color.ToRaylib(), 0.2f));
+        Raylib.DrawSphereWires(_pos, 0.1f, 8, 8, Enabled ? Raylib.ColorAlpha(Color.ToRaylib(), 0.8f) : Raylib.ColorAlpha(Color.ToRaylib(), 0.2f));
     }
     
     public override void LoopUi(Core core, bool isEditor) {}

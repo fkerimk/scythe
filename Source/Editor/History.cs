@@ -38,7 +38,7 @@ internal static class History {
         var values = reference
             .GetType()
             .GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-            .Where(f => Attribute.IsDefined(f, typeof(RecordHistory)))
+            .Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute)))
             .Select(f => f.GetValue(reference)!)
             .ToArray();
 
@@ -50,7 +50,7 @@ internal static class History {
         var props = reference
             .GetType()
             .GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-            .Where(f => Attribute.IsDefined(f, typeof(RecordHistory)))
+            .Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute)))
             .ToArray();
         
         for (var i = 0; i < props.Length; i++)

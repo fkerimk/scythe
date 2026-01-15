@@ -20,12 +20,12 @@ internal static partial class Extensions {
 
         public Vector4 to_vector4() => new(value.R, value.G, value.B, value.A);
 
-        public byte4 ToBytes() => new((byte)(value.R * 255), (byte)(value.G * 255), (byte)(value.B * 255), (byte)(value.A * 255));
+        public byte[] ToBytes() => [(byte)(value.R * 255), (byte)(value.G * 255), (byte)(value.B * 255), (byte)(value.A * 255)];
 
         public uint ToUint() {
 
             var bytes = value.ToBytes();
-            return ((uint)bytes.x << 24) | ((uint)bytes.y << 16) | ((uint)bytes.z << 8) | bytes.w;
+            return ((uint)bytes[0] << 24) | ((uint)bytes[1]<< 16) | ((uint)bytes[2] << 8) | bytes[3];
         }
     }
 }

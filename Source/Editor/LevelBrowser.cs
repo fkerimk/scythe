@@ -13,7 +13,7 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
 
     protected override void OnDraw() {
 
-        if (editor.Core.ActiveLevel == null) return;
+        if (editor.Core?.ActiveLevel == null) return;
         
         ImGui.BeginChild("scroll", new Vector2(0, 0));
         
@@ -65,7 +65,7 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
 
     private bool DrawObject(Obj obj, int indent = 0) {
 
-        if (editor.Core.ActiveLevel == null) return true;
+        if (editor.Core?.ActiveLevel == null) return true;
 
         if (SelectedObject != null && IsAncestorOf(obj, SelectedObject)) {
             

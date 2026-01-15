@@ -33,7 +33,7 @@ internal static class Notifications {
 
             var text = notification.Text;
 
-            var pos = new int2(X, Y + i * (notification.Height + Spacing));
+            var pos = new Vector2(X, Y + i * (notification.Height + Spacing));
 
             var brColor = Colors.Back.ToRaylib();
             var bgColor = Colors.Black.ToRaylib();
@@ -50,7 +50,7 @@ internal static class Notifications {
                 var fadeProgress = (notification.Timer - Duration) / Fadeout;
                 var status = Raymath.Clamp(1 * (1f - fadeProgress), 0, 1);
 
-                pos.x = (int)(status * X);
+                pos.X = (int)(status * X);
                 
                 brColor.A = (byte)(status * brColor.A);
                 bgColor.A = (byte)(status * bgColor.A);
@@ -64,11 +64,11 @@ internal static class Notifications {
                 }
             }
             
-            if (notification.DrawPosX == 0) notification.DrawPosX = -notification.Width - pos.x;
-            if (notification.DrawPosY == 0) notification.DrawPosY = pos.y;
+            if (notification.DrawPosX == 0) notification.DrawPosX = -notification.Width - pos.X;
+            if (notification.DrawPosY == 0) notification.DrawPosY = pos.Y;
             
-            var finalPosX = (int)(notification.DrawPosX = Raymath.Lerp(notification.DrawPosX, pos.x, Raylib.GetFrameTime() * 15));
-            var finalPosY = (int)(notification.DrawPosY = Raymath.Lerp(notification.DrawPosY, pos.y, Raylib.GetFrameTime() * 15));
+            var finalPosX = (int)(notification.DrawPosX = Raymath.Lerp(notification.DrawPosX, pos.X, Raylib.GetFrameTime() * 15));
+            var finalPosY = (int)(notification.DrawPosY = Raymath.Lerp(notification.DrawPosY, pos.Y, Raylib.GetFrameTime() * 15));
 
             Raylib.DrawRectangle(finalPosX, finalPosY, notification.Width, notification.Height, brColor);
             Raylib.DrawRectangle(
