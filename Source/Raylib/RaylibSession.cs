@@ -50,7 +50,7 @@ internal abstract class RaylibSession(int initWidth, int initHeight, ConfigFlags
         while (!Raylib.WindowShouldClose() && continueLoop) {
             
             continueLoop = Loop();
-
+            
             if (TargetFps == -1) TargetFps = Screen.RefreshRate;
             
             Raylib.SetTargetFPS(TargetFps);

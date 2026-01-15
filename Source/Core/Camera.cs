@@ -1,12 +1,12 @@
 ﻿using System.Numerics;
 using Raylib_cs;
 
-internal class Camera(Obj obj, Camera3D cam) : ObjType(obj) {
+internal class Camera(Obj obj) : ObjType(obj) {
     
     public override string LabelIcon => Icons.Camera;
     public override Color LabelColor => Colors.GuiTypeCamera;
 
-    public Camera3D Cam = cam;
+    public required Camera3D Cam = new();
     
     public override bool Load(Core core, bool isEditor) => true;
 
@@ -22,6 +22,8 @@ internal class Camera(Obj obj, Camera3D cam) : ObjType(obj) {
         Cam.Position = pos;
         Cam.Target = (pos + forward);
 
+        if (!isEditor) return;
+        
         Cam.DrawCameraFrustum(Raylib.ColorAlpha(Raylib_cs.Color.White, IsSelected ? 1 : 0.3f));
     }
 
