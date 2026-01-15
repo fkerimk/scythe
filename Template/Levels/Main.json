@@ -5,8 +5,15 @@
         {
           "Children": [],
           "Type": {
+            "Pos": {
+              "x": -4.2316624E-06,
+              "y": 2.554336,
+              "z": 4.7703843
+            },
             "Euler": {
-              "x": -89.99999
+              "x": -157.49982,
+              "y": -5.0089357E-06,
+              "z": -179.9999
             },
             "Scale": {
               "x": 1.0,
@@ -14,45 +21,37 @@
               "z": 1.0
             },
             "Rot": {
-              "X": -0.70710677,
-              "W": 0.70710677
+              "X": -9.0100565E-07,
+              "Y": 0.98078495,
+              "Z": -0.19509187,
+              "W": 1.3465507E-07
             },
             "Name": "Transform"
           },
           "Name": "Transform"
         },
         {
-          "Children": [
-            {
-              "Children": [],
-              "Type": {
-                "Path": "BearMan/BearMan",
-                "IsPlaying": true,
-                "Looping": true,
-                "Name": "Animation"
-              },
-              "Name": "Animation"
-            }
-          ],
+          "Children": [],
           "Type": {
-            "Path": "BearMan/BearMan",
-            "Color": {},
-            "Name": "Model"
+            "Name": "Camera"
           },
-          "Name": "Model"
+          "Name": "Camera"
         }
       ],
-      "Name": "Bear Man"
+      "Name": "Camera"
     },
     {
       "Children": [
         {
           "Children": [],
           "Type": {
+            "Pos": {
+              "y": 0.5
+            },
             "Scale": {
-              "x": 2.0,
-              "y": 0.2,
-              "z": 2.0
+              "x": 1.0,
+              "y": 1.0,
+              "z": 1.0
             },
             "Rot": {
               "W": 1.0,
@@ -80,8 +79,12 @@
           "Children": [],
           "Type": {
             "Pos": {
-              "y": 3.0,
-              "z": 1.0
+              "y": 3.0
+            },
+            "Euler": {
+              "x": -134.99974,
+              "y": -44.999992,
+              "z": -179.9999
             },
             "Scale": {
               "x": 1.0,
@@ -89,8 +92,10 @@
               "z": 1.0
             },
             "Rot": {
-              "W": 1.0,
-              "IsIdentity": true
+              "X": -0.14644815,
+              "Y": 0.8535525,
+              "Z": -0.35355565,
+              "W": -0.35355267
             },
             "Name": "Transform"
           },
@@ -100,19 +105,19 @@
           "Children": [],
           "Type": {
             "Enabled": true,
-            "Type": 1,
+            "Type": 0,
             "Color": {
-              "R": 0.722973,
-              "B": 0.9887691
+              "G": 0.97274774,
+              "B": 0.8264463
             },
-            "Intensity": 5.0,
+            "Intensity": 10.0,
             "Range": 10.0,
             "Name": "Light"
           },
           "Name": "Light"
         }
       ],
-      "Name": "Point Light"
+      "Name": "Directional Light"
     }
   ],
   "Name": "Root"

@@ -156,11 +156,13 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
 
                         if (Path.GetExtension(modelPath) != ".iqm") continue;
                         
-                        var path = modelPath.TrimStart(PathUtil.Relative("Models")+"\\")[..^4].ToString().Replace('\\', '/');
+                        var pre = PathUtil.Relative("Models") + "\\";
+                        var path = modelPath[pre.Length..^4].Replace('\\', '/');
+                        var name = Path.GetFileName(path);
                         
                         if (!ImGui.MenuItem(path)) continue;
                         
-                        var parentObj = editor.Core.ActiveLevel.RecordedBuildObject(path, obj, null);
+                        var parentObj = editor.Core.ActiveLevel.RecordedBuildObject(name, obj, null);
                         var model = editor.Core.ActiveLevel.BuildObject("Model", parentObj, "Model").Type as Model;
                         editor.Core.ActiveLevel.BuildObject("Transform", parentObj, "Transform");
                         model?.Path = path;

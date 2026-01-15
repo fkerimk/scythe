@@ -29,9 +29,14 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
         _io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
         _io.NativePtr->IniFilename = (byte*)Marshal.StringToHGlobalAnsi("Layouts/User.ini").ToPointer();
         
-        // Generic initials
-        Core = new Core(true, new Cam());
+        // Init Core
+        Core = new Core(true) {
+            
+            ActiveCamera = new Cam()
+        };
+        
         Core.ActiveLevel = new Level("Main", Core);
+        
         FreeCam = new FreeCam(Core.ActiveCamera);
         Fonts.LoadImFonts(_io);
 
@@ -50,6 +55,8 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
     }
 
     protected override bool Loop() {
+        
+        Core.Load(true);
         
         TargetFps = Config.Editor.FpsLock;
         

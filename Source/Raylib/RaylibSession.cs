@@ -40,7 +40,7 @@ internal abstract class RaylibSession(int initWidth, int initHeight, ConfigFlags
         
         while (!Raylib.IsWindowReady()) Task.Delay(0);
 
-        bool continueLoop = true;
+        var continueLoop = true;
         
         while (!Raylib.WindowShouldClose() && continueLoop) {
             

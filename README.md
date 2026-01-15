@@ -12,12 +12,12 @@ Nothing fancy. It’s not designed to take you to space. You can take a look if 
 
 Scythe is licensed under the [LGPL-2.1 license](./LICENSE).
 
-This project uses [C# bindings](https://github.com/raylib-cs/raylib-cs) of [Raylib](https://github.com/raysan5/raylib/), both licensed under [zlib/libpng](https://github.com/raysan5/raylib/blob/master/LICENSE).
+This project uses [C# bindings](https://github.com/raylib-cs/raylib-cs) of [Raylib](https://github.com/raysan5/raylib/) and [C# bindings](https://github.com/raylib-extras/rlImGui-cs) of [ImGui](https://github.com/ocornut/imgui), all licensed under [zlib/libpng](https://github.com/raysan5/raylib/blob/master/LICENSE).
 
 ## 👷 Building
 
 > [!CAUTION]  
-> Scythe hasn’t even learned to crawl yet. It’s not mature enough to be of any real use to you. It is recommended for experimental or educational use only.
+> Scythe is still in its infancy. It’s not mature enough to be of much real use. It is recommended for experimental or educational use only.
 
 Make sure you have the .NET SDK 10.0+ packages installed.
 
@@ -38,18 +38,11 @@ dotnet run -editor
 
 ## 🔧 Configuring
 
-The [Scythe.ini](./Scythe.ini) file in the project folder comes with all default settings. Scythe first reads the [Scythe.ini](./scythe.ini) file in the working directory; if it’s not found there, it reads the one in the executable directory.
-
-There’s no setting you need to change to run it. You can set the location of the project to be loaded using `mod.path`.
-
-```ini
-[Mod]
-Path="Template"
-```
+The [Scythe.ini](./Scythe.ini) file in the project folder comes with all default settings. Scythe first reads the [Scythe.ini](./Scythe.ini) file in the working directory; if it’s not found there, it reads the one in the executable directory.
 
 Make sure the basic resources included with the template are in the necessary locations within the project.
 
-Setting `FpsLock` to `-1` locks the FPS to the refresh rate _(vsync)_. Setting it to 0 makes it unlimited.
+For more detailed configuration, you can refer to the [configuring](./CONFIGURING.md) file.
 
 ## 🙏 Attributions
 
@@ -57,3 +50,4 @@ Setting `FpsLock` to `-1` locks the FPS to the refresh rate _(vsync)_. Setting i
 
 [Bear Man PSX](https://skfb.ly/p9SUZ) by Bonvikt, licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
 
+[The Green Wizard Gnome N64 Style](https://skfb.ly/oXSLR) by Drillimpact, licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).

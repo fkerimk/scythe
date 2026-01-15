@@ -9,23 +9,27 @@ internal class Runtime() : RaylibSession(1, 1, [ ConfigFlags.Msaa4xHint, ConfigF
         ResizeWindow(new int2(Screen.Width / 2, Screen.Height / 2));
         CenterWindow();
 
-        Core = new Core(false, new Cam());
+        Core = new Core(false);
         Core.ActiveLevel = new Level("Main", Core);
     }
 
     protected override bool Loop() {
         
+        Core.Load(false);
+
+        Core.ActiveCamera ??= Core.ActiveLevel?.FindType<Camera>()?.Cam;
+
         TargetFps = Config.Runtime.FpsLock;
         
         Raylib.BeginDrawing();
             
         Clear(Colors.Game);
             
-        Core.ActiveCamera.StartRendering();
+        Core.ActiveCamera?.StartRendering();
             
         Core.Loop3D(false);
             
-        Core.ActiveCamera.StopRendering();
+        Core.ActiveCamera?.StopRendering();
             
         Core.LoopUi(false);
 

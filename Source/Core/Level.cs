@@ -123,4 +123,6 @@ internal class Level {
         
         History.StopRecording();
     }
+    
+    public T? FindType<T>() where T : ObjType => (from obj in Root.GetChildrenRecursive() where obj.Type is T select obj.Type).FirstOrDefault() as T;
 }

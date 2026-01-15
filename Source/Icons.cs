@@ -5,6 +5,7 @@
     public static string Transform => FaArrows;
     public static string Animation => FaPlayCircle;
     public static string Light     => FaLightbulbO;
+    public static string Camera    => FaVideoCamera;
     
     // font awesome icon codes - https://fontawesome.com/v4/cheatsheet/
     public const string FaFile = ""; // fa-file
@@ -16,4 +17,5 @@
     public const string FaPlayCircle = ""; // fa-play-circle
     public const string FaArrows = ""; // fa-arrows
     public const string FaLightbulbO = ""; // fa-lightbulb-o
+    public const string FaVideoCamera = ""; // fa-video-camera
 }

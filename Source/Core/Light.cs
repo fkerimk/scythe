@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.ComponentModel;
+using System.Numerics;
 using Newtonsoft.Json;
 using Raylib_cs;
 
@@ -9,10 +10,10 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
     public override Color LabelColor => Colors.GuiTypeLight;
 
     [RecordHistory] [JsonProperty] [Label("Enabled")] public bool Enabled { get; set; } = true;
-    [RecordHistory] [JsonProperty] [Label("Type")] public int Type { get; set => field = (int)Raymath.Clamp(value, 0, 2); } = 1;
+    [RecordHistory] [JsonProperty] [Label("Type")] [DefaultValue(1)] public int Type { get; set => field = (int)Raymath.Clamp(value, 0, 2); }
     [RecordHistory] [JsonProperty] [Label("Color")] public Color Color { get; set; } = Colors.White;
-    [RecordHistory] [JsonProperty] [Label("Intensity")] public float Intensity { get; set; } = 2;
-    [RecordHistory] [JsonProperty] [Label("Range")] public float Range { get; set; } = 10;
+    [RecordHistory] [JsonProperty] [Label("Intensity")] [DefaultValue(2)] public float Intensity { get; set; }
+    [RecordHistory] [JsonProperty] [Label("Range")] [DefaultValue(10)] public float Range { get; set; }
     
     private float3 _pos = float3.zero;
     private float3 _target = float3.zero;
@@ -33,7 +34,9 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
         Raylib.SetShaderValue(Shaders.Pbr, colorLoc, Color.to_vector4(), ShaderUniformDataType.Vec4);
         Raylib.SetShaderValue(Shaders.Pbr, intensityLoc, Intensity, ShaderUniformDataType.Float);
     }
-    
+
+    public override bool Load(Core core, bool isEditor) => true;
+
     public override void Loop3D(Core core, bool isEditor) {
 
         if (Obj.Parent == null) return; 

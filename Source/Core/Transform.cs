@@ -36,7 +36,9 @@ internal class Transform(Obj obj) : ObjType(obj) {
     private const float MoveSnap = 0.2f;
 
     private bool _canUseShortcuts;
-    
+
+    public override bool Load(Core core, bool isEditor) => true;
+
     public override void Loop3D(Core core, bool isEditor) {
 
         if (Obj.Parent == null) return;

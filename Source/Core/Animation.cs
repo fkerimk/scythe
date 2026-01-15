@@ -39,37 +39,39 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
     
     private bool _animLoaded;
     private ModelAnimation* _rlAnims;
-    
+
+    public override bool Load(Core core, bool isEditor) {
+        
+        var path = PathUtil.Relative($"Models/{Path}.iqm");
+            
+        if (!File.Exists(path)) return false;
+
+        _rlAnims = Raylib.LoadModelAnimations(path, ref _count);
+            
+        // set loaded
+        
+        Track = (int)Raymath.Clamp(Track, 0, _count);
+        
+        return true;
+    }
+
     public override void Loop3D(Core core, bool isEditor) {
         
-        if (!_animLoaded) {
+        if (!IsLoaded || _count == -1 || !IsPlaying || Obj.Parent?.Type is not Model model) return;
+        
+        _frame = (int)Math.Floor(_frameRaw);
             
-            var path = PathUtil.Relative($"Models/{Path}.iqm");
-            
-            if (!File.Exists(path)) return;
+        if (_frame >= _rlAnims[Track].FrameCount) {
 
-            _rlAnims = Raylib.LoadModelAnimations(path, ref _count);
-            _animLoaded = true;
-            
-            Track = (int)Raymath.Clamp(Track, 0, _count);
+            _frame = 0;
+            _frameRaw = 0;
+
+            IsPlaying = Looping;
         }
         
-        else if (_count != -1 && IsPlaying && Obj.Parent?.Type is Model model) {
-                
-            _frame = (int)Math.Floor(_frameRaw);
+        Raylib.UpdateModelAnimation(model.RlModel, _rlAnims[Track], _frame);
             
-            if (_frame >= _rlAnims[Track].FrameCount) {
-
-                _frame = 0;
-                _frameRaw = 0;
-
-                IsPlaying = Looping;
-            }
-        
-            Raylib.UpdateModelAnimation(model.RlModel, _rlAnims[Track], _frame);
-            
-            _frameRaw += Raylib.GetFrameTime() * 60;
-        }
+        _frameRaw += Raylib.GetFrameTime() * 60;
     }
 
     public override void LoopUi(Core core, bool isEditor) {}

@@ -81,4 +81,5 @@
     public static Color GuiTypeTransform => new(0.9f, 0.5f, 0.2f);
     public static Color GuiTypeAnimation => new(0.9f, 0.5f, 0.9f);
     public static Color GuiTypeLight     => new(0.9f, 0.9f, 0.5f);
+    public static Color GuiTypeCamera    => new(0.5f, 0.9f, 0.9f);
 }

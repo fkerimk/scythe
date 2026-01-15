@@ -4,13 +4,11 @@ using Raylib_cs;
 internal class Core {
 
     public Level? ActiveLevel;
-    public Cam ActiveCamera;
+    public Cam? ActiveCamera;
     
     public readonly Dictionary<int, Light> Lights;
     
-    public Core (bool isEditor, Cam cam) {
-
-        ActiveCamera = cam;
+    public Core (bool isEditor) {
 
         Lights = [];
 
@@ -28,12 +26,31 @@ internal class Core {
         Raylib.SetShaderValue(Shaders.Pbr, Raylib.GetShaderLocation(Shaders.Pbr, "ambient_intensity"), ambientIntensity, ShaderUniformDataType.Float);
     }
 
+    public void Load(bool isEditor) {
+        
+        if (ActiveLevel == null) return;
+        
+        LoadObj(ActiveLevel.Root, isEditor);
+    }
+    
+    private void LoadObj(Obj obj, bool isEditor, int index = 0) {
+
+        if (obj.Type?.IsLoaded != true)
+            if (obj.Type?.Load(this, isEditor) == true)
+                obj.Type?.IsLoaded = true;
+
+        obj.Children.Sort(ObjType.Comparer.Instance);
+        
+        foreach (var child in obj.Children)
+            LoadObj(child, isEditor, index + 1);
+    }
+
     public unsafe void Loop3D(bool isEditor) {
 
         if (ActiveLevel == null) return;
         
         Lights.Clear();
-        Raylib.SetShaderValue(Shaders.Pbr, Shaders.Pbr.Locs[(int)ShaderLocationIndex.VectorView], ActiveCamera.Pos, ShaderUniformDataType.Vec3);
+        Raylib.SetShaderValue(Shaders.Pbr, Shaders.Pbr.Locs[(int)ShaderLocationIndex.VectorView], ActiveCamera?.Pos ?? float3.zero, ShaderUniformDataType.Vec3);
         
         Loop3DObj(ActiveLevel.Root, isEditor);
         

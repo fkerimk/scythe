@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using Newtonsoft.Json;
+using Raylib_cs;
 
 [JsonObject(MemberSerialization.OptIn)]
 internal class Obj {
@@ -72,7 +73,7 @@ internal class Obj {
     
         Children.Sort((a, b) => NaturalCompare(a.Name, b.Name));
     }
-
+    
     private static int NaturalCompare(string a, string b) {
     
         var tokensA = NaturalRegex.Split(a);
@@ -93,5 +94,34 @@ internal class Obj {
         }
 
         return tokensA.Length.CompareTo(tokensB.Length);
+    }
+
+    public unsafe void DecomposeMatrix(out Vector3 pos, out Quaternion rot, out Vector3 scale) {
+        
+        var position = Vector3.Zero;
+        var rotation = Quaternion.Identity;
+        var lossyScale = Vector3.One;
+    
+        Raymath.MatrixDecompose(Matrix, &position, &rotation, &lossyScale);
+        
+        pos = position;
+        rot = rotation;
+        scale = lossyScale;
+    }
+}
+
+internal static partial class Extensions {
+    
+    public static IEnumerable<Obj> GetChildrenRecursive (this Obj obj) {
+
+        foreach (var child in obj.Children) {
+            
+            yield return child;
+
+            foreach (var grandChild in child.GetChildrenRecursive()) {
+                
+                yield return grandChild;
+            }
+        }
     }
 }
