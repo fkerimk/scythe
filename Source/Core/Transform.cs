@@ -58,7 +58,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
                 Matrix4x4.Transpose(Obj.Parent.RotMatrix)
             ),
 
-            Raymath.MatrixTranslate(-Pos.X, Pos.Y, Pos.Z)
+            Raymath.MatrixTranslate(Pos.X, Pos.Y, Pos.Z)
         );
     }
 
@@ -122,7 +122,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
         
         var isActive = _activeId == id;
         
-        var a = Pos with { X = -Pos.X } + (Raymath.Vector3Normalize(normal) * 0.1f);
+        var a = Pos + (Raymath.Vector3Normalize(normal) * 0.1f);
         var b = a + normal * 1.5f;
 
         if (!string.IsNullOrEmpty(_activeId) && _activeId != id) {
@@ -133,7 +133,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
         if (isActive) {
 
-            var worldPos = _activePos with { X = -_activePos.X };
+            var worldPos = _activePos;
             
             var newPos = Pos;
             var newRot = Rot;
@@ -154,7 +154,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
                     }
 
                     var newWorldPos = worldPos - delta;
-                    newPos = newWorldPos with { X = -newWorldPos.X };
+                    newPos = newWorldPos;
                     _activeMove = Vector3.Dot(delta, _activeNormal);
                     break;
                 }
@@ -211,7 +211,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
         const int rayQuality = 64;
         
         var isHovered = false;
-        var centerPos = Pos with { X = -Pos.X };
+        var centerPos = Pos;
 
         if (_mode == 1) { // Rotation circle collision
             
@@ -248,7 +248,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
             _activeNormal = normal;
             
-            var worldPos = _activePos with { X = -_activePos.X };
+            var worldPos = _activePos;
             
             if (_mode == 1 && IntersectRayPlane(ray, worldPos, _activeNormal, out _activeInitialPoint))
                 _activeInitialVector = Vector3.Normalize(_activeInitialPoint - worldPos);

@@ -60,7 +60,7 @@ internal class Core {
     
     private void Loop3DObj(Obj obj, bool isEditor, int index = 0) {
         
-        obj.Matrix = Matrix4x4.Identity;
+        //obj.Matrix = Matrix4x4.Identity;
         obj.Type?.Loop3D(this, isEditor);
 
         obj.Children.Sort(ObjType.Comparer.Instance);

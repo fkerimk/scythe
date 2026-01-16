@@ -45,7 +45,6 @@ internal class FreeCam {
             _isLocked = false;
         }
         
-        
         _lerpedPos = Raymath.Vector3Lerp(_lerpedPos, _pos, Raylib.GetFrameTime() * 15);
         
         _camera.Position = _lerpedPos;

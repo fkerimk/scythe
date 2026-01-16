@@ -20,7 +20,7 @@ internal class Level3D() : Viewport("3D") {
         
         var contentPos = ImGui.GetCursorScreenPos();
         
-        ImGui.Image(tex, ContentRegion, new(0, 1), new(1, 0));
+        ImGui.Image(tex, ContentRegion, new Vector2(0, 1), new Vector2(1, 0));
         
         var mouse = Raylib.GetMousePosition();
 
@@ -29,7 +29,7 @@ internal class Level3D() : Viewport("3D") {
 
         relX = (relX - 0.5f) * (ContentRegion.X / Raylib.GetScreenWidth()) * (Raylib.GetScreenHeight() / ContentRegion.Y) + 0.5f;
 
-        RelativeMouse3D = new(relX * Raylib.GetScreenWidth(), relY * Raylib.GetScreenHeight());
+        RelativeMouse3D = new Vector2(relX * Raylib.GetScreenWidth(), relY * Raylib.GetScreenHeight());
         
         TexSize = ContentRegion;
     }

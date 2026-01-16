@@ -32,4 +32,6 @@ public class LuaF3 {
           var mat = Matrix4x4.CreateFromQuaternion(q);
           return new Vector3(mat.M31, mat.M32, mat.M33);
      }
+     
+     public static Vector3 Normalize(Vector3 value) => Vector3.Normalize(value);
 }

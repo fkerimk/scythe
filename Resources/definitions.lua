@@ -170,6 +170,10 @@ function LuaF3.lerp(a, b, t) end
 ---@return Vector3
 function LuaF3.fromQuaternion(q) end
 
+---@param value Vector3
+---@return Vector3
+function LuaF3.normalize(value) end
+
 ---@class LuaMt
 local LuaMt = {}
 ---@param value number
@@ -207,6 +211,13 @@ function LuaKb.up(keyName) end
 ---@class LuaMouse
 ---@field delta Vector2
 local LuaMouse = {}
+---@param visible boolean
+---@return void
+function LuaMouse.setVisible(visible) end
+
+---@return void
+function LuaMouse.moveToCenter() end
+
 ---@class LuaQuat
 ---@field identity Quaternion
 local LuaQuat = {}

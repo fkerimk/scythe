@@ -167,7 +167,7 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
                 var psi = new ProcessStartInfo {
                     
                     FileName = currentPath,
-                    Arguments = "-no-splash",
+                    Arguments = "nosplash",
                     CreateNoWindow = true,
                     UseShellExecute = false,
                     WorkingDirectory = PathUtil.LaunchPath,
