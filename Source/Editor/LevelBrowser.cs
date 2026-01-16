@@ -172,6 +172,30 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
                     ImGui.EndMenu();
                 }
                 
+                if (ImGui.BeginMenu("Scripts")) {
+
+                    var modelPaths = Directory.GetFiles(PathUtil.ModRelative("Scripts"), "*.*", SearchOption.AllDirectories);
+
+                    foreach (var modelPath in modelPaths) {
+
+                        if (Path.GetExtension(modelPath) != ".lua") continue;
+                        
+                        var pre = PathUtil.ModRelative("Scripts") + "\\";
+                        var path = modelPath[pre.Length..^4].Replace('\\', '/');
+                        var name = Path.GetFileName(path);
+                        
+                        if (!ImGui.MenuItem(path)) continue;
+                        
+                        var parentObj = editor.Core.ActiveLevel.RecordedBuildObject(name, obj, null);
+                        var script = editor.Core.ActiveLevel.BuildObject("Script", parentObj, "Script").Type as Script;
+                        editor.Core.ActiveLevel.BuildObject("Transform", parentObj, "Transform");
+                        script?.Path = path;
+                        SelectObject(parentObj);
+                    }
+                    
+                    ImGui.EndMenu();
+                }
+                
                 ImGui.Separator();
                 
                 if (ImGui.BeginMenu("Types")) {
@@ -199,7 +223,6 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
                 ImGui.EndMenu();
             }
             
-            if (ImGui.MenuItem("Rename")) { }
             if (ImGui.MenuItem("Delete")) DeleteObject = obj;
     
             ImGui.EndPopup();

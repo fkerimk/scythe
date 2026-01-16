@@ -15,8 +15,6 @@ public class LuaF2 {
 
 public class LuaF3 {
      
-     public static Func<float, float, float, Vector3> New => (x, y, z) => new Vector3(x, y, z);
-     public static Vector3 Lerp(Vector3 a, Vector3 b, float t) => Raymath.Vector3Lerp(a, b, t);
      public static Vector3 Zero => Vector3.Zero;
      public static Vector3 Up => Vector3.UnitY;
      public static Vector3 Down => -Vector3.UnitY;
@@ -24,4 +22,14 @@ public class LuaF3 {
      public static Vector3 Back => -Vector3.UnitZ;
      public static Vector3 Right => Vector3.UnitX;
      public static Vector3 Left => -Vector3.UnitX;
+     
+     public static Func<float, float, float, Vector3> New => (x, y, z) => new Vector3(x, y, z);
+     
+     public static Vector3 Lerp(Vector3 a, Vector3 b, float t) => Raymath.Vector3Lerp(a, b, t);
+
+     public static Vector3 FromQuaternion(Quaternion q) {
+
+          var mat = Matrix4x4.CreateFromQuaternion(q);
+          return new Vector3(mat.M31, mat.M32, mat.M33);
+     }
 }

@@ -38,7 +38,7 @@ internal static class Fonts {
             rlImGui.ReloadFonts();
         }
         
-        RlMontserratRegular = LoadFont<Font>("Fonts/fa7-free-solid.otf");
+        RlMontserratRegular = LoadFont<Font>("Fonts/montserrat-regular.otf");
     }
     
     public static void UnloadRlFonts() {

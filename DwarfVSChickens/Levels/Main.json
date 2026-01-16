@@ -13,8 +13,8 @@
             },
             "Euler": {
               "X": 22.500181,
-              "Y": -5.0089634E-06,
-              "Z": 0.0001042738
+              "Y": 5.0089634E-06,
+              "Z": -0.0001042738
             },
             "Scale": {
               "X": 1.0,
@@ -51,8 +51,8 @@
             },
             "Euler": {
               "X": -134.99974,
-              "Y": -44.999992,
-              "Z": -179.9999
+              "Y": 44.999992,
+              "Z": 179.9999
             },
             "Scale": {
               "X": 1.0,
@@ -108,7 +108,19 @@
           }
         },
         {
-          "Children": [],
+          "Children": [
+            {
+              "Children": [],
+              "Name": "Animation",
+              "Type": {
+                "Path": "Wizard_Gnome/Wizard_Gnome",
+                "Track": 6,
+                "IsPlaying": true,
+                "Looping": true,
+                "Name": "Animation"
+              }
+            }
+          ],
           "Name": "Model",
           "Type": {
             "Path": "Wizard_Gnome/Wizard_Gnome",

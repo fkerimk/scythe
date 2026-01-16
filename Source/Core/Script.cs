@@ -4,7 +4,8 @@ using MoonSharp.Interpreter;
 using Newtonsoft.Json;
 
 internal class Script(Obj obj) : ObjType(obj) {
-
+    
+    public override int Priority => 3;
     [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
 
     public required MoonSharp.Interpreter.Script LuaScript;
@@ -13,16 +14,20 @@ internal class Script(Obj obj) : ObjType(obj) {
     public static LuaMt? LuaMt;
     public static LuaTime? LuaTime;
     public static LuaKb? LuaKb;
+    public static LuaMouse? LuaMouse;
     public static LuaF2? LuaF2;
     public static LuaF3? LuaF3;
+    public static LuaQuat? LuaQuat;
     
     public static void Register() {
         
         UserData.RegisterType<LuaMt>(); LuaMt = new LuaMt();
         UserData.RegisterType<LuaTime>(); LuaTime = new LuaTime();
         UserData.RegisterType<LuaKb>(); LuaKb = new LuaKb();
+        UserData.RegisterType<LuaMouse>(); LuaMouse = new LuaMouse();
         UserData.RegisterType<LuaF2>(); LuaF2 = new LuaF2();
         UserData.RegisterType<LuaF3>(); LuaF3 = new LuaF3();
+        UserData.RegisterType<LuaQuat>(); LuaQuat = new LuaQuat();
         
         UserData.RegisterType<Vector2>();
         UserData.RegisterType<Vector3>();
@@ -65,6 +70,8 @@ internal class Script(Obj obj) : ObjType(obj) {
                 ["mt"] = LuaMt,
                 ["time"] = LuaTime,
                 ["kb"] = LuaKb,
+                ["mouse"] = LuaMouse,
+                ["quat"] = LuaQuat,
             }
         };
 

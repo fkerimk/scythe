@@ -24,6 +24,12 @@ time = nil
 ---@type LuaKb
 kb = nil
 
+---@type LuaMouse
+mouse = nil
+
+---@type LuaQuat
+quat = nil
+
 ---@class Obj
 ---@field icon string
 ---@field color Color
@@ -145,7 +151,6 @@ local LuaF2 = {}
 function LuaF2.lerp(a, b, t) end
 
 ---@class LuaF3
----@field new Func
 ---@field zero Vector3
 ---@field up Vector3
 ---@field down Vector3
@@ -153,12 +158,17 @@ function LuaF2.lerp(a, b, t) end
 ---@field back Vector3
 ---@field right Vector3
 ---@field left Vector3
+---@field new Func
 local LuaF3 = {}
 ---@param a Vector3
 ---@param b Vector3
 ---@param t number
 ---@return Vector3
 function LuaF3.lerp(a, b, t) end
+
+---@param q Quaternion
+---@return Vector3
+function LuaF3.fromQuaternion(q) end
 
 ---@class LuaMt
 local LuaMt = {}
@@ -168,19 +178,9 @@ local LuaMt = {}
 ---@return number
 function LuaMt.clamp(value, min, max) end
 
----@param dir Vector3
----@return Quaternion
-function LuaMt.rotDir(dir) end
-
----@param a Quaternion
----@param b Quaternion
----@return Quaternion
-function LuaMt.multiply(a, b) end
-
----@param axis Vector3
----@param angle number
----@return Quaternion
-function LuaMt.rotFromAxisAngle(axis, angle) end
+---@param dir Vector2
+---@return number
+function LuaMt.dirAngle(dir) end
 
 ---@class LuaTime
 ---@field delta number
@@ -203,6 +203,29 @@ function LuaKb.released(keyName) end
 ---@param keyName string
 ---@return boolean
 function LuaKb.up(keyName) end
+
+---@class LuaMouse
+---@field delta Vector2
+local LuaMouse = {}
+---@class LuaQuat
+---@field identity Quaternion
+local LuaQuat = {}
+---@param x number
+---@param y number
+---@param z number
+---@return Quaternion
+function LuaQuat.fromEuler(x, y, z) end
+
+---@param a Quaternion
+---@param b Quaternion
+---@return Quaternion
+function LuaQuat.multiply(a, b) end
+
+---@param a Quaternion
+---@param b Quaternion
+---@param t number
+---@return Quaternion
+function LuaQuat.lerp(a, b, t) end
 
 ---@class Color
 ---@field r number
@@ -246,6 +269,10 @@ function ObjType:loopUiEditor(core, viewport) end
 
 ---@return void
 function ObjType:quit() end
+
+---@param name string
+---@return any
+function ObjType:findType(name) end
 
 ---@param name string
 ---@return any
