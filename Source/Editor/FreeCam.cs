@@ -64,7 +64,7 @@ internal class FreeCam {
         var input = Raylib.GetMouseDelta();
 
         _rot -= new Vector2(input.Y * Sens, input.X * Sens);
-        _rot.X = Math.Clamp(_rot.X, -Clamp, Clamp);
+        _rot.X = Raymath.Clamp(_rot.X, -Clamp, Clamp);
 
         _forward = new Vector3(
             

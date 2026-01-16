@@ -24,8 +24,8 @@ internal class Level3D() : Viewport("3D") {
         
         var mouse = Raylib.GetMousePosition();
 
-        var relX = Math.Clamp((mouse.X - contentPos.X) / ContentRegion.X, 0, 1);
-        var relY = Math.Clamp((mouse.Y - contentPos.Y) / ContentRegion.Y, 0, 1);
+        var relX = Raymath.Clamp((mouse.X - contentPos.X) / ContentRegion.X, 0, 1);
+        var relY = Raymath.Clamp((mouse.Y - contentPos.Y) / ContentRegion.Y, 0, 1);
 
         relX = (relX - 0.5f) * (ContentRegion.X / Raylib.GetScreenWidth()) * (Raylib.GetScreenHeight() / ContentRegion.Y) + 0.5f;
 

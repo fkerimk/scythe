@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using MoonSharp.Interpreter;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -125,4 +126,5 @@ internal class Level {
     }
     
     public T? FindType<T>() where T : ObjType => (from obj in Root.GetChildrenRecursive() where obj.Type is T select obj.Type).FirstOrDefault() as T;
+    public ObjType? FindType(string name) => (from child in Root.GetChildrenRecursive() where child.Type?.Name == name select child.Type).FirstOrDefault();
 }

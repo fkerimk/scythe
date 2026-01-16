@@ -4,21 +4,22 @@
       "Children": [
         {
           "Children": [],
+          "Name": "Transform",
           "Type": {
             "Pos": {
-              "x": -4.2316624E-06,
-              "y": 2.554336,
-              "z": 4.7703843
+              "X": -4.2316624E-06,
+              "Y": 2.554336,
+              "Z": 4.7703843
             },
             "Euler": {
-              "x": -157.49982,
-              "y": -5.0089357E-06,
-              "z": -179.9999
+              "X": -157.49982,
+              "Y": -5.0089357E-06,
+              "Z": -179.9999
             },
             "Scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
             },
             "Rot": {
               "X": -9.0100565E-07,
@@ -27,15 +28,14 @@
               "W": 1.3465507E-07
             },
             "Name": "Transform"
-          },
-          "Name": "Transform"
+          }
         },
         {
           "Children": [],
+          "Name": "Camera",
           "Type": {
             "Name": "Camera"
-          },
-          "Name": "Camera"
+          }
         }
       ],
       "Name": "Camera"
@@ -44,31 +44,39 @@
       "Children": [
         {
           "Children": [],
+          "Name": "Transform",
           "Type": {
             "Pos": {
-              "y": 0.5
+              "Y": 0.5
             },
             "Scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
             },
             "Rot": {
               "W": 1.0,
               "IsIdentity": true
             },
             "Name": "Transform"
-          },
-          "Name": "Transform"
+          }
         },
         {
           "Children": [],
+          "Name": "Model",
           "Type": {
             "Path": "Cube",
             "Color": {},
             "Name": "Model"
-          },
-          "Name": "Model"
+          }
+        },
+        {
+          "Children": [],
+          "Name": "Script",
+          "Type": {
+            "Path": "RotatingCube",
+            "Name": "Script"
+          }
         }
       ],
       "Name": "Cube"
@@ -77,19 +85,20 @@
       "Children": [
         {
           "Children": [],
+          "Name": "Transform",
           "Type": {
             "Pos": {
-              "y": 3.0
+              "Y": 3.0
             },
             "Euler": {
-              "x": -134.99974,
-              "y": -44.999992,
-              "z": -179.9999
+              "X": -134.99974,
+              "Y": -44.999992,
+              "Z": -179.9999
             },
             "Scale": {
-              "x": 1.0,
-              "y": 1.0,
-              "z": 1.0
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
             },
             "Rot": {
               "X": -0.14644815,
@@ -98,11 +107,11 @@
               "W": -0.35355267
             },
             "Name": "Transform"
-          },
-          "Name": "Transform"
+          }
         },
         {
           "Children": [],
+          "Name": "Light",
           "Type": {
             "Enabled": true,
             "Type": 0,
@@ -113,8 +122,7 @@
             "Intensity": 10.0,
             "Range": 10.0,
             "Name": "Light"
-          },
-          "Name": "Light"
+          }
         }
       ],
       "Name": "Directional Light"

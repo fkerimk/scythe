@@ -21,7 +21,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
     
     [RecordHistory] [JsonProperty] [Label("Scale")] public Vector3 Scale { get; set; } = Vector3.One;
     
-    [RecordHistory] [JsonProperty] private Quaternion Rot { get; set; } = Quaternion.Identity;
+    [RecordHistory] [JsonProperty] public Quaternion Rot { get; set; } = Quaternion.Identity;
 
     private int _mode;
     private float _activeMove;
@@ -53,9 +53,8 @@ internal class Transform(Obj obj) : ObjType(obj) {
                 Matrix4x4.Transpose(Obj.Parent.RotMatrix)
             ),
 
-            Raymath.MatrixTranslate(Pos.X, Pos.Y, Pos.Z)
+            Raymath.MatrixTranslate(-Pos.X, Pos.Y, Pos.Z)
         );
-        
     }
 
     public override void LoopUi(Core core, bool isEditor) {}
@@ -118,7 +117,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
         
         var isActive = _activeId == id;
         
-        var a = Pos + (Vector3.Normalize(normal) * 0.1f);
+        var a = Pos with { X = -Pos.X } + (Raymath.Vector3Normalize(normal) * 0.1f);
         var b = a + normal * 1.5f;
 
         if (!string.IsNullOrEmpty(_activeId) && _activeId != id) {
@@ -155,7 +154,10 @@ internal class Transform(Obj obj) : ObjType(obj) {
             
             switch (_mode) {
                 
-                case 0: newPos = _activePos + _activeNormal * _activeMove; break;
+                case 0:
+                    var addition = _activeNormal * _activeMove;
+                    addition.X *= -1;
+                    newPos = _activePos + addition; break;
                 
                 case 1:
                     var normalQ = Quaternion.CreateFromAxisAngle(_activeNormal, _activeMove.DegToRad());
@@ -212,5 +214,14 @@ internal class Transform(Obj obj) : ObjType(obj) {
         Raylib.DrawCylinderEx(a, b, radius, radius, 1, targetColor.ToRaylib());
     }
     
-    public override void Quit() {}
+    public void RotateX(float deg) => Rot = Quaternion.CreateFromAxisAngle(Vector3.UnitX, deg.DegToRad()) * Rot;
+
+    public void RotateY(float deg) => Rot = Quaternion.CreateFromAxisAngle(Vector3.UnitY, deg.DegToRad()) * Rot;
+
+    public void RotateZ(float deg) => Rot = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, deg.DegToRad()) * Rot;
+
+    public void AddEuler(float x, float y, float z) {
+        var q = Quaternion.CreateFromYawPitchRoll(x.DegToRad(), y.DegToRad(), z.DegToRad());
+        Rot = q * Rot;
+    }
 }

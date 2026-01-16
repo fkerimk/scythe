@@ -1,0 +1,99 @@
+﻿using System.Numerics;
+using MoonSharp.Interpreter;
+using Newtonsoft.Json;
+using Raylib_cs;
+
+internal class Script(Obj obj) : ObjType(obj) {
+
+    [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
+
+    public required MoonSharp.Interpreter.Script LuaScript;
+    public DynValue? LuaLoop;
+
+    public static LuaMt? LuaMt;
+    public static LuaTime? LuaTime;
+    public static LuaKb? LuaKb;
+    public static LuaF2? LuaF2;
+    public static LuaF3? LuaF3;
+    
+    public static void Register() {
+        
+        UserData.RegisterType<LuaMt>(); LuaMt = new LuaMt();
+        UserData.RegisterType<LuaTime>(); LuaTime = new LuaTime();
+        UserData.RegisterType<LuaKb>(); LuaKb = new LuaKb();
+        UserData.RegisterType<LuaF2>(); LuaF2 = new LuaF2();
+        UserData.RegisterType<LuaF3>(); LuaF3 = new LuaF3();
+        
+        UserData.RegisterType<Vector2>();
+        UserData.RegisterType<Vector3>();
+        UserData.RegisterType<Quaternion>();
+        
+        UserData.RegisterType<Level>();
+        
+        UserData.RegisterType<Obj>();
+        UserData.RegisterType<ObjType>();
+        UserData.RegisterType<Animation>();
+        UserData.RegisterType<Camera>();
+        UserData.RegisterType<Light>();
+        UserData.RegisterType<Model>();
+        UserData.RegisterType<Script>();
+        UserData.RegisterType<Transform>();
+    }
+    
+    public override bool Load(Core core, bool isEditor) {
+
+        if (isEditor) return true;
+
+        var path = PathUtil.Relative($"Scripts/{Path}.lua");
+            
+        if (!File.Exists(path)) return false;
+
+        LuaScript = new() {
+
+            Options = {
+
+                DebugPrint = Console.WriteLine
+            },
+            
+            Globals = {
+                
+                ["obj"] = obj,
+                ["level"] = core.ActiveLevel,
+                ["cam"] = core.ActiveLevel?.FindType<Camera>(),
+                ["f2"] = LuaF2,
+                ["f3"] = LuaF3,
+                ["mt"] = LuaMt,
+                ["time"] = LuaTime,
+                ["kb"] = LuaKb,
+            }
+        };
+
+        var code = File.ReadAllText(path);
+        
+        LuaScript.DoString(code);
+
+        LuaLoop = LuaScript.Globals.Get("loop");
+
+        return true;
+    }
+
+    public override void Loop3D(Core core, bool isEditor) {
+        
+        if (isEditor || !IsLoaded) return;
+        if (LuaLoop.IsNotNil()) LuaScript.Call(LuaLoop, Raylib.GetFrameTime());
+    }
+
+    public override void LoopUi(Core core, bool isEditor) {
+        
+        if (isEditor || !IsLoaded) return;
+        
+    }
+
+    public override void Loop3DEditor(Core core, Viewport viewport) {}
+    public override void LoopUiEditor(Core core, Viewport viewport) {}
+
+    public override void Quit() {
+        
+        
+    }
+}

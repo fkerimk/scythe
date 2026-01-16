@@ -162,18 +162,28 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
 
             if (!string.IsNullOrEmpty(currentPath)) {
                 
-                Console.WriteLine(currentPath);
-
                 var psi = new ProcessStartInfo {
                     
                     FileName = currentPath,
                     Arguments = "-no-splash",
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    WorkingDirectory = PathUtil.FirstDir
+                    WorkingDirectory = PathUtil.FirstDir,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
                 };
+                
+                using var process = new Process();
+                
+                process.StartInfo = psi;
+                process.OutputDataReceived += (_, e) => { if (e.Data != null) Console.WriteLine(e.Data); };
+                process.ErrorDataReceived += (_, e) => { if (e.Data != null) Console.Error.WriteLine(e.Data); };
 
-                using var process = Process.Start(psi);
+                process.Start();
+                
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+                
                 process?.WaitForExit();
             }
         }

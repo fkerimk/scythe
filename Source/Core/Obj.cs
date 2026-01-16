@@ -10,14 +10,15 @@ internal class Obj {
     
     [RecordHistory] [JsonProperty] [Label("Name")] public string Name { get; set; }
 
-    public Obj? Parent;
+    public Obj? Parent; 
     [JsonProperty] public readonly List<Obj> Children = [];
-    [JsonProperty] public readonly ObjType? Type;
+    
+    [JsonProperty] public ObjType? Type { get; set; }
     
     public Matrix4x4 Matrix = Matrix4x4.Identity;
     public Matrix4x4 RotMatrix = Matrix4x4.Identity;
     
-    public Vector3 Right => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitX, RotMatrix));
+    public Vector3 Right => Raymath.Vector3Normalize(Vector3.Transform(-Vector3.UnitX, RotMatrix));
     public Vector3 Up => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitY, RotMatrix));
     public Vector3 Fwd => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitZ, RotMatrix));
     
@@ -79,7 +80,7 @@ internal class Obj {
         var tokensA = NaturalRegex.Split(a);
         var tokensB = NaturalRegex.Split(b);
 
-        for (var i = 0; i < Math.Min(tokensA.Length, tokensB.Length); i++) {
+        for (var i = 0; i < MathF.Min(tokensA.Length, tokensB.Length); i++) {
         
             if (int.TryParse(tokensA[i], out var aNum) && int.TryParse(tokensB[i], out var bNum)) {
             
@@ -108,6 +109,10 @@ internal class Obj {
         rot = rotation;
         scale = lossyScale;
     }
+
+    public T? FindType<T>() where T : ObjType => (from child in this.GetChildrenRecursive() where child.Type is T select child.Type).FirstOrDefault() as T;
+    public ObjType? FindType(string name) => (from child in this.GetChildrenRecursive() where child.Type?.Name == name select child.Type).FirstOrDefault();
+    public ObjType? FindParentType(string name) => (from child in Parent?.GetChildrenRecursive() where child.Type?.Name == name select child.Type).FirstOrDefault();
 }
 
 internal static partial class Extensions {

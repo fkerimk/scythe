@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using System.Reflection;
 using ImGuiNET;
+using Raylib_cs;
 
 internal class ObjectBrowser() : Viewport("Object") {
     
@@ -84,9 +85,9 @@ internal class ObjectBrowser() : Viewport("Object") {
                 ImGui.PopItemWidth();
 
                 if (
-                    Math.Abs(castValue.X - convertedValue.X) > 0.001f ||
-                    Math.Abs(castValue.Y - convertedValue.Y) > 0.001f ||
-                    Math.Abs(castValue.Z - convertedValue.Z) > 0.001f
+                    MathF.Abs(castValue.X - convertedValue.X) > 0.001f ||
+                    MathF.Abs(castValue.Y - convertedValue.Y) > 0.001f ||
+                    MathF.Abs(castValue.Z - convertedValue.Z) > 0.001f
                 ) {
                     History.StartRecording(target, prop.Name);
                     recordedHistory = true;
@@ -105,10 +106,10 @@ internal class ObjectBrowser() : Viewport("Object") {
                 ImGui.PopItemWidth();
 
                 if (
-                    Math.Abs(castValue.R - convertedValue.X) > 0.001f ||
-                    Math.Abs(castValue.G - convertedValue.Y) > 0.001f ||
-                    Math.Abs(castValue.B - convertedValue.Z) > 0.001f ||
-                    Math.Abs(castValue.A - convertedValue.W) > 0.001f
+                    MathF.Abs(castValue.R - convertedValue.X) > 0.001f ||
+                    MathF.Abs(castValue.G - convertedValue.Y) > 0.001f ||
+                    MathF.Abs(castValue.B - convertedValue.Z) > 0.001f ||
+                    MathF.Abs(castValue.A - convertedValue.W) > 0.001f
                 ) {
                     History.StartRecording(target, prop.Name);
                     recordedHistory = true;
@@ -154,7 +155,7 @@ internal class ObjectBrowser() : Viewport("Object") {
                 ImGui.InputFloat(id, ref castValue);
                 ImGui.PopItemWidth();
 
-                if (Math.Abs((float)value - castValue) > 0.001f) {
+                if (MathF.Abs((float)value - castValue) > 0.001f) {
                     History.StartRecording(target, prop.Name);
                     recordedHistory = true;
                 }

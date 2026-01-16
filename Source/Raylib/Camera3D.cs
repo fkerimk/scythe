@@ -6,7 +6,7 @@ internal class Camera3D {
     public Raylib_cs.Camera3D Raylib = new() {
                 
         Projection = CameraProjection.Perspective,
-        FovY = 90,
+        FovY = 60,
         Position = new Vector3(2, 2, 2),
         Target = new Vector3(0, 1, 0),
         Up = new Vector3(0, 1, 0)

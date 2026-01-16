@@ -1,0 +1,169 @@
+{
+  "Children": [
+    {
+      "Children": [
+        {
+          "Children": [],
+          "Name": "Transform",
+          "Type": {
+            "Pos": {
+              "X": -4.2316624E-06,
+              "Y": 2.554336,
+              "Z": -3.0
+            },
+            "Euler": {
+              "X": 22.500181,
+              "Y": -5.0089634E-06,
+              "Z": 0.0001042738
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            },
+            "Rot": {
+              "X": 0.19509187,
+              "Y": 1.3465439E-07,
+              "Z": 9.0100343E-07,
+              "W": 0.98078495
+            },
+            "Name": "Transform"
+          }
+        },
+        {
+          "Children": [],
+          "Name": "Camera",
+          "Type": {
+            "Name": "Camera"
+          }
+        }
+      ],
+      "Name": "Camera"
+    },
+    {
+      "Children": [
+        {
+          "Children": [],
+          "Name": "Transform",
+          "Type": {
+            "Pos": {
+              "Y": 3.0
+            },
+            "Euler": {
+              "X": -134.99974,
+              "Y": -44.999992,
+              "Z": -179.9999
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            },
+            "Rot": {
+              "X": -0.14644815,
+              "Y": 0.8535525,
+              "Z": -0.35355565,
+              "W": -0.35355267
+            },
+            "Name": "Transform"
+          }
+        },
+        {
+          "Children": [],
+          "Name": "Light",
+          "Type": {
+            "Enabled": true,
+            "Type": 0,
+            "Color": {
+              "G": 0.97274774,
+              "B": 0.8264463
+            },
+            "Intensity": 10.0,
+            "Range": 10.0,
+            "Name": "Light"
+          }
+        }
+      ],
+      "Name": "Directional Light"
+    },
+    {
+      "Children": [
+        {
+          "Children": [],
+          "Name": "Transform",
+          "Type": {
+            "Euler": {
+              "X": -89.99998
+            },
+            "Scale": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            },
+            "Rot": {
+              "X": -0.70710665,
+              "W": 0.70710695
+            },
+            "Name": "Transform"
+          }
+        },
+        {
+          "Children": [],
+          "Name": "Model",
+          "Type": {
+            "Path": "Wizard_Gnome/Wizard_Gnome",
+            "Color": {},
+            "Name": "Model"
+          }
+        },
+        {
+          "Children": [],
+          "Name": "Script",
+          "Type": {
+            "Path": "Player",
+            "Name": "Script"
+          }
+        }
+      ],
+      "Name": "Wizard_Gnome"
+    },
+    {
+      "Children": [
+        {
+          "Children": [],
+          "Name": "Transform",
+          "Type": {
+            "Pos": {
+              "Y": -6.0,
+              "Z": -1.4901161E-06
+            },
+            "Euler": {
+              "X": -89.99998
+            },
+            "Scale": {
+              "X": 3.0,
+              "Y": 3.0,
+              "Z": 3.0
+            },
+            "Rot": {
+              "X": -0.70710665,
+              "W": 0.70710695
+            },
+            "Name": "Transform"
+          }
+        },
+        {
+          "Children": [],
+          "Name": "Model",
+          "Type": {
+            "Path": "kenney_platformer-kit/block-grass-overhang-large-tall",
+            "Color": {},
+            "Name": "Model"
+          }
+        }
+      ],
+      "Name": "block-grass-overhang-large-tall"
+    }
+  ],
+  "Name": "Root"
+}

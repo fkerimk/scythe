@@ -58,7 +58,7 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
         
         if (!IsLoaded || _count == -1 || !IsPlaying || Obj.Parent?.Type is not Model model) return;
         
-        _frame = (int)Math.Floor(_frameRaw);
+        _frame = (int)MathF.Floor(_frameRaw);
             
         if (_frame >= _rlAnims[Track].FrameCount) {
 
