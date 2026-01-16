@@ -18,5 +18,7 @@ else throw new FileNotFoundException("Mod.ini not found");
 
 CommandLine.Init();
 
+Script.Register();
+
 if (!CommandLine.NoSplash) new Splash(1).Show();
 (CommandLine.Editor ? (RaylibSession) new Editor() : new Runtime()).Show();

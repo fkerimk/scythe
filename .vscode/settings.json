@@ -1,0 +1,11 @@
+{
+    "Lua.runtime.version": "Lua 5.2",
+    "Lua.workspace.library": [ "Resources" ],
+    "Lua.completion.callSnippet": "Both",
+    "Lua.diagnostics.disable": [
+        "lowercase-global",
+        "duplicate-set-field",
+        "undefined-doc-name",
+        "undefined-doc-param"
+    ]
+}

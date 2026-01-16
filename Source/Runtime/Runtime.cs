@@ -9,8 +9,6 @@ internal class Runtime() : RaylibSession(1, 1, [ ConfigFlags.Msaa4xHint, ConfigF
         Raylib.SetWindowSize(Screen.Width / 2, Screen.Height / 2);
         CenterWindow();
         
-        Script.Register();
-
         _core = new Core(false);
         _core.ActiveLevel = new Level("Main", _core);
         

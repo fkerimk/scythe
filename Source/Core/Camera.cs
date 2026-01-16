@@ -2,12 +2,14 @@
 using Raylib_cs;
 
 internal class Camera(Obj obj) : ObjType(obj) {
+
+    public Camera() : this(new Obj()) { }
     
     public override string LabelIcon => Icons.Camera;
     public override Color LabelColor => Colors.GuiTypeCamera;
 
     public required Camera3D Cam = new();
-    
+
     public override bool Load(Core core, bool isEditor) => true;
 
     public override void Loop3D(Core core, bool isEditor) {

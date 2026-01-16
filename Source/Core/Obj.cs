@@ -5,6 +5,8 @@ using Raylib_cs;
 [JsonObject(MemberSerialization.OptIn)]
 internal class Obj {
 
+    public Obj() { Name = ""; }
+    
     public string Icon => Type?.LabelIcon ?? Icons.Obj;
     public Color Color => Type?.LabelColor ?? Colors.GuiTypeObject;
     
@@ -32,7 +34,8 @@ internal class Obj {
         if (type == null || type == typeof(Obj)) Type = null;
         else Type = (ObjType?)(Activator.CreateInstance(type, this) ?? Activator.CreateInstance(type));
     }
-    
+
+
     public void Delete() {
 
         if (Parent == null) return;

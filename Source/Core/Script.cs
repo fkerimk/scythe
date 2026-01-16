@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
+using Raylib_cs;
 using MoonSharp.Interpreter;
 using Newtonsoft.Json;
-using Raylib_cs;
 
 internal class Script(Obj obj) : ObjType(obj) {
 
@@ -38,14 +38,17 @@ internal class Script(Obj obj) : ObjType(obj) {
         UserData.RegisterType<Model>();
         UserData.RegisterType<Script>();
         UserData.RegisterType<Transform>();
-    }
-    
-    public override bool Load(Core core, bool isEditor) {
 
-        if (isEditor) return false;
-        if (!PathUtil.BestPath($"Scripts/{Path}.lua", out var bestPath)) return false;
+        Make(generateDefinitions: true);
+    }
+
+    private static MoonSharp.Interpreter.Script Make(Core? core = null, Obj? obj = null, bool generateDefinitions = false) {
+
+        var dummyObj = new Obj();
+        var dummyCam = new Camera { Cam = null! };
+        var dummyLvl = new Level();
         
-        LuaScript = new MoonSharp.Interpreter.Script {
+        var script = new MoonSharp.Interpreter.Script {
 
             Options = {
 
@@ -54,9 +57,9 @@ internal class Script(Obj obj) : ObjType(obj) {
             
             Globals = {
                 
-                ["obj"] = obj,
-                ["level"] = core.ActiveLevel,
-                ["cam"] = core.ActiveLevel?.FindType<Camera>(),
+                ["obj"] = obj ?? dummyObj,
+                ["level"] = core?.ActiveLevel ?? dummyLvl,
+                ["cam"] = core?.ActiveLevel?.FindType<Camera>() ?? dummyCam,
                 ["f2"] = LuaF2,
                 ["f3"] = LuaF3,
                 ["mt"] = LuaMt,
@@ -65,7 +68,22 @@ internal class Script(Obj obj) : ObjType(obj) {
             }
         };
 
-        var code = File.ReadAllText(bestPath);
+        if (!generateDefinitions) return script;
+        
+        if (PathUtil.BestPath("Resources/definitions.lua", out var definitionsPath))
+            LuaDefinitionGenerator.Generate(script, definitionsPath);
+
+        return script;
+    }
+    
+    public override bool Load(Core core, bool isEditor) {
+
+        if (isEditor) return false;
+        if (!PathUtil.BestPath($"Scripts/{Path}.lua", out var scriptPath)) return false;
+
+        LuaScript = Make(core, obj);
+
+        var code = File.ReadAllText(scriptPath);
         
         LuaScript.DoString(code);
         LuaLoop = LuaScript.Globals.Get("loop");
@@ -76,16 +94,8 @@ internal class Script(Obj obj) : ObjType(obj) {
     public override void Loop3D(Core core, bool isEditor) {
         
         if (isEditor || !IsLoaded) return;
-        if (LuaLoop.IsNotNil()) LuaScript.Call(LuaLoop, Raylib.GetFrameTime());
-    }
-
-    public override void LoopUi(Core core, bool isEditor) {
+        if (LuaLoop == null || LuaLoop.IsNil()) return;
         
-        if (isEditor || !IsLoaded) return;
-    }
-
-    public override void Quit() {
-        
-        
+        LuaScript.Call(LuaLoop, Raylib.GetFrameTime());
     }
 }

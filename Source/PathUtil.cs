@@ -34,11 +34,11 @@ internal abstract class PathUtil {
             
                 case false when File.Exists(checkPath):
                 case true when Directory.Exists(checkPath):
-                    Console.WriteLine("PASS: " + checkPath);
+                    //Console.WriteLine("PASS: " + checkPath);
                     return true;
             }
             
-            Console.WriteLine("FAIL: " + checkPath);
+            //Console.WriteLine("FAIL: " + checkPath);
             
             return false;
         }

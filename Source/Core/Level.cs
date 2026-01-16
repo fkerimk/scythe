@@ -4,11 +4,13 @@ using Newtonsoft.Json.Linq;
 
 internal class Level {
 
-    public readonly string Name;
-    public readonly Obj Root;
-    public readonly Core Core;
+    public readonly string Name = null!;
+    public readonly Obj Root = null!;
+    public readonly Core Core = null!;
     
-    private string _jsonPath;
+    private string _jsonPath = null!;
+
+    public Level() {}
     
     public Level(string name, Core core) {
 
@@ -44,9 +46,7 @@ internal class Level {
             TypeNameHandling = TypeNameHandling.None 
         };
 
-        Formatting formatting;
-
-        if (!Enum.TryParse(Config.Level.Formatting, out formatting))
+        if (!Enum.TryParse(Config.Level.Formatting, out Formatting formatting))
             formatting = Formatting.None;
         
         var json = JsonConvert.SerializeObject(Root,formatting, settings);

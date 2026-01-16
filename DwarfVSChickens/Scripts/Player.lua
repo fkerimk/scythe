@@ -1,5 +1,5 @@
-local transform = obj.findParentType("Transform")
-local cameraTransform = cam.findParentType("Transform")
+local transform = obj:findParentType("Transform")
+local cameraTransform = cam:findParentType("Transform")
 
 local movePos = transform.pos
 local moveDir = f3.fwd
@@ -27,10 +27,11 @@ function movement(dt)
 
     transform.pos = f3.lerp(transform.pos, movePos, dt * 15)
 
-    print(moveInput)
+    local rot = mt.rotFromAxisAngle(f3.left, 90)
+    rot = mt.multiply(rot, mt.rotDir(f3.new(moveInput.x, 0, 0)))
     
-    local rot = mt.rotDir(f3.new(moveInput.x, 0, moveInput.y))
-    rot = mt.multiply(rot, mt.rotFromAxisAngle(f3.left, 90))
+    --local rot = mt.rotDir(f3.new(moveInput.x, 0, moveInput.y))
+    --rot = mt.multiply(rot, mt.rotFromAxisAngle(f3.left, 90))
 
     transform.rot = rot
 end
