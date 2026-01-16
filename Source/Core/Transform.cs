@@ -35,6 +35,8 @@ internal class Transform(Obj obj) : ObjType(obj) {
     private Vector3 _activeScale;
     private Quaternion _activeRot = Quaternion.Identity;
     private Vector3 _activeNormal;
+    private Vector3 _activeInitialPoint;
+    private Vector3 _activeInitialVector;
 
     private const float MoveSnap = 0.2f;
 
@@ -100,7 +102,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
         _canUseShortcuts = true;
         
         var textA = _mode switch { 0 => "pos", 1 => "rot", 2 => "scale", _ => "bruh" };
-        var textPosA = new Vector2(viewport.RelativeMouse.X, viewport.RelativeMouse.Y - 15);
+        var textPosA = viewport.RelativeMouse with { Y = viewport.RelativeMouse.Y - 15 };
         
         Raylib.DrawText(textA, (int)textPosA.X - 14, (int)textPosA.Y - 19, 20, Colors.Black.ToRaylib());
         Raylib.DrawText(textA, (int)textPosA.X - 15, (int)textPosA.Y - 20, 20, Colors.Yellow.ToRaylib());
@@ -108,7 +110,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
         if (_activeMove == 0) return;
         
         var textB = _mode switch { 0 or 2 => $"{_activeMove:F2}m", 1 => $"{_activeMove:F2}°", _ => $"{_activeMove:F2}" }; 
-        var textPosB = new Vector2(viewport.RelativeMouse.X, viewport.RelativeMouse.Y - 15);
+        var textPosB = viewport.RelativeMouse with { Y = viewport.RelativeMouse.Y - 15 };
             
         Raylib.DrawText(textB, (int)textPosB.X - 14, (int)textPosB.Y - 39, 20, Colors.Black.ToRaylib());
         Raylib.DrawText(textB, (int)textPosB.X - 15, (int)textPosB.Y - 40, 20, Colors.Yellow.ToRaylib());
@@ -131,44 +133,70 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
         if (isActive) {
 
+            var worldPos = _activePos with { X = -_activePos.X };
+            
             var newPos = Pos;
             var newRot = Rot;
             var newScale = Scale;
 
-            var diff = (Raylib.GetMousePosition() - _activeMouseTemp) * _mode switch { 0 => 0.01f, 1 => 1f, 2 => 0.05f, _ => 0 };
-                
-            var drag = _mode switch {
-                
-                0 or 2 => core.ActiveCamera.Right * diff.X + core.ActiveCamera.Up * -diff.Y,
-                1 => core.ActiveCamera.Up * diff.X + core.ActiveCamera.Right * diff.Y,
-                _ => Vector3.Zero
-            };
-
-            var camDistance = Vector3.Distance(_activePos, core.ActiveCamera.Position);
-            var move = Vector3.Dot(drag, _activeNormal) * camDistance * 0.25f;
-
-            _activeMove = _mode switch {
-                    
-                0 when !Raylib.IsKeyDown(KeyboardKey.LeftShift) => MathF.Round(move / MoveSnap) * MoveSnap,
-                1 when !Raylib.IsKeyDown(KeyboardKey.LeftShift) => MathF.Round(move / 22.5f) * 22.5f,
-                2 when !Raylib.IsKeyDown(KeyboardKey.LeftShift) => MathF.Round(move / MoveSnap) * MoveSnap,
-                _ => move
-            };
-            
             switch (_mode) {
                 
-                case 0:
-                    var addition = _activeNormal * _activeMove;
-                    addition.X *= -1;
-                    newPos = _activePos + addition; break;
-                
-                case 1:
-                    var angle = (id == "y") ? -_activeMove : _activeMove;
-                    var normalQ = Quaternion.CreateFromAxisAngle(_activeNormal, angle.DegToRad());
-                    newRot = normalQ * _activeRot;
+                case 0: { // Position
+                    
+                    var currentPoint = GetClosestPointLineRay(worldPos, _activeNormal, ray);
+                    var delta = currentPoint - _activeInitialPoint;
+                    
+                    if (!Raylib.IsKeyDown(KeyboardKey.LeftShift)) {
+                        
+                        delta.X = MathF.Round(delta.X / MoveSnap) * MoveSnap;
+                        delta.Y = MathF.Round(delta.Y / MoveSnap) * MoveSnap;
+                        delta.Z = MathF.Round(delta.Z / MoveSnap) * MoveSnap;
+                    }
+
+                    var newWorldPos = worldPos - delta;
+                    newPos = newWorldPos with { X = -newWorldPos.X };
+                    _activeMove = Vector3.Dot(delta, _activeNormal);
                     break;
+                }
+
                 
-                case 2: newScale = _activeScale + _activeNormal * _activeMove; break;
+                case 1: { // Rotation
+                    
+                    if (IntersectRayPlane(ray, worldPos, _activeNormal, out var currentPoint)) {
+                        
+                        var currentVector = Vector3.Normalize(currentPoint - worldPos);
+                        var angleRad = MathF.Atan2(Vector3.Dot(_activeNormal, Vector3.Cross(_activeInitialVector, currentVector)), Vector3.Dot(_activeInitialVector, currentVector));
+                        var angleDeg = angleRad * (180f / MathF.PI);
+
+                        if (!Raylib.IsKeyDown(KeyboardKey.LeftShift)) angleDeg = MathF.Round(angleDeg / 22.5f) * 22.5f;
+                        _activeMove = angleDeg;
+
+                        var normalQ = Quaternion.CreateFromAxisAngle(_activeNormal, _activeMove.DegToRad());
+                        newRot = normalQ * _activeRot;
+                    }
+                    break;
+                }
+
+                case 2: { // Scale
+                
+                    var currentPoint = GetClosestPointLineRay(worldPos, _activeNormal, ray);
+                    var delta = currentPoint - _activeInitialPoint;
+                    var move = -Vector3.Dot(delta, _activeNormal);
+
+                    if (!Raylib.IsKeyDown(KeyboardKey.LeftShift)) move = MathF.Round(move / MoveSnap) * MoveSnap;
+                    _activeMove = move;
+
+                    newScale = _activeScale;
+                    
+                    switch (id) {
+                        
+                        case "x": newScale.X += move; break;
+                        case "y": newScale.Y += move; break;
+                        case "z": newScale.Z += move; break;
+                    }
+                    
+                    break;
+                }
             }
             
             Pos = newPos;
@@ -176,18 +204,36 @@ internal class Transform(Obj obj) : ObjType(obj) {
             Scale = newScale;
         }
         
-        const float radius = 0.025f, rayRadius = 0.125f;
-        const int rayQuality = 9;
+        const float
+            radius = 0.025f,
+            rayRadius = 0.125f;
+        
+        const int rayQuality = 64;
         
         var isHovered = false;
-        
-        for (var i = 0; i < rayQuality + 1; i++) {
+        var centerPos = Pos with { X = -Pos.X };
 
-            var step = Vector3.Lerp(a, b, 1f / rayQuality * i);
+        if (_mode == 1) { // Rotation circle collision
+            
+            var normal1 = Vector3.Normalize(Vector3.Cross(normal, MathF.Abs(normal.Y) > 0.9f ? Vector3.UnitX : Vector3.UnitY));
+            var normal2 = Vector3.Cross(normal, normal1);
 
-            //Raylib.DrawSphere(step.to_vector3(), ray_radius, axis_color.to_raylib());
-            if (Raylib.GetRayCollisionSphere(ray, step, rayRadius).Hit)
-                isHovered = true;
+            for (var i = 0; i < rayQuality + 1; i++) {
+                
+                var angle = (i / (float)rayQuality) * MathF.PI * 2f;
+                var step = centerPos + (normal1 * MathF.Cos(angle) + normal2 * MathF.Sin(angle)) * 1.5f;
+                
+                if (Raylib.GetRayCollisionSphere(ray, step, rayRadius * 1.5f).Hit) isHovered = true;
+            }
+            
+        } else { // Line collision
+            
+            for (var i = 0; i < rayQuality + 1; i++) {
+                
+                var step = Vector3.Lerp(a, b, 1f / rayQuality * i);
+                
+                if (Raylib.GetRayCollisionSphere(ray, step, rayRadius).Hit) isHovered = true;
+            }
         }
         
         if (isHovered && Raylib.IsMouseButtonPressed(MouseButton.Left)) {
@@ -200,7 +246,14 @@ internal class Transform(Obj obj) : ObjType(obj) {
     
             _activeMouseTemp = Raylib.GetMousePosition();
 
-            _activeNormal = _mode switch { 2 => axis, _ => normal };
+            _activeNormal = normal;
+            
+            var worldPos = _activePos with { X = -_activePos.X };
+            
+            if (_mode == 1 && IntersectRayPlane(ray, worldPos, _activeNormal, out _activeInitialPoint))
+                _activeInitialVector = Vector3.Normalize(_activeInitialPoint - worldPos);
+            
+            else _activeInitialPoint = GetClosestPointLineRay(worldPos, _activeNormal, ray);
             
             History.StartRecording(this, "Transform");
         }
@@ -215,7 +268,23 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
         var targetColor = (!isActive && isHovered && !Raylib.IsCursorHidden()) ? Colors.White : axisColor;
         
-        Raylib.DrawCylinderEx(a, b, radius, radius, 1, targetColor.ToRaylib());
+        if (_mode == 1) { // Draw rotation circle
+            
+            var normal1 = Vector3.Normalize(Vector3.Cross(normal, MathF.Abs(normal.Y) > 0.9f ? Vector3.UnitX : Vector3.UnitY));
+            var normal2 = Vector3.Cross(normal, normal1);
+            
+            for (var i = 0; i < 48; i++) {
+                
+                var angle1 = (i / 48f) * MathF.PI * 2f;
+                var angle2 = ((i + 1) / 48f) * MathF.PI * 2f;
+                var p1 = centerPos + (normal1 * MathF.Cos(angle1) + normal2 * MathF.Sin(angle1)) * 1.5f;
+                var p2 = centerPos + (normal1 * MathF.Cos(angle2) + normal2 * MathF.Sin(angle2)) * 1.5f;
+                
+                Raylib.DrawCylinderEx(p1, p2, radius, radius, 1, targetColor.ToRaylib());
+            }
+        }
+        
+        else Raylib.DrawCylinderEx(a, b, radius, radius, 1, targetColor.ToRaylib());
     }
     
     public void RotateX(float deg) => Rot = Quaternion.CreateFromAxisAngle(Vector3.UnitX, deg.DegToRad()) * Rot;
@@ -225,7 +294,41 @@ internal class Transform(Obj obj) : ObjType(obj) {
     public void RotateZ(float deg) => Rot = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, (-deg).DegToRad()) * Rot;
 
     public void AddEuler(float x, float y, float z) {
+        
         var q = Quaternion.CreateFromYawPitchRoll((-y).DegToRad(), x.DegToRad(), (-z).DegToRad());
         Rot = q * Rot;
+    }
+
+    private static Vector3 GetClosestPointLineRay(Vector3 lineStart, Vector3 lineDir, Ray ray) {
+        
+        var w0 = ray.Position - lineStart;
+        var a = Vector3.Dot(lineDir, lineDir);
+        var b = Vector3.Dot(lineDir, ray.Direction);
+        var c = Vector3.Dot(ray.Direction, ray.Direction);
+        var d = Vector3.Dot(lineDir, w0);
+        var e = Vector3.Dot(ray.Direction, w0);
+        var denom = a * c - b * b;
+        if (MathF.Abs(denom) < 1e-6f) return lineStart;
+        var s = (b * e - c * d) / denom;
+        return lineStart + lineDir * s;
+    }
+
+    private static bool IntersectRayPlane(Ray ray, Vector3 planePos, Vector3 planeNormal, out Vector3 intersection) {
+        
+        var denom = Vector3.Dot(planeNormal, ray.Direction);
+        
+        if (MathF.Abs(denom) > 1e-6f) {
+            
+            var t = Vector3.Dot(planePos - ray.Position, planeNormal) / denom;
+            
+            if (t >= 0) {
+                
+                intersection = ray.Position + ray.Direction * t;
+                return true;
+            }
+        }
+        
+        intersection = Vector3.Zero;
+        return false;
     }
 }
