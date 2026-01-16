@@ -20,7 +20,7 @@ internal class ObjType(Obj obj) {
     public bool IsLoaded;
     public bool IsSelected => (Obj.Parent != null && (Obj.Parent.IsSelected || Obj.IsSelected ||  Obj.Parent.Children.Any(obj => obj.IsSelected)));
     
-    public ObjType? FindParentType(string name) => (from child in obj.Parent?.GetChildrenRecursive() where child.Type?.Name == name select child.Type).FirstOrDefault();
+    public ObjType? FindParentType(string name) => (from child in Obj.Parent?.GetChildrenRecursive() where child.Type?.Name == name select child.Type).FirstOrDefault();
     
     internal class Comparer : IComparer<Obj> {
     

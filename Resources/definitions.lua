@@ -82,6 +82,10 @@ function Level:buildObject(name, parent, type) end
 function Level:recordedBuildObject(name, parent, type) end
 
 ---@param source Obj
+---@return any
+function Level:cloneObject(source) end
+
+---@param source Obj
 ---@return void
 function Level:recordedCloneObject(source) end
 

@@ -81,7 +81,7 @@ internal class Script(Obj obj) : ObjType(obj) {
         if (isEditor) return false;
         if (!PathUtil.BestPath($"Scripts/{Path}.lua", out var scriptPath)) return false;
 
-        LuaScript = Make(core, obj);
+        LuaScript = Make(core, Obj);
 
         var code = File.ReadAllText(scriptPath);
         

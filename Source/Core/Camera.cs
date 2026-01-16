@@ -17,7 +17,7 @@ internal class Camera(Obj obj) : ObjType(obj) {
         var pos = Vector3.Zero;
         var rot= Quaternion.Identity;
         
-        obj.Parent?.DecomposeMatrix(out pos, out rot, out _);
+        Obj.Parent?.DecomposeMatrix(out pos, out rot, out _);
         
         var forward = Vector3.Transform(Vector3.UnitZ, rot);
 
