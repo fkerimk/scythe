@@ -15,8 +15,11 @@ internal class Transform(Obj obj) : ObjType(obj) {
     
     [RecordHistory] [JsonProperty] [Label("Euler")] public Vector3 Euler { 
         
-        get => Raymath.QuaternionToEuler(Rot).ToDeg();
-        set => Rot = Raymath.QuaternionFromEuler(value.X.DegToRad(), value.Y.DegToRad(), value.Z.DegToRad());
+        get {
+            var e = Raymath.QuaternionToEuler(Rot).ToDeg();
+            return new Vector3(e.X, -e.Y, -e.Z);
+        }
+        set => Rot = Raymath.QuaternionFromEuler(value.X.DegToRad(), (-value.Y).DegToRad(), (-value.Z).DegToRad());
     }
     
     [RecordHistory] [JsonProperty] [Label("Scale")] public Vector3 Scale { get; set; } = Vector3.One;
@@ -160,7 +163,8 @@ internal class Transform(Obj obj) : ObjType(obj) {
                     newPos = _activePos + addition; break;
                 
                 case 1:
-                    var normalQ = Quaternion.CreateFromAxisAngle(_activeNormal, _activeMove.DegToRad());
+                    var angle = (id == "y" || id == "z") ? -_activeMove : _activeMove;
+                    var normalQ = Quaternion.CreateFromAxisAngle(_activeNormal, angle.DegToRad());
                     newRot = normalQ * _activeRot;
                     break;
                 
@@ -216,12 +220,12 @@ internal class Transform(Obj obj) : ObjType(obj) {
     
     public void RotateX(float deg) => Rot = Quaternion.CreateFromAxisAngle(Vector3.UnitX, deg.DegToRad()) * Rot;
 
-    public void RotateY(float deg) => Rot = Quaternion.CreateFromAxisAngle(Vector3.UnitY, deg.DegToRad()) * Rot;
+    public void RotateY(float deg) => Rot = Quaternion.CreateFromAxisAngle(Vector3.UnitY, (-deg).DegToRad()) * Rot;
 
-    public void RotateZ(float deg) => Rot = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, deg.DegToRad()) * Rot;
+    public void RotateZ(float deg) => Rot = Quaternion.CreateFromAxisAngle(Vector3.UnitZ, (-deg).DegToRad()) * Rot;
 
     public void AddEuler(float x, float y, float z) {
-        var q = Quaternion.CreateFromYawPitchRoll(x.DegToRad(), y.DegToRad(), z.DegToRad());
+        var q = Quaternion.CreateFromYawPitchRoll((-y).DegToRad(), x.DegToRad(), (-z).DegToRad());
         Rot = q * Rot;
     }
 }
