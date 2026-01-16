@@ -163,7 +163,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
                     newPos = _activePos + addition; break;
                 
                 case 1:
-                    var angle = (id == "y" || id == "z") ? -_activeMove : _activeMove;
+                    var angle = (id == "y") ? -_activeMove : _activeMove;
                     var normalQ = Quaternion.CreateFromAxisAngle(_activeNormal, angle.DegToRad());
                     newRot = normalQ * _activeRot;
                     break;
