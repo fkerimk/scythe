@@ -60,6 +60,12 @@ internal class Core {
     
     private void Loop3DObj(Obj obj, bool isEditor, int index = 0) {
         
+        if (obj.Parent != null) {
+            
+            obj.Matrix = obj.Parent.Matrix;
+            obj.RotMatrix = obj.Parent.RotMatrix;
+        }
+        
         //obj.Matrix = Matrix4x4.Identity;
         obj.Type?.Loop3D(this, isEditor);
 

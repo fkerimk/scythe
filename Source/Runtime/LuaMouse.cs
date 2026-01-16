@@ -11,6 +11,7 @@ internal class LuaMouse {
     //public static bool Up(string keyName) => Raylib.IsKeyUp(GetKey(keyName));
 
     public static Vector2 Delta => Raylib.GetMouseDelta();
+    public static float Scroll => Raylib.GetMouseWheelMove();
 
     public static void SetVisible(bool visible) {
 
@@ -21,7 +22,9 @@ internal class LuaMouse {
 
     public static void MoveToCenter() {
 
-        var pos = Raylib.GetWindowPosition();
+        if (!Raylib.IsWindowFocused()) return;
+        
+        var pos = Raylib.GetScreenCenter();
         Raylib.SetMousePosition((int)pos.X, (int)pos.Y);
     }
 }

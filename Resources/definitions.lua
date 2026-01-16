@@ -176,6 +176,12 @@ function LuaF3.normalize(value) end
 
 ---@class LuaMt
 local LuaMt = {}
+---@param a number
+---@param b number
+---@param t number
+---@return number
+function LuaMt.lerp(a, b, t) end
+
 ---@param value number
 ---@param min number
 ---@param max number
@@ -210,6 +216,7 @@ function LuaKb.up(keyName) end
 
 ---@class LuaMouse
 ---@field delta Vector2
+---@field scroll number
 local LuaMouse = {}
 ---@param visible boolean
 ---@return void
@@ -237,6 +244,10 @@ function LuaQuat.multiply(a, b) end
 ---@param t number
 ---@return Quaternion
 function LuaQuat.lerp(a, b, t) end
+
+---@param dir Vector3
+---@return Quaternion
+function LuaQuat.fromDir(dir) end
 
 ---@class Color
 ---@field r number

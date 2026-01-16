@@ -3,6 +3,7 @@ using Raylib_cs;
 
 internal class LuaMt {
 
+    public static float Lerp(float a, float b, float t) => Raymath.Lerp(a, b, t);
     public static float Clamp(float value, float min, float max) => Raymath.Clamp(value, min, max);
    
     public static float DirAngle(Vector2 dir) {

@@ -11,7 +11,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
     public override string LabelIcon => Icons.Transform;
     public override Color LabelColor => Colors.GuiTypeTransform;
     
-    [RecordHistory] [JsonProperty] [Label("Pos")] public Vector3 Pos { get; set; } = Vector3.Zero;
+    [RecordHistory] [JsonProperty] [Label("Pos")] public Vector3 Pos { get => _pos; set { _pos = value; UpdateTransform(); } }
     
     [RecordHistory] [JsonProperty] [Label("Euler")] public Vector3 Euler { 
         
@@ -22,12 +22,16 @@ internal class Transform(Obj obj) : ObjType(obj) {
         set => Rot = Raymath.QuaternionFromEuler(value.X.DegToRad(), (-value.Y).DegToRad(), (-value.Z).DegToRad());
     }
     
-    [RecordHistory] [JsonProperty] [Label("Scale")] public Vector3 Scale { get; set; } = Vector3.One;
+    [RecordHistory] [JsonProperty] [Label("Scale")] public Vector3 Scale { get => _scale; set { _scale = value; UpdateTransform(); } }
     
-    [RecordHistory] [JsonProperty] public Quaternion Rot { get; set; } = Quaternion.Identity;
+    [RecordHistory] [JsonProperty] public Quaternion Rot { get => _rot; set { _rot = value; UpdateTransform(); } }
 
     private int _mode;
     private float _activeMove;
+    
+    private Vector3 _pos = Vector3.Zero;
+    private Vector3 _scale = Vector3.One;
+    private Quaternion _rot = Quaternion.Identity;
     
     private string _activeId = "";
     private Vector2 _activeMouseTemp;
@@ -44,22 +48,37 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
     public override bool Load(Core core, bool isEditor) => true;
 
-    public override void Loop3D(Core core, bool isEditor) {
+    private void UpdateTransform() {
 
         if (Obj.Parent == null) return;
-        
-        Obj.Parent.RotMatrix = Matrix4x4.CreateFromQuaternion(Rot);
-        
-        Obj.Parent.Matrix = Raymath.MatrixMultiply(
+
+        var rotMatrix = Matrix4x4.CreateFromQuaternion(Rot);
+        var matrix = Raymath.MatrixMultiply(
 
             Raymath.MatrixMultiply(
     
                 Raymath.MatrixScale(Scale.X, Scale.Y, Scale.Z),
-                Matrix4x4.Transpose(Obj.Parent.RotMatrix)
+                Matrix4x4.Transpose(rotMatrix)
             ),
 
             Raymath.MatrixTranslate(Pos.X, Pos.Y, Pos.Z)
         );
+        
+        Obj.Parent.RotMatrix = rotMatrix;
+        Obj.Parent.Matrix = matrix;
+        
+        foreach (var child in Obj.Parent.Children) {
+            
+            if (child == Obj) continue;
+            
+            child.RotMatrix = rotMatrix;
+            child.Matrix = matrix;
+        }
+    }
+
+    public override void Loop3D(Core core, bool isEditor) {
+
+        UpdateTransform();
     }
 
     public override void LoopUi(Core core, bool isEditor) {}
