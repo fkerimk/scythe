@@ -1,35 +1,37 @@
 ﻿using System.Reflection;
-using MoonSharp.Interpreter;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 internal class Level {
 
     public readonly string Name;
-    public readonly string JsonPath;
     public readonly Obj Root;
     public readonly Core Core;
+    
+    private string _jsonPath;
     
     public Level(string name, Core core) {
 
         Name = name;
-        JsonPath = $"Levels/{Name}.json";
         Root = Load();
         Core = core;
     }
 
     private Obj Load() {
         
+        if (!PathUtil.BestPath($"Levels/{Name}.json", out _jsonPath))
+            throw new FileNotFoundException($"Could not find level json file {_jsonPath}");
+
         var root = new Obj("Root", null, null);
 
-        var jsonText = File.ReadAllText(PathUtil.Relative(JsonPath));
+        var jsonText = File.ReadAllText(_jsonPath);
         var rawData = JObject.Parse(jsonText);
 
         if (rawData["Children"] is not JArray children) return root;
         
         foreach (var childData in children)
             BuildHierarchy((JObject)childData, root);
-
+            
         return root;
     }
 
@@ -49,7 +51,7 @@ internal class Level {
         
         var json = JsonConvert.SerializeObject(Root,formatting, settings);
 
-        File.WriteAllText(JsonPath, json);
+        File.WriteAllText(_jsonPath, json);
     }
     
     private void BuildHierarchy(JObject data, Obj parent) {

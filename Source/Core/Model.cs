@@ -17,18 +17,18 @@ internal class Model(Obj obj) : ObjType(obj) {
 
     public override unsafe bool Load(Core core, bool isEditor) {
         
-        var path = PathUtil.Relative($"Models/{Path}.iqm");
-            
-        if (!File.Exists(path)) return false;
-            
-        RlModel = Raylib.LoadModel(path);
-            
+        if (!PathUtil.BestPath($"Models/{Path}.iqm", out var modelPath)) return false;
+        
+        RlModel = Raylib.LoadModel(modelPath);
+                
         if (isEditor ? Config.Editor.GenTangents : Config.Runtime.GenTangents)
             for (var m = 0; m < RlModel.MeshCount; m++)
                 Raylib.GenMeshTangents(ref RlModel.Meshes[m]);
-    
-        if (isEditor ? !Config.Editor.NoShade : !Config.Runtime.NoShade) for (var i = 0; i < RlModel.MaterialCount; i++) {
-                
+
+        if (isEditor ? Config.Editor.NoShade : Config.Runtime.NoShade) return true;
+        
+        for (var i = 0; i < RlModel.MaterialCount; i++) {
+                    
             RlModel.Materials[i].Shader = Shaders.Pbr;
             //rl_model.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Value = 0f;
             //rl_model.Materials[i].Maps[(int)MaterialMapIndex.Roughness].Value = 0.5f;
@@ -42,9 +42,9 @@ internal class Model(Obj obj) : ObjType(obj) {
             var normalImg = Raylib.GenImageColor(1, 1, new Raylib_cs.Color(128, 128, 255, 255));
             var normalTex = Raylib.LoadTextureFromImage(normalImg);
             Raylib.UnloadImage(normalImg);
-    
+        
             RlModel.Materials[i].Maps[(int)MaterialMapIndex.Normal].Texture = normalTex;
-    
+        
             //var mraImg = Raylib.GenImageColor(1, 1, Color.White);
             //var mraTex = Raylib.LoadTextureFromImage(mraImg);
             //Raylib.UnloadImage(mraImg);

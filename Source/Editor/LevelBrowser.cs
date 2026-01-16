@@ -150,13 +150,13 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
                 
                 if (ImGui.BeginMenu("Models")) {
 
-                    var modelPaths = Directory.GetFiles(PathUtil.Relative("Models"), "*.*", SearchOption.AllDirectories);
+                    var modelPaths = Directory.GetFiles(PathUtil.ModRelative("Models"), "*.*", SearchOption.AllDirectories);
 
                     foreach (var modelPath in modelPaths) {
 
                         if (Path.GetExtension(modelPath) != ".iqm") continue;
                         
-                        var pre = PathUtil.Relative("Models") + "\\";
+                        var pre = PathUtil.ModRelative("Models") + "\\";
                         var path = modelPath[pre.Length..^4].Replace('\\', '/');
                         var name = Path.GetFileName(path);
                         

@@ -18,7 +18,7 @@
         <PublishTrimmed>false</PublishTrimmed>
         <TrimMode>link</TrimMode>
 
-        <ApplicationIcon>Template/Icon/White.ico</ApplicationIcon>
+        <ApplicationIcon>Resources/Images/Icon.ico</ApplicationIcon>
       
         <!--
         <NoWarn>CS8981;IL2067;IL2026;IL2075;IL2065;CS0162</NoWarn>

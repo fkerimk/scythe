@@ -42,13 +42,10 @@ internal class Script(Obj obj) : ObjType(obj) {
     
     public override bool Load(Core core, bool isEditor) {
 
-        if (isEditor) return true;
-
-        var path = PathUtil.Relative($"Scripts/{Path}.lua");
-            
-        if (!File.Exists(path)) return false;
-
-        LuaScript = new() {
+        if (isEditor) return false;
+        if (!PathUtil.BestPath($"Scripts/{Path}.lua", out var bestPath)) return false;
+        
+        LuaScript = new MoonSharp.Interpreter.Script {
 
             Options = {
 
@@ -68,10 +65,9 @@ internal class Script(Obj obj) : ObjType(obj) {
             }
         };
 
-        var code = File.ReadAllText(path);
+        var code = File.ReadAllText(bestPath);
         
         LuaScript.DoString(code);
-
         LuaLoop = LuaScript.Globals.Get("loop");
 
         return true;
@@ -86,11 +82,7 @@ internal class Script(Obj obj) : ObjType(obj) {
     public override void LoopUi(Core core, bool isEditor) {
         
         if (isEditor || !IsLoaded) return;
-        
     }
-
-    public override void Loop3DEditor(Core core, Viewport viewport) {}
-    public override void LoopUiEditor(Core core, Viewport viewport) {}
 
     public override void Quit() {
         

@@ -1,0 +1,22 @@
+﻿PathUtil.LaunchPath = Environment.CurrentDirectory;
+
+if (PathUtil.BestPath("Scythe.ini", out var scytheIniPath)) {
+        
+    var iniFile = new Ini(scytheIniPath);
+    iniFile.ToConfig();
+}
+    
+else throw new FileNotFoundException("Scythe.ini not found");
+    
+if (PathUtil.BestPath("Mod.ini", out var modIniPath)) {
+        
+    var iniFile = new Ini(modIniPath);
+    iniFile.ToConfig();
+}
+    
+else throw new FileNotFoundException("Mod.ini not found");
+
+CommandLine.Init();
+
+if (!CommandLine.NoSplash) new Splash(1).Show();
+(CommandLine.Editor ? (RaylibSession) new Editor() : new Runtime()).Show();

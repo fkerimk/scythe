@@ -26,7 +26,7 @@ internal static class Shaders {
     public static unsafe void Init() {
 
         // load generic shaders
-        Transform = Load("transform");
+        Transform = Load("transform", vert: false);
         
         // load pbr shader
         Pbr = Load("pbr");
@@ -44,13 +44,13 @@ internal static class Shaders {
         PbrTiling = Raylib.GetShaderLocation(Pbr, "tiling");
     }
 
-    private static Shader Load(string shader) {
+    private static Shader Load(string shader, bool vert = true, bool frag = true) {
 
-        var vsPath = PathUtil.Relative(Path.Combine("Shaders", shader + ".vs"));
-        var fsPath = PathUtil.Relative(Path.Combine("Shaders", shader + ".fs"));
-
-        if (!File.Exists(vsPath)) vsPath = null;
-        if (!File.Exists(fsPath)) fsPath = null;
+        string? vsPath = null, fsPath = null;
+        
+        if ((vert && !PathUtil.BestPath(Path.Combine("Shaders", shader + ".vs"), out vsPath)) ||
+            (frag && !PathUtil.BestPath(Path.Combine("Shaders", shader + ".fs"), out fsPath)))
+            throw new FileNotFoundException("Shader not found", shader);
 
         return Raylib.LoadShader(vsPath, fsPath);
     }

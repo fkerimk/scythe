@@ -17,30 +17,30 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
     public Core? Core;
     private FreeCam? _freeCam;
     
-    protected override void Init() {
+    protected override bool Init() {
 
         Raylib.SetWindowSize(Screen.Width / 2, Screen.Height / 2);
         CenterWindow();
-        
-        // ImGui setup
         rlImGui.Setup(true, true);
+        
+        var layoutPath = PathUtil.ExeRelative("Layouts/User.ini");
+        if (PathUtil.BestPath("Layouts/User.ini", out var existLayoutPath))
+            layoutPath = existLayoutPath;
         
         _io = ImGui.GetIO();
         _io.ConfigFlags |= ImGuiConfigFlags.DockingEnable;
-        _io.NativePtr->IniFilename = (byte*)Marshal.StringToHGlobalAnsi("Layouts/User.ini").ToPointer();
+        _io.NativePtr->IniFilename = (byte*)Marshal.StringToHGlobalAnsi(layoutPath).ToPointer();
         
         // Init Core
-        Core = new Core(true) {
-            
-            ActiveCamera = new Camera3D()
-        };
-        
+        Core = new Core(true) { ActiveCamera = new Camera3D() };
         Core.ActiveLevel = new Level("Main", Core);
         
         _freeCam = new FreeCam(Core.ActiveCamera);
-        Fonts.LoadImFonts(_io);
 
-        if (Core.ActiveLevel == null) return;
+        Fonts.ImGuiIoPtr = _io;
+        Fonts.Init(true);
+
+        if (Core.ActiveLevel == null) return false;
         
         // Viewports
         _level3D = new Level3D { CustomStyle = new CustomStyle {
@@ -52,6 +52,8 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
         _levelBrowser = new LevelBrowser(this);
         _objectBrowser = new ObjectBrowser();
         _projectBrowser = new ProjectBrowser();
+
+        return true;
     }
 
     protected override bool Loop() {
@@ -168,7 +170,7 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
                     Arguments = "-no-splash",
                     CreateNoWindow = true,
                     UseShellExecute = false,
-                    WorkingDirectory = PathUtil.FirstDir,
+                    WorkingDirectory = PathUtil.LaunchPath,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                 };

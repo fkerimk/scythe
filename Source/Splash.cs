@@ -6,10 +6,14 @@ internal class Splash(float duration) : RaylibSession(320, 190, [ ConfigFlags.Un
     private float _time;
     private Texture2D _art;
     
-    protected override void Init() {
+    protected override bool Init() {
+        
+        if (!PathUtil.BestPath("Images/Splash.png", out var bestPath)) return false;
         
         Raylib.SetWindowState(ConfigFlags.UndecoratedWindow);
-        _art = Raylib.LoadTexture(PathUtil.Relative("Images/Splash.png"));
+        _art = Raylib.LoadTexture(bestPath);
+            
+        return true;
     }
 
     protected override bool Loop() {

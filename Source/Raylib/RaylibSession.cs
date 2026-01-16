@@ -32,16 +32,18 @@ internal abstract class RaylibSession(int initWidth, int initHeight, ConfigFlags
         foreach (var flag in flags)
             Raylib.SetConfigFlags(flag);
     
-        
         Raylib.InitWindow(initWidth, initHeight, Config.Mod.Name);
 
-        var img = Raylib.LoadImage(PathUtil.Relative("Icon/Black.png"));
-        Raylib.SetWindowIcon(img);
-        Raylib.UnloadImage(img);
+        if (PathUtil.BestPath("Images/Icon.png", out var iconPath)) {
+
+            var img = Raylib.LoadImage(iconPath);
+            Raylib.SetWindowIcon(img);
+            Raylib.UnloadImage(img);
+        }
         
         Raylib.SetExitKey(KeyboardKey.Null);
 
-        Init();
+        if (!Init()) goto Quit;
         
         while (!Raylib.IsWindowReady()) Task.Delay(0);
 
@@ -58,22 +60,15 @@ internal abstract class RaylibSession(int initWidth, int initHeight, ConfigFlags
             Raylib.EndDrawing();
         }
         
+        Quit:
         Quit();
-
         Raylib.CloseWindow();
     }
 
-    protected abstract void Init();
+    protected abstract bool Init();
     protected abstract bool Loop();
     protected abstract void Quit();
 
-    protected void CenterWindow() {
-        
-        Raylib.SetWindowPosition((Screen.Width - Width) / 2, (Screen.Height - Height) / 2);
-    }
-
-    protected void Clear(Color color) {
-        
-        Raylib.ClearBackground(color.ToRaylib());
-    }
+    protected static void CenterWindow() => Raylib.SetWindowPosition((Screen.Width - Width) / 2, (Screen.Height - Height) / 2);
+    protected static void Clear(Color color) => Raylib.ClearBackground(color.ToRaylib());
 }

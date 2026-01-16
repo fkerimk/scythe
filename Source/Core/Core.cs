@@ -13,7 +13,6 @@ internal class Core {
         Lights = [];
 
         Shaders.Init();
-        Fonts.LoadRlFonts();
         
         const float ambientIntensity = 0.02f;
         var ambientColor = new Color(1, 1, 1);

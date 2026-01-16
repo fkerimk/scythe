@@ -41,14 +41,9 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
 
     public override bool Load(Core core, bool isEditor) {
         
-        var path = PathUtil.Relative($"Models/{Path}.iqm");
-            
-        if (!File.Exists(path)) return false;
-
-        _rlAnims = Raylib.LoadModelAnimations(path, ref _count);
-            
-        // set loaded
+        if (!PathUtil.BestPath($"Models/{Path}.iqm", out var animPath)) return false;
         
+        _rlAnims = Raylib.LoadModelAnimations(animPath, ref _count);
         Track = (int)Raymath.Clamp(Track, 0, _count);
         
         return true;
