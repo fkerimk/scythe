@@ -11,6 +11,10 @@ internal class Transform(Obj obj) : ObjType(obj) {
     public override string LabelIcon => Icons.Transform;
     public override ScytheColor LabelScytheColor => Colors.GuiTypeTransform;
     
+    private Vector3 _pos = Vector3.Zero;
+    private Vector3 _scale = Vector3.One;
+    private Quaternion _rot = Quaternion.Identity;
+    
     [RecordHistory] [JsonProperty] [Label("Pos")] public Vector3 Pos { get => _pos; set { _pos = value; UpdateTransform(); } }
     
     [RecordHistory] [JsonProperty] [Label("Euler")] public Vector3 Euler { 
@@ -23,15 +27,11 @@ internal class Transform(Obj obj) : ObjType(obj) {
     }
     
     [RecordHistory] [JsonProperty] [Label("Scale")] public Vector3 Scale { get => _scale; set { _scale = value; UpdateTransform(); } }
-    
+
     [RecordHistory] [JsonProperty] public Quaternion Rot { get => _rot; set { _rot = value; UpdateTransform(); } }
 
     private int _mode;
     private float _activeMove;
-    
-    private Vector3 _pos = Vector3.Zero;
-    private Vector3 _scale = Vector3.One;
-    private Quaternion _rot = Quaternion.Identity;
     
     private string _activeId = "";
     private Vector2 _activeMouseTemp;
@@ -64,13 +64,16 @@ internal class Transform(Obj obj) : ObjType(obj) {
         
         Obj.Parent.RotMatrix = rotMatrix;
         Obj.Parent.Matrix = matrix;
-        
-        foreach (var child in Obj.Parent.Children) {
+
+        if (Obj.Parent.Parent != null) {
+
+            Obj.Parent.WorldMatrix = Obj.Parent.Parent.WorldMatrix * Obj.Parent.Matrix;
+            Obj.Parent.WorldRotMatrix = Obj.Parent.Parent.WorldRotMatrix * Obj.Parent.RotMatrix;
             
-            if (child == Obj) continue;
-            
-            child.RotMatrix = rotMatrix;
-            child.Matrix = matrix;
+        } else {
+
+            Obj.Parent.WorldMatrix = Obj.Parent.Matrix;
+            Obj.Parent.WorldRotMatrix = Obj.Parent.RotMatrix;
         }
     }
 

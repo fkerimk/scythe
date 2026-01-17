@@ -56,7 +56,7 @@ internal class Model(Obj obj) : ObjType(obj) {
 
     public override unsafe void Loop3D() {
 
-        RlModel.Transform = Obj.Parent!.Matrix;
+        RlModel.Transform = Obj.Parent!.WorldMatrix;
         
         // Draw test model
         for (var i = 0; i < RlModel.MaterialCount; i++) {

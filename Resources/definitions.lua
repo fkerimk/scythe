@@ -42,6 +42,8 @@ quat = nil
 ---@field children List
 ---@field matrix Matrix4x4
 ---@field rotMatrix Matrix4x4
+---@field worldMatrix Matrix4x4
+---@field worldRotMatrix Matrix4x4
 ---@field isSelected boolean
 local Obj = {}
 ---@return void

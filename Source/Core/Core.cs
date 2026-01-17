@@ -69,8 +69,13 @@ internal static class Core {
         
         if (obj.Parent != null) {
             
-            obj.Matrix = obj.Parent.Matrix;
-            obj.RotMatrix = obj.Parent.RotMatrix;
+            obj.WorldMatrix = obj.Parent.WorldMatrix * obj.Matrix;
+            obj.WorldRotMatrix = obj.Parent.WorldRotMatrix * obj.RotMatrix;
+        }
+        else {
+
+            obj.WorldMatrix = obj.Matrix;
+            obj.WorldRotMatrix = obj.RotMatrix;
         }
         
         obj.Type?.Loop3D();
