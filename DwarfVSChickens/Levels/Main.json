@@ -74,10 +74,7 @@
           "Type": {
             "Enabled": true,
             "Type": 0,
-            "Color": {
-              "G": 0.97274774,
-              "B": 0.8264463
-            },
+            "ScytheColor": {},
             "Intensity": 10.0,
             "Range": 10.0,
             "Name": "Light"
@@ -93,7 +90,7 @@
           "Name": "Transform",
           "Type": {
             "Euler": {
-              "X": -89.99998
+              "X": 90.000015
             },
             "Scale": {
               "X": 1.0,
@@ -101,8 +98,8 @@
               "Z": 1.0
             },
             "Rot": {
-              "X": -0.70710665,
-              "W": 0.70710695
+              "X": -0.7071069,
+              "W": -0.7071067
             },
             "Name": "Transform"
           }
@@ -124,7 +121,7 @@
           "Name": "Model",
           "Type": {
             "Path": "Wizard_Gnome/Wizard_Gnome",
-            "Color": {},
+            "ScytheColor": {},
             "Name": "Model"
           }
         },
@@ -150,7 +147,7 @@
               "Z": -1.4901161E-06
             },
             "Euler": {
-              "X": -89.99998
+              "X": 90.00003
             },
             "Scale": {
               "X": 3.0,
@@ -158,8 +155,8 @@
               "Z": 3.0
             },
             "Rot": {
-              "X": -0.70710665,
-              "W": 0.70710695
+              "X": 0.707107,
+              "W": 0.7071066
             },
             "Name": "Transform"
           }
@@ -169,7 +166,7 @@
           "Name": "Model",
           "Type": {
             "Path": "kenney_platformer-kit/block-grass-overhang-large-tall",
-            "Color": {},
+            "ScytheColor": {},
             "Name": "Model"
           }
         }

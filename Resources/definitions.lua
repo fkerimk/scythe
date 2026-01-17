@@ -58,6 +58,12 @@ function Obj:recordedDelete() end
 ---@return void
 function Obj:decomposeMatrix(pos, rot, scale) end
 
+---@param worldPos Vector3
+---@param worldRot Quaternion
+---@param worldScale Vector3
+---@return void
+function Obj:decomposeWorldMatrix(worldPos, worldRot, worldScale) end
+
 ---@return any
 function Obj:findType() end
 

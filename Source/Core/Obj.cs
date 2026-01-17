@@ -24,9 +24,14 @@ internal class Obj {
     public Matrix4x4 WorldMatrix = Matrix4x4.Identity;
     public Matrix4x4 WorldRotMatrix = Matrix4x4.Identity;
     
-    public Vector3 Right => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitX, WorldRotMatrix));
-    public Vector3 Up => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitY, WorldRotMatrix));
-    public Vector3 Fwd => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitZ, WorldRotMatrix));
+    //public Vector3 Right => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitX, WorldRotMatrix));
+    //public Vector3 Up => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitY, WorldRotMatrix));
+    //public Vector3 Fwd => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitZ, WorldRotMatrix));
+    
+    // Sütunlardan (Column) okuma:
+    public Vector3 Right => Vector3.Normalize(new Vector3(WorldRotMatrix.M11, WorldRotMatrix.M21, WorldRotMatrix.M31));
+    public Vector3 Up    => Vector3.Normalize(new Vector3(WorldRotMatrix.M12, WorldRotMatrix.M22, WorldRotMatrix.M32));
+    public Vector3 Fwd   => Vector3.Normalize(new Vector3(WorldRotMatrix.M13, WorldRotMatrix.M23, WorldRotMatrix.M33));
     
     public bool IsSelected;
     
@@ -118,6 +123,19 @@ internal class Obj {
         pos = position;
         rot = rotation;
         scale = lossyScale;
+    }
+    
+    public unsafe void DecomposeWorldMatrix(out Vector3 worldPos, out Quaternion worldRot, out Vector3 worldScale) {
+        
+        var position = Vector3.Zero;
+        var rotation = Quaternion.Identity;
+        var lossyScale = Vector3.One;
+    
+        Raymath.MatrixDecompose(WorldMatrix, &position, &rotation, &lossyScale);
+        
+        worldPos = position;
+        worldScale = lossyScale;
+        worldRot = rotation;
     }
 
     public T? FindType<T>() where T : ObjType => (from child in this.GetChildrenRecursive() where child.Type is T select child.Type).FirstOrDefault() as T;
