@@ -207,12 +207,24 @@ internal class Transform(Obj obj) : ObjType(obj) {
                         if (!IsKeyDown(KeyboardKey.LeftShift)) angleDeg = MathF.Round(angleDeg / 22.5f) * 22.5f;
                         _activeMove = angleDeg;
 
-                        var normalQ = Quaternion.CreateFromAxisAngle(_activeLocalAxis, _activeMove.DegToRad());
+                        var deltaRot = Quaternion.CreateFromAxisAngle(_activeLocalAxis, _activeMove.DegToRad());
 
-                        if (_isWorldSpace)
-                             newRot = _activeRot * normalQ;
-                        else newRot = normalQ * _activeRot;
+                        if (_isWorldSpace) {
+
+                            if (Obj.Parent?.Parent != null) {
+
+                                var parentRot = Quaternion.CreateFromRotationMatrix(Obj.Parent.Parent.WorldRotMatrix);
+                                var localDeltaInParentSpace = Quaternion.Inverse(parentRot) * deltaRot * parentRot;
+
+                                newRot = _activeRot * localDeltaInParentSpace;
+                            }
+
+                            else newRot = _activeRot * deltaRot ;
+                        }
+
+                        else newRot = deltaRot * _activeRot;
                     }
+                    
                     break;
                 }
 
