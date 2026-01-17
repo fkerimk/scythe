@@ -22,6 +22,7 @@ internal abstract class Viewport(string title) {
             
             ImGui.End(); 
             
+            if (CustomStyle != null) Style.Pop();
             return;
         }
         

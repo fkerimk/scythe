@@ -5,9 +5,8 @@ internal class Runtime() : RaylibSession(1, 1, [ ConfigFlags.Msaa4xHint, ConfigF
     private static Core? _core;
     
     protected override bool Init() {
-        
-        Raylib.SetWindowSize(Screen.Width / 2, Screen.Height / 2);
-        CenterWindow();
+
+        PrepareWindow(1, fullscreen: true);
         
         _core = new Core(false);
         _core.ActiveLevel = new Level("Main", _core);

@@ -69,6 +69,23 @@ internal abstract class RaylibSession(int initWidth, int initHeight, ConfigFlags
     protected abstract bool Loop();
     protected abstract void Quit();
 
+    protected static void PrepareWindow(float scale = 0.5f, bool maximize = false, bool fullscreen = false, bool borderless = true) {
+        
+        Raylib.SetWindowSize((int)Math.Floor(Screen.Width * scale), (int)Math.Floor(Screen.Height * scale)); CenterWindow();
+        
+        if (maximize) Raylib.MaximizeWindow();
+
+        if (!fullscreen) return;
+       
+        if (borderless) {
+                
+            Raylib.SetConfigFlags(ConfigFlags.UndecoratedWindow);
+            Raylib.SetWindowSize(Raylib.GetMonitorWidth(Raylib.GetCurrentMonitor()), Raylib.GetMonitorHeight(Raylib.GetCurrentMonitor()));
+        }
+            
+        else if (!Raylib.IsWindowFullscreen()) Raylib.ToggleFullscreen();
+    }
+
     protected static void CenterWindow() => Raylib.SetWindowPosition((Screen.Width - Width) / 2, (Screen.Height - Height) / 2);
     protected static void Clear(Color color) => Raylib.ClearBackground(color.ToRaylib());
 }

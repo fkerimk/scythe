@@ -10,11 +10,7 @@ internal class Level3D() : Viewport("3D") {
 
     protected override void OnDraw() {
         
-        if (Rt.Texture.Width == 0 || Rt.Texture.Height == 0) {
-                
-            ImGui.End();
-            return;
-        }
+        if (Rt.Texture.Width == 0 || Rt.Texture.Height == 0) return;
 
         var tex = (IntPtr)Rt.Texture.Id;
         

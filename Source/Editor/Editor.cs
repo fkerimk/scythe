@@ -19,8 +19,8 @@ internal unsafe class Editor() : RaylibSession(1, 1, [ConfigFlags.Msaa4xHint, Co
     
     protected override bool Init() {
 
-        Raylib.SetWindowSize(Screen.Width / 2, Screen.Height / 2);
-        CenterWindow();
+        PrepareWindow(0.75f);
+        
         rlImGui.Setup(true, true);
         
         var layoutPath = PathUtil.ExeRelative("Layouts/User.ini");
