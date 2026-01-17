@@ -31,12 +31,13 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
     private int _mode;
     private float _activeMove;
+    private bool _isWorldSpace;
     
     private string _activeId = "";
     private Vector2 _activeMouseTemp;
     private Vector3 _activePos;
-    private Vector3 _activeLocalAxis;
     private Vector3 _activeWorldPos;
+    private Vector3 _activeLocalAxis;
     private Vector3 _activeScale;
     private Quaternion _activeRot = Quaternion.Identity;
     private Vector3 _activeNormal;
@@ -95,15 +96,22 @@ internal class Transform(Obj obj) : ObjType(obj) {
             if (IsKeyPressed(KeyboardKey.Q)) _mode = 0;
             if (IsKeyPressed(KeyboardKey.W)) _mode = 1;
             if (IsKeyPressed(KeyboardKey.E)) _mode = 2;
+            if (IsKeyPressed(KeyboardKey.X)) _isWorldSpace = !_isWorldSpace;
         }
         
         Shaders.Begin(Shaders.Transform);
 
         var ray = GetScreenToWorldRay(level3d.RelativeMouse3D, Core.ActiveCamera.Raylib);
 
-        Axis("x", Vector3.UnitX, Obj.Parent.Right, new Color(0.9f, 0.3f, 0.3f), ray);
-        Axis("y", Vector3.UnitY, Obj.Parent.Up, new Color(0.3f, 0.9f, 0.3f), ray);
-        Axis("z", Vector3.UnitZ, Obj.Parent.Fwd, new Color(0.3f, 0.3f, 0.9f), ray);
+        var useWorld = _isWorldSpace && _mode != 2;
+
+        var r = useWorld ? Vector3.UnitX : Obj.Parent.Right;
+        var u = useWorld ? Vector3.UnitY : Obj.Parent.Up;
+        var f = useWorld ? Vector3.UnitZ : Obj.Parent.Fwd;
+        
+        Axis("x", Vector3.UnitX, r, new Color(0.9f, 0.3f, 0.3f), ray);
+        Axis("y", Vector3.UnitY, u, new Color(0.3f, 0.9f, 0.3f), ray);
+        Axis("z", Vector3.UnitZ, f, new Color(0.3f, 0.3f, 0.9f), ray);
         
         Shaders.End();
     }
@@ -118,7 +126,10 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
         _canUseShortcuts = true;
         
-        var textA = _mode switch { 0 => "pos", 1 => "rot", 2 => "scale", _ => "bruh" };
+        var modeName = _mode switch { 0 => "Pos", 1 => "Rot", 2 => "Scale", _ => "Bruh" };
+        var spaceName = (_mode == 2) ? ("") : (_isWorldSpace ? "(World)" : "(Local)");
+
+        var textA = $"{modeName} {spaceName}";
         var textPosA = viewport.RelativeMouse with { Y = viewport.RelativeMouse.Y - 15 };
         
         DrawText(textA, (int)textPosA.X - 14, (int)textPosA.Y - 19, 20, Color.Black);
@@ -197,7 +208,10 @@ internal class Transform(Obj obj) : ObjType(obj) {
                         _activeMove = angleDeg;
 
                         var normalQ = Quaternion.CreateFromAxisAngle(_activeLocalAxis, _activeMove.DegToRad());
-                        newRot = normalQ * _activeRot;
+
+                        if (_isWorldSpace)
+                             newRot = _activeRot * normalQ;
+                        else newRot = normalQ * _activeRot;
                     }
                     break;
                 }
