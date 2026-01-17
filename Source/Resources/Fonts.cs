@@ -15,14 +15,12 @@ internal static class Fonts {
     public static ImFontPtr ImFontAwesomeNormal;
     public static ImFontPtr ImFontAwesomeLarge ;
 
-    public static ImGuiIOPtr ImGuiIoPtr;
-    
     private static ImFontConfigPtr _imFontConfigPtr;
     private static IntPtr _iconRanges;
     
-    public static unsafe void Init(bool isEditor) {
+    public static unsafe void Init() {
         
-        if (isEditor) {
+        if (CommandLine.Editor) {
         
             _iconRanges = GCHandle.Alloc(new ushort[] { 0xE000, 0xF8FF, 0 }, GCHandleType.Pinned).AddrOfPinnedObject();
         
@@ -58,8 +56,8 @@ internal static class Fonts {
         if (typeof(T) == typeof(ImFontPtr)) {
 
             return (T)(object) (useIconRanges ?
-                ImGuiIoPtr.Fonts.AddFontFromFileTTF(bestPath, size, _imFontConfigPtr, _iconRanges) :
-                ImGuiIoPtr.Fonts.AddFontFromFileTTF(bestPath, size, _imFontConfigPtr));
+                Editor.ImGuiIoPtr.Fonts.AddFontFromFileTTF(bestPath, size, _imFontConfigPtr, _iconRanges) :
+                Editor.ImGuiIoPtr.Fonts.AddFontFromFileTTF(bestPath, size, _imFontConfigPtr));
         }
 
         throw new NotSupportedException($"Unsupported font type: {typeof(T)}");

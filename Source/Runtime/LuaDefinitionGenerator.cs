@@ -103,6 +103,8 @@ internal static class LuaDefinitionGenerator {
         // Fields & properties (Vector2.X -> vector2.x etc..)
         foreach (var p in type.GetProperties(flags)) {
             
+            if (Attribute.IsDefined(p, typeof(MoonSharpHiddenAttribute))) continue;
+            
             var safeName = ToCamelCase(p.Name);
             if (!IsSafeName(p.Name) || generatedMembers.Contains(safeName)) continue;
             sb.AppendLine($"---@field {safeName} {MapType(p.PropertyType, queue)}");
@@ -110,6 +112,8 @@ internal static class LuaDefinitionGenerator {
         }
         
         foreach (var f in type.GetFields(flags)) {
+            
+            if (Attribute.IsDefined(f, typeof(MoonSharpHiddenAttribute))) continue;
             
             var safeName = ToCamelCase(f.Name);
             if (!IsSafeName(f.Name) || generatedMembers.Contains(safeName)) continue;
@@ -121,6 +125,8 @@ internal static class LuaDefinitionGenerator {
 
         // Methods
         foreach (var method in type.GetMethods(flags | BindingFlags.DeclaredOnly)) {
+            
+            if (Attribute.IsDefined(method, typeof(MoonSharpHiddenAttribute))) continue;
             
             if (method.IsSpecialName || !IsSafeName(method.Name)) continue;
 

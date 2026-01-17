@@ -7,7 +7,7 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
     public override int Priority => 1;
     
     public override string LabelIcon => Icons.Animation;
-    public override Color LabelColor => Colors.GuiTypeAnimation;
+    public override ScytheColor LabelScytheColor => Colors.GuiTypeAnimation;
 
     [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
     
@@ -39,7 +39,7 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
     
     private ModelAnimation* _rlAnims;
 
-    public override bool Load(Core core, bool isEditor) {
+    public override bool Load() {
         
         if (!PathUtil.BestPath($"Models/{Path}.iqm", out var animPath)) return false;
         
@@ -49,7 +49,7 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
         return true;
     }
 
-    public override void Loop3D(Core core, bool isEditor) {
+    public override void Loop3D() {
         
         if (!IsLoaded || _count == -1 || !IsPlaying || Obj.Parent?.Type is not Model model) return;
         
@@ -67,10 +67,6 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
             
         _frameRaw += Raylib.GetFrameTime() * 60;
     }
-
-    public override void LoopUi(Core core, bool isEditor) {}
-    public override void Loop3DEditor(Core core, Viewport viewport) { }
-    public override void LoopUiEditor(Core core, Viewport viewport) { }
 
     public override void Quit() {
         

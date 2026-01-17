@@ -1,9 +1,9 @@
 ﻿using System.Numerics;
 using Raylib_cs;
 
-internal class Grid(Camera3D? camera) {
+internal static class Grid {
 
-    public void Draw() {
+    public static void Draw(Camera3D? camera) {
         
         if (camera == null) return;
         

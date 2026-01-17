@@ -1,31 +1,24 @@
 using System.Numerics;
 using Raylib_cs;
 
-internal class FreeCam {
+internal static class FreeCam {
     
     private const float Sens = 0.003f;
     private const float Clamp = 1.55f;
     private const float Speed = 15;
     
-    private Vector3 _pos;
-    private Vector3 _lerpedPos;
-    private Vector3 _forward;
+    private static Vector3 _pos;
+    private static Vector3 _lerpedPos;
+    private static Vector3 _forward;
     
-    private Vector2 _rot;
+    private static Vector2 _rot;
     
-    private bool _isLocked;
-    private Vector2 _lockPos;
+    private static bool _isLocked;
+    private static Vector2 _lockPos;
 
-    private readonly Camera3D _camera;
-
-    public FreeCam (Camera3D camera) {
-
-        _camera = camera;
+    public static void Loop(Viewport viewport) {
         
-        SetFromTarget(_camera.Position, _camera.Target);
-    }
-    
-    public void Loop(Viewport viewport) {
+        if (Core.ActiveCamera == null) return; 
         
         var center = viewport.WindowPos + viewport.ContentRegion / 2;
         
@@ -47,8 +40,8 @@ internal class FreeCam {
         
         _lerpedPos = Raymath.Vector3Lerp(_lerpedPos, _pos, Raylib.GetFrameTime() * 15);
         
-        _camera.Position = _lerpedPos;
-        _camera.Target = _lerpedPos + _forward;
+        Core.ActiveCamera.Position = _lerpedPos;
+        Core.ActiveCamera.Target = _lerpedPos + _forward;
         
         if (!_isLocked) return;
         
@@ -58,7 +51,7 @@ internal class FreeCam {
         Raylib.SetMousePosition((int)_lockPos.X, (int)_lockPos.Y);
     }
 
-    private void Rotation() {
+    private static void Rotation() {
         
         var input = Raylib.GetMouseDelta();
 
@@ -73,8 +66,10 @@ internal class FreeCam {
         );
     }
 
-    private void Movement() {
+    private static void Movement() {
 
+        if (Core.ActiveCamera == null) return; 
+        
         var input = Vector3.Zero;
 
         if (Raylib.IsKeyDown(KeyboardKey.W)) input.Z += 1;
@@ -84,17 +79,19 @@ internal class FreeCam {
         if (Raylib.IsKeyDown(KeyboardKey.E)) input.Y += 1;
         if (Raylib.IsKeyDown(KeyboardKey.Q)) input.Y -= 1;
         
-        _pos += (_camera.Up * input.Y + _camera.Right * input.X + _camera.Fwd * input.Z) * Speed * Raylib.GetFrameTime();
+        _pos += (Core.ActiveCamera.Up * input.Y + Core.ActiveCamera.Right * input.X + Core.ActiveCamera.Fwd * input.Z) * Speed * Raylib.GetFrameTime();
     }
 
-    private void SetFromTarget(Vector3 pos, Vector3 target) {
+    private static void SetFromTarget(Vector3 pos, Vector3 target) {
+        
+        if (Core.ActiveCamera == null) return; 
         
         var dir = Raymath.Vector3Normalize(target - pos);
 
         var vertical = MathF.Asin(dir.Y);
         var horizontal = MathF.Atan2(dir.X, dir.Z);
 
-        _lerpedPos = _pos = _camera.Position;
+        _lerpedPos = _pos = Core.ActiveCamera.Position;
         _rot = new Vector2(vertical, horizontal);
         
         _forward = new Vector3(
@@ -104,4 +101,6 @@ internal class FreeCam {
             MathF.Cos(_rot.X) * MathF.Cos(_rot.Y)
         );
     }
+    
+    public static void SetFromTarget(Camera3D? camera) => SetFromTarget(camera?.Position ?? Vector3.Zero, camera?.Target ?? Vector3.Zero);
 }

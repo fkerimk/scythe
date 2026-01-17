@@ -6,17 +6,15 @@ internal class Level {
 
     public readonly string Name = null!;
     public readonly Obj Root = null!;
-    public readonly Core Core = null!;
     
     private string _jsonPath = null!;
 
     public Level() {}
     
-    public Level(string name, Core core) {
+    public Level(string name) {
 
         Name = name;
         Root = Load();
-        Core = core;
     }
 
     private Obj Load() {

@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Numerics;
 
-internal class Color(float r, float g, float b, float a = 1) {
+internal class ScytheColor(float r, float g, float b, float a = 1) {
     
     [DefaultValue(1f)] public float R = r;
     [DefaultValue(1f)] public float G = g;
@@ -11,11 +11,11 @@ internal class Color(float r, float g, float b, float a = 1) {
 
 internal static partial class Extensions {
     
-    public static Color ToColor(this System.Drawing.Color value) => new(value.R, value.G, value.B, value.A);
+    public static ScytheColor ToColor(this System.Drawing.Color value) => new(value.R, value.G, value.B, value.A);
   
-    public static Color ToColor(this Vector4 color) => new(color.X, color.Y, color.Z, color.W);
+    public static ScytheColor ToColor(this Vector4 color) => new(color.X, color.Y, color.Z, color.W);
     
-    extension(Color value) {
+    extension(ScytheColor value) {
         public Raylib_cs.Color ToRaylib() => new(value.R, value.G, value.B, value.A);
 
         public Vector4 to_vector4() => new(value.R, value.G, value.B, value.A);

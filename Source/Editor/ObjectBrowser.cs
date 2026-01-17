@@ -96,9 +96,9 @@ internal class ObjectBrowser() : Viewport("Object") {
                 prop.SetValue(target, convertedValue);
             }
             
-            if (prop.PropertyType == typeof(Color)) {
+            if (prop.PropertyType == typeof(ScytheColor)) {
 
-                var castValue = (Color)value;
+                var castValue = (ScytheColor)value;
                 var convertedValue = castValue.to_vector4();
                 ImGui.PushItemWidth(-1);
                 //ImGui.InputFloat4(id, ref convertedValue);

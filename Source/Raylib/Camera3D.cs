@@ -61,9 +61,6 @@ internal static partial class Extensions {
             }
         }
 
-        public void StartRendering() => Raylib.BeginMode3D(camera.Raylib);
-        public void StopRendering() => Raylib.EndMode3D();
-
         public Vector3 Up => Raymath.Vector3Normalize(Raymath.Vector3CrossProduct(camera.Fwd, camera.Right));
         public Vector3 Fwd => Raymath.Vector3Normalize(camera.Target - camera.Position);
         public Vector3 Right => Raymath.Vector3Normalize(Raymath.Vector3CrossProduct(camera.Fwd, Vector3.UnitY));

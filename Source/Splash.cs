@@ -1,35 +1,38 @@
 ﻿using System.Numerics;
 using Raylib_cs;
+using static Raylib_cs.Raylib;
 
-internal class Splash(float duration) : RaylibSession(320, 190, [ ConfigFlags.UndecoratedWindow ]) {
+// (float duration) : RaylibSession(320, 190, [ ConfigFlags.UndecoratedWindow ]) 
 
-    private float _time;
-    private Texture2D _art;
+internal static class Splash {
+
+    private const float Duration = 1;
     
-    protected override bool Init() {
+    private static float _time;
+    private static Texture2D _art;
+
+    public static void Show() {
         
-        if (!PathUtil.BestPath("Images/Splash.png", out var bestPath)) return false;
+        if (!PathUtil.BestPath("Images/Splash.png", out var splashPath)) return;
         
-        Raylib.SetWindowState(ConfigFlags.UndecoratedWindow);
-        _art = Raylib.LoadTexture(bestPath);
+        Window.Show(width: 320, height: 190, flags: ConfigFlags.UndecoratedWindow, isSplash: true);
+        
+        _art = LoadTexture(splashPath);
+        
+        while (!WindowShouldClose()) {
             
-        return true;
-    }
-
-    protected override bool Loop() {
-        
-        Raylib.BeginDrawing();
+            Window.UpdateFps();
+            
+            BeginDrawing();
                 
-        Raylib.SetWindowSize(Width, Height);
-                
-        Raylib.DrawTexturePro(_art, new Rectangle(0, 0, _art.Width, _art.Height), new Rectangle(0, 0, Width, Height), Vector2.Zero, 0, Raylib_cs.Color.White);
+            DrawTexturePro(_art, new Rectangle(0, 0, _art.Width, _art.Height), new Rectangle(0, 0, Window.Width, Window.Height), Vector2.Zero, 0, Raylib_cs.Color.White);
 
-        _time += Raylib.GetFrameTime();
-
-        if (_time >= duration) return false;
+            _time += GetFrameTime();
+            if (_time >= Duration) break;
+            
+            EndDrawing();
+        }
         
-        return true;
+        CloseWindow();
     }
-
-    protected override void Quit() {}
 }

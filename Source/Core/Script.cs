@@ -47,12 +47,8 @@ internal class Script(Obj obj) : ObjType(obj) {
         Make(generateDefinitions: true);
     }
 
-    private static MoonSharp.Interpreter.Script Make(Core? core = null, Obj? obj = null, bool generateDefinitions = false) {
+    private static MoonSharp.Interpreter.Script Make(Obj? obj = null, bool generateDefinitions = false) {
 
-        var dummyObj = new Obj();
-        var dummyCam = new Camera { Cam = null! };
-        var dummyLvl = new Level();
-        
         var script = new MoonSharp.Interpreter.Script {
 
             Options = {
@@ -62,9 +58,9 @@ internal class Script(Obj obj) : ObjType(obj) {
             
             Globals = {
                 
-                ["obj"] = obj ?? dummyObj,
-                ["level"] = core?.ActiveLevel ?? dummyLvl,
-                ["cam"] = core?.ActiveLevel?.FindType<Camera>() ?? dummyCam,
+                ["obj"] = generateDefinitions ? new Obj() : obj,
+                ["level"] = generateDefinitions ? new Level() : Core.ActiveLevel,
+                ["cam"] = generateDefinitions ? new Camera { Cam = null! } : Core.ActiveLevel?.FindType<Camera>(),
                 ["f2"] = LuaF2,
                 ["f3"] = LuaF3,
                 ["mt"] = LuaMt,
@@ -83,12 +79,13 @@ internal class Script(Obj obj) : ObjType(obj) {
         return script;
     }
     
-    public override bool Load(Core core, bool isEditor) {
+    public override bool Load() {
 
-        if (isEditor) return false;
+        if (CommandLine.Editor) return true;
+        
         if (!PathUtil.BestPath($"Scripts/{Path}.lua", out var scriptPath)) return false;
 
-        LuaScript = Make(core, Obj);
+        LuaScript = Make(Obj);
 
         var code = File.ReadAllText(scriptPath);
         
@@ -98,9 +95,9 @@ internal class Script(Obj obj) : ObjType(obj) {
         return true;
     }
 
-    public override void Loop3D(Core core, bool isEditor) {
+    public override void Loop3D() {
         
-        if (isEditor || !IsLoaded) return;
+        if (CommandLine.Editor || !IsLoaded) return;
         if (LuaLoop == null || LuaLoop.IsNil()) return;
         
         LuaScript.Call(LuaLoop, Raylib.GetFrameTime());

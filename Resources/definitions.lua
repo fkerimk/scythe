@@ -32,7 +32,7 @@ quat = nil
 
 ---@class Obj
 ---@field icon string
----@field color Color
+---@field scytheColor ScytheColor
 ---@field name string
 ---@field type ObjType
 ---@field right Vector3
@@ -50,10 +50,6 @@ function Obj:delete() end
 ---@return void
 function Obj:recordedDelete() end
 
----@param obj Obj
----@return void
-function Obj:setParent(obj) end
-
 ---@param pos Vector3
 ---@param rot Quaternion
 ---@param scale Vector3
@@ -70,7 +66,6 @@ function Obj:findParentType(name) end
 ---@class Level
 ---@field name string
 ---@field root Obj
----@field core Core
 local Level = {}
 ---@return void
 function Level:save() end
@@ -100,7 +95,7 @@ function Level:findType() end
 
 ---@class Camera : ObjType
 ---@field labelIcon string
----@field labelColor Color
+---@field labelScytheColor ScytheColor
 ---@field name string
 ---@field priority number
 ---@field isSelected boolean
@@ -108,33 +103,8 @@ function Level:findType() end
 ---@field obj Obj
 ---@field isLoaded boolean
 local Camera = {}
----@param core Core
----@param isEditor boolean
----@return boolean
-function Camera:load(core, isEditor) end
-
----@param core Core
----@param isEditor boolean
 ---@return void
-function Camera:loop3D(core, isEditor) end
-
----@param core Core
----@param isEditor boolean
----@return void
-function Camera:loopUi(core, isEditor) end
-
----@param core Core
----@param viewport Viewport
----@return void
-function Camera:loop3DEditor(core, viewport) end
-
----@param core Core
----@param viewport Viewport
----@return void
-function Camera:loopUiEditor(core, viewport) end
-
----@return void
-function Camera:quit() end
+function Camera:loop3D() end
 
 ---@class LuaF2
 ---@field new Func
@@ -249,45 +219,37 @@ function LuaQuat.lerp(a, b, t) end
 ---@return Quaternion
 function LuaQuat.fromDir(dir) end
 
----@class Color
+---@class ScytheColor
 ---@field r number
 ---@field g number
 ---@field b number
 ---@field a number
-local Color = {}
+local ScytheColor = {}
 ---@class ObjType
 ---@field name string
 ---@field priority number
 ---@field labelIcon string
----@field labelColor Color
+---@field labelScytheColor ScytheColor
 ---@field isSelected boolean
 ---@field obj Obj
 ---@field isLoaded boolean
 local ObjType = {}
----@param core Core
----@param isEditor boolean
 ---@return boolean
-function ObjType:load(core, isEditor) end
+function ObjType:load() end
 
----@param core Core
----@param isEditor boolean
 ---@return void
-function ObjType:loop3D(core, isEditor) end
+function ObjType:loop3D() end
 
----@param core Core
----@param isEditor boolean
 ---@return void
-function ObjType:loopUi(core, isEditor) end
+function ObjType:loopUi() end
 
----@param core Core
 ---@param viewport Viewport
 ---@return void
-function ObjType:loop3DEditor(core, viewport) end
+function ObjType:loop3DEditor(viewport) end
 
----@param core Core
 ---@param viewport Viewport
 ---@return void
-function ObjType:loopUiEditor(core, viewport) end
+function ObjType:loopUiEditor(viewport) end
 
 ---@return void
 function ObjType:quit() end
@@ -1208,34 +1170,6 @@ function Quaternion:lengthSquared() end
 ---@return string
 function Quaternion:toString() end
 
----@class Core
----@field activeLevel Level
----@field activeCamera Camera3D
----@field lights Dictionary
-local Core = {}
----@param isEditor boolean
----@return void
-function Core:load(isEditor) end
-
----@param isEditor boolean
----@return void
-function Core:loop3D(isEditor) end
-
----@param isEditor boolean
----@return void
-function Core:loopUi(isEditor) end
-
----@param viewport Viewport
----@return void
-function Core:loop3DEditor(viewport) end
-
----@param viewport Viewport
----@return void
-function Core:loopUiEditor(viewport) end
-
----@return void
-function Core:quit() end
-
 ---@class Camera3D
 ---@field projection CameraProjection
 ---@field fovY number
@@ -1244,16 +1178,6 @@ function Core:quit() end
 ---@field up Vector3
 ---@field raylib Camera3D
 local Camera3D = {}
----@class Viewport
----@field customStyle Nullable
----@field windowPos Vector2
----@field contentRegion Vector2
----@field relativeMouse Vector2
----@field isHovered boolean
-local Viewport = {}
----@return void
-function Viewport:draw() end
-
 ---@class Vector2
 ---@field allBitsSet Vector2
 ---@field e Vector2
@@ -1741,6 +1665,16 @@ function Vector2:lengthSquared() end
 
 ---@return string
 function Vector2:toString() end
+
+---@class Viewport
+---@field customStyle Nullable
+---@field windowPos Vector2
+---@field contentRegion Vector2
+---@field relativeMouse Vector2
+---@field isHovered boolean
+local Viewport = {}
+---@return void
+function Viewport:draw() end
 
 ---@class Vector4
 ---@field allBitsSet Vector4

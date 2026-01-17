@@ -9,7 +9,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
     public override int Priority => 0;
 
     public override string LabelIcon => Icons.Transform;
-    public override Color LabelColor => Colors.GuiTypeTransform;
+    public override ScytheColor LabelScytheColor => Colors.GuiTypeTransform;
     
     [RecordHistory] [JsonProperty] [Label("Pos")] public Vector3 Pos { get => _pos; set { _pos = value; UpdateTransform(); } }
     
@@ -46,8 +46,6 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
     private bool _canUseShortcuts;
 
-    public override bool Load(Core core, bool isEditor) => true;
-
     private void UpdateTransform() {
 
         if (Obj.Parent == null) return;
@@ -76,18 +74,14 @@ internal class Transform(Obj obj) : ObjType(obj) {
         }
     }
 
-    public override void Loop3D(Core core, bool isEditor) {
+    public override void Loop3D() {
 
         UpdateTransform();
     }
 
-    public override void LoopUi(Core core, bool isEditor) {}
-
-    public override void Loop3DEditor(Core core, Viewport viewport) {
+    public override void Loop3DEditor(Viewport viewport) {
         
-        if (core.ActiveCamera == null||
-            viewport is not Level3D level3d
-        ) return;
+        if (Core.ActiveCamera == null|| viewport is not Level3D level3d) return;
 
         if (Obj.Parent == null || (!Obj.Parent.IsSelected && !Obj.IsSelected && !Obj.Parent.Children.Any(o => o.IsSelected))) return;
         
@@ -100,17 +94,17 @@ internal class Transform(Obj obj) : ObjType(obj) {
         
         Shaders.Begin(Shaders.Transform);
 
-        var ray = Raylib.GetScreenToWorldRay(level3d.RelativeMouse3D, core.ActiveCamera.Raylib);
+        var ray = Raylib.GetScreenToWorldRay(level3d.RelativeMouse3D, Core.ActiveCamera.Raylib);
         //Raylib.DrawSphere(ray.Position + ray.Direction * 15, 0.1f, Color.Magenta);
         
-        Axis(core, "x", Vector3.UnitX, Obj.Parent.Right, new Color(0.9f, 0.3f, 0.3f), ray);
-        Axis(core, "y", Vector3.UnitY, Obj.Parent.Up, new Color(0.3f, 0.9f, 0.3f), ray);
-        Axis(core, "z", Vector3.UnitZ, Obj.Parent.Fwd, new Color(0.3f, 0.3f, 0.9f), ray);
+        Axis("x", Vector3.UnitX, Obj.Parent.Right, new ScytheColor(0.9f, 0.3f, 0.3f), ray);
+        Axis("y", Vector3.UnitY, Obj.Parent.Up, new ScytheColor(0.3f, 0.9f, 0.3f), ray);
+        Axis("z", Vector3.UnitZ, Obj.Parent.Fwd, new ScytheColor(0.3f, 0.3f, 0.9f), ray);
         
         Shaders.End();
     }
 
-    public override void LoopUiEditor(Core core, Viewport viewport) {
+    public override void LoopUiEditor(Viewport viewport) {
 
         _canUseShortcuts = false;
         
@@ -135,9 +129,9 @@ internal class Transform(Obj obj) : ObjType(obj) {
         Raylib.DrawText(textB, (int)textPosB.X - 15, (int)textPosB.Y - 40, 20, Colors.Yellow.ToRaylib());
     }
 
-    private void Axis(Core core, string id, Vector3 axis, Vector3 normal, Color axisColor, Ray ray) {
+    private void Axis(string id, Vector3 axis, Vector3 normal, ScytheColor axisScytheColor, Ray ray) {
 
-        if (core.ActiveCamera == null) return;
+        if (Core.ActiveCamera == null) return;
         
         var isActive = _activeId == id;
         
@@ -146,7 +140,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
         if (!string.IsNullOrEmpty(_activeId) && _activeId != id) {
             
-            Raylib.DrawLine3D(a, b, axisColor.ToRaylib());
+            Raylib.DrawLine3D(a, b, axisScytheColor.ToRaylib());
             return;
         }
 
@@ -285,7 +279,7 @@ internal class Transform(Obj obj) : ObjType(obj) {
             History.StopRecording();
         }
 
-        var targetColor = (!isActive && isHovered && !Raylib.IsCursorHidden()) ? Colors.White : axisColor;
+        var targetColor = (!isActive && isHovered && !Raylib.IsCursorHidden()) ? Colors.White : axisScytheColor;
         
         if (_mode == 1) { // Draw rotation circle
             

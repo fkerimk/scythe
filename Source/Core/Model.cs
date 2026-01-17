@@ -8,24 +8,24 @@ internal class Model(Obj obj) : ObjType(obj) {
     public override int Priority => 2;
     
     public override string LabelIcon => Icons.Model;
-    public override Color LabelColor => Colors.GuiTypeModel;
+    public override ScytheColor LabelScytheColor => Colors.GuiTypeModel;
     
     [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
-    [RecordHistory] [JsonProperty] [Label("Color")] public Color Color { get; set; } = Colors.White;
+    [RecordHistory] [JsonProperty] [Label("Color")] public ScytheColor ScytheColor { get; set; } = Colors.White;
 
     public Raylib_cs.Model RlModel;
 
-    public override unsafe bool Load(Core core, bool isEditor) {
+    public override unsafe bool Load() {
         
         if (!PathUtil.BestPath($"Models/{Path}.iqm", out var modelPath)) return false;
         
         RlModel = Raylib.LoadModel(modelPath);
                 
-        if (isEditor ? Config.Editor.GenTangents : Config.Runtime.GenTangents)
+        if (CommandLine.Editor ? Config.Editor.GenTangents : Config.Runtime.GenTangents)
             for (var m = 0; m < RlModel.MeshCount; m++)
                 Raylib.GenMeshTangents(ref RlModel.Meshes[m]);
 
-        if (isEditor ? Config.Editor.NoShade : Config.Runtime.NoShade) return true;
+        if (CommandLine.Editor ? Config.Editor.NoShade : Config.Runtime.NoShade) return true;
         
         for (var i = 0; i < RlModel.MaterialCount; i++) {
                     
@@ -54,7 +54,7 @@ internal class Model(Obj obj) : ObjType(obj) {
         return true;
     }
 
-    public override unsafe void Loop3D(Core core, bool isEditor) {
+    public override unsafe void Loop3D() {
 
         RlModel.Transform = Obj.Parent!.Matrix;
         
@@ -67,12 +67,8 @@ internal class Model(Obj obj) : ObjType(obj) {
         }
 
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrTiling, new Vector2(0.5f, 0.5f), ShaderUniformDataType.Vec2);
-        Raylib.DrawModel(RlModel, Vector3.Zero, 1, Color.ToRaylib());
+        Raylib.DrawModel(RlModel, Vector3.Zero, 1, ScytheColor.ToRaylib());
     }
-
-    public override void LoopUi(Core core, bool isEditor) {}
-    public override void Loop3DEditor(Core core, Viewport viewport) { }
-    public override void LoopUiEditor(Core core, Viewport viewport) { }
 
     public override void Quit() {
         

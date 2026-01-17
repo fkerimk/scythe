@@ -7,37 +7,35 @@ using Raylib_cs;
 internal unsafe class Light(Obj obj) : ObjType(obj) {
     
     public override string LabelIcon => Icons.Light;
-    public override Color LabelColor => Colors.GuiTypeLight;
+    public override ScytheColor LabelScytheColor => Colors.GuiTypeLight;
 
     [RecordHistory] [JsonProperty] [Label("Enabled")] public bool Enabled { get; set; } = true;
     [RecordHistory] [JsonProperty] [Label("Type")] [DefaultValue(1)] public int Type { get; set => field = (int)Raymath.Clamp(value, 0, 2); }
-    [RecordHistory] [JsonProperty] [Label("Color")] public Color Color { get; set; } = Colors.White;
+    [RecordHistory] [JsonProperty] [Label("Color")] public ScytheColor ScytheColor { get; set; } = Colors.White;
     [RecordHistory] [JsonProperty] [Label("Intensity")] [DefaultValue(2)] public float Intensity { get; set; }
     [RecordHistory] [JsonProperty] [Label("Range")] [DefaultValue(10)] public float Range { get; set; }
     
     private Vector3 _pos = Vector3.Zero;
     private Vector3 _target = Vector3.Zero;
 
-    public void Update(Core core) {
+    public void Update() {
         
-        var enabledLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{core.Lights.Count}].enabled");
-        var typeLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{core.Lights.Count}].type");
-        var posLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{core.Lights.Count}].position");
-        var targetLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{core.Lights.Count}].target");
-        var colorLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{core.Lights.Count}].color");
-        var intensityLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{core.Lights.Count}].intensity");
+        var enabledLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].enabled");
+        var typeLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].type");
+        var posLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].position");
+        var targetLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].target");
+        var colorLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].color");
+        var intensityLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].intensity");
         
         Raylib.SetShaderValue(Shaders.Pbr, enabledLoc, Enabled ? 1 : 0, ShaderUniformDataType.Int);
         Raylib.SetShaderValue(Shaders.Pbr, typeLoc, Type, ShaderUniformDataType.Int);
         Raylib.SetShaderValue(Shaders.Pbr, posLoc, _pos, ShaderUniformDataType.Vec3);
         Raylib.SetShaderValue(Shaders.Pbr, targetLoc, _target, ShaderUniformDataType.Vec3);
-        Raylib.SetShaderValue(Shaders.Pbr, colorLoc, Color.to_vector4(), ShaderUniformDataType.Vec4);
+        Raylib.SetShaderValue(Shaders.Pbr, colorLoc, ScytheColor.to_vector4(), ShaderUniformDataType.Vec4);
         Raylib.SetShaderValue(Shaders.Pbr, intensityLoc, Intensity, ShaderUniformDataType.Float);
     }
 
-    public override bool Load(Core core, bool isEditor) => true;
-
-    public override void Loop3D(Core core, bool isEditor) {
+    public override void Loop3D() {
 
         if (Obj.Parent == null) return; 
         
@@ -50,13 +48,13 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
         _pos = position;
         _target = _pos + Obj.Parent.Fwd * (Type == 0 ? 1 : Range);
         
-        Update(core);
+        Update();
         
-        core.Lights[GetHashCode()] = this;
+        Core.Lights[GetHashCode()] = this;
 
         if (IsSelected) {
 
-            var gizmoColor = Raylib.ColorAlpha(Color.ToRaylib(), 0.3f);
+            var gizmoColor = Raylib.ColorAlpha(ScytheColor.ToRaylib(), 0.3f);
             
             switch (Type) {
                 
@@ -99,15 +97,8 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
             }
         }
         
-        if ((!Config.Runtime.DrawLights || isEditor) && (!Config.Editor.DrawLights || !isEditor)) return;
+        if ((!Config.Runtime.DrawLights || CommandLine.Editor) && (!Config.Editor.DrawLights || !CommandLine.Editor)) return;
 
-        Raylib.DrawSphereWires(_pos, 0.1f, 8, 8, Enabled ? Raylib.ColorAlpha(Color.ToRaylib(), 0.8f) : Raylib.ColorAlpha(Color.ToRaylib(), 0.2f));
+        Raylib.DrawSphereWires(_pos, 0.1f, 8, 8, Enabled ? Raylib.ColorAlpha(ScytheColor.ToRaylib(), 0.8f) : Raylib.ColorAlpha(ScytheColor.ToRaylib(), 0.2f));
     }
-    
-    public override void LoopUi(Core core, bool isEditor) {}
-    
-    public override void Loop3DEditor(Core core, Viewport viewport) { }
-    public override void LoopUiEditor(Core core, Viewport viewport) { }
-
-    public override void Quit() { }
 }

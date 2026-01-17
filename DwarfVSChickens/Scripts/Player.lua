@@ -12,6 +12,12 @@ local camRot = f2.zero
 local camDistance = 5;
 local smoothCamDistance = 5;
 
+--newObj = level:cloneObject(obj)
+--newObj.setParent(level.root)
+--newObj:findParentType("Script").path = ""
+--newObjTr = newObj.findParentType("Transform")
+--newObjTr.pos = f3.new(0, 3, 0)
+
 mouse.setVisible(false)
 
 function loop(dt)

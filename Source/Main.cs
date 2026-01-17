@@ -20,5 +20,8 @@ CommandLine.Init();
 
 Script.Register();
 
-if (!CommandLine.NoSplash) new Splash(1).Show();
-(CommandLine.Editor ? (RaylibSession) new Editor() : new Runtime()).Show();
+if (!CommandLine.NoSplash) Splash.Show();
+
+if (CommandLine.Editor) 
+      Editor.Show();
+else Runtime.Show();

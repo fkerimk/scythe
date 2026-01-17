@@ -8,13 +8,13 @@ internal class ObjType(Obj obj) {
 
     public virtual int Priority => 100;
     public virtual string LabelIcon => Icons.Obj;
-    public virtual Color LabelColor => Colors.GuiTypeObject;
+    public virtual ScytheColor LabelScytheColor => Colors.GuiTypeObject;
 
-    public virtual bool Load(Core core, bool isEditor) => true;
-    public virtual void Loop3D(Core core, bool isEditor) {}
-    public virtual void LoopUi(Core core, bool isEditor) {}
-    public virtual void Loop3DEditor(Core core, Viewport viewport) {}
-    public virtual void LoopUiEditor(Core core, Viewport viewport) {}
+    public virtual bool Load() => true;
+    public virtual void Loop3D() {}
+    public virtual void LoopUi() {}
+    public virtual void Loop3DEditor(Viewport viewport) {}
+    public virtual void LoopUiEditor(Viewport viewport) {}
     public virtual void Quit() {}
 
     public bool IsLoaded;

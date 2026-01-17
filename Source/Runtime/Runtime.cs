@@ -1,47 +1,34 @@
 ﻿using Raylib_cs;
+using static Raylib_cs.Raylib;
 
-internal class Runtime() : RaylibSession(1, 1, [ ConfigFlags.Msaa4xHint, ConfigFlags.AlwaysRunWindow, ConfigFlags.ResizableWindow ], false) {
-    
-    private static Core? _core;
-    
-    protected override bool Init() {
+internal static class Runtime {
 
-        PrepareWindow(1, fullscreen: true);
+    public static void Show() {
         
-        _core = new Core(false);
-        _core.ActiveLevel = new Level("Main", _core);
+        Window.Show(fullscreen: true, flags: [ ConfigFlags.Msaa4xHint, ConfigFlags.ResizableWindow ]);
         
-        Fonts.Init(false);
+        // Setup core
+        Core.Init();
 
-        return true;
+        while (!WindowShouldClose()) {
+            
+            if (Core.ActiveCamera == null) break;
+            
+            Window.UpdateFps();
+            
+            Core.Load();
+            
+            BeginDrawing();
+            ClearBackground(Colors.Game.ToRaylib());
+            BeginMode3D(Core.ActiveCamera.Raylib);
+            Core.Loop3D();
+            EndMode3D();
+            Core.LoopUi();
+            if (Config.Runtime.DrawFps) DrawText($"{GetFPS()}", 10, 10, 20, Colors.Primary.ToRaylib());
+            EndDrawing();
+        }
+        
+        CloseWindow();
+        Core.Quit();
     }
-
-    protected override bool Loop() {
-        
-        if (_core == null) return true;
-        
-        _core.Load(false);
-
-        _core.ActiveCamera ??= _core.ActiveLevel?.FindType<Camera>()?.Cam;
-
-        TargetFps = Config.Runtime.FpsLock;
-        
-        Raylib.BeginDrawing();
-            
-        Clear(Colors.Game);
-            
-        _core.ActiveCamera?.StartRendering();
-            
-        _core.Loop3D(false);
-            
-        _core.ActiveCamera?.StopRendering();
-            
-        _core.LoopUi(false);
-
-        if (Config.Runtime.DrawFps) Raylib.DrawText($"{Raylib.GetFPS()}", 10, 10, 20, Colors.Primary.ToRaylib());
-
-        return !Raylib.WindowShouldClose();
-    }
-
-    protected override void Quit() => _core?.Quit();
 }

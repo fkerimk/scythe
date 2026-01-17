@@ -2,41 +2,45 @@
 using System.Reflection;
 using ImGuiNET;
 
-internal class LevelBrowser(Editor editor) : Viewport("Level") {
+internal class LevelBrowser() : Viewport("Level") {
 
     // cache
-    public Obj? DragObject;
-    public Obj? DragTarget;
-    public Obj? DeleteObject;
-    public Obj? SelectedObject;
-    public float? SavedScroll;
+    private float? _savedScroll;
 
+    private Obj?
+        _dragObject,
+        _dragTarget;
+    
+    public Obj? DeleteObject;
+
+    public Obj? SelectedObject { get; private set; }
+    
     protected override void OnDraw() {
 
-        if (editor.Core?.ActiveLevel == null) return;
+        if (Core.ActiveLevel == null) return;
         
         ImGui.BeginChild("scroll", new Vector2(0, 0));
         
         // restore scroll 
-        if (SavedScroll != null) {
+        if (_savedScroll != null) {
             
-            ImGui.SetScrollY(SavedScroll.Value);
-            SavedScroll = null;
+            ImGui.SetScrollY(_savedScroll.Value);
+            _savedScroll = null;
         }
 
         // drag object
-        if (DragObject != null && DragTarget != null) {
+        if (_dragObject != null && _dragTarget != null) {
 
-            DragObject.SetParent(DragTarget);
+            _dragObject.SetParent(_dragTarget);
             
-            DragObject = null;
-            DragTarget = null;
+            _dragObject = null;
+            _dragTarget = null;
         }
 
         // Delete object
         if (DeleteObject != null) {
 
-            if (DeleteObject != editor.Core.ActiveLevel.Root) {
+            if (DeleteObject != Core.ActiveLevel.Root) {
                 
                 DeleteObject.RecordedDelete();
             }
@@ -45,7 +49,7 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
         }
         
         // draw objects
-        DrawObject(editor.Core.ActiveLevel.Root);
+        DrawObject(Core.ActiveLevel.Root);
         
         ImGui.EndChild();
     }
@@ -65,7 +69,7 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
 
     private bool DrawObject(Obj obj, int indent = 0) {
 
-        if (editor.Core?.ActiveLevel == null) return true;
+        if (Core.ActiveLevel == null) return true;
 
         if (SelectedObject != null && IsAncestorOf(obj, SelectedObject)) {
             
@@ -112,7 +116,7 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
                 
                 var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(ObjType)) && !t.IsAbstract);
 
-                if (ImGui.MenuItem("Object")) editor.Core.ActiveLevel.RecordedBuildObject("Object", obj, null);
+                if (ImGui.MenuItem("Object")) Core.ActiveLevel.RecordedBuildObject("Object", obj, null);
 
                 ImGui.Separator();
                 
@@ -120,27 +124,27 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
                     
                     if (ImGui.MenuItem("Directional Light")) {
                             
-                        var lightParent = editor.Core.ActiveLevel.RecordedBuildObject("Directional Light", obj, null);
-                        var light = editor.Core.ActiveLevel.BuildObject("Light", lightParent, "Light").Type as Light;
-                        editor.Core.ActiveLevel.BuildObject("Transform", lightParent, "Transform");
+                        var lightParent = Core.ActiveLevel.RecordedBuildObject("Directional Light", obj, null);
+                        var light = Core.ActiveLevel.BuildObject("Light", lightParent, "Light").Type as Light;
+                        Core.ActiveLevel.BuildObject("Transform", lightParent, "Transform");
                         light?.Type = 0;
                         SelectObject(lightParent);
                     }
                 
                     if (ImGui.MenuItem("Point Light")) {
                             
-                        var lightParent = editor.Core.ActiveLevel.RecordedBuildObject("Point Light", obj, null);
-                        var light = editor.Core.ActiveLevel.BuildObject("Light", lightParent, "Light").Type as Light;
-                        editor.Core.ActiveLevel.BuildObject("Transform", lightParent, "Transform");
+                        var lightParent = Core.ActiveLevel.RecordedBuildObject("Point Light", obj, null);
+                        var light = Core.ActiveLevel.BuildObject("Light", lightParent, "Light").Type as Light;
+                        Core.ActiveLevel.BuildObject("Transform", lightParent, "Transform");
                         light?.Type = 1;
                         SelectObject(lightParent);
                     }
                 
                     if (ImGui.MenuItem("Spot Light")) {
                             
-                        var lightParent = editor.Core.ActiveLevel.RecordedBuildObject("Spot Light", obj, null);
-                        var light = editor.Core.ActiveLevel.BuildObject("Light", lightParent, "Light").Type as Light;
-                        editor.Core.ActiveLevel.BuildObject("Transform", lightParent, "Transform");
+                        var lightParent = Core.ActiveLevel.RecordedBuildObject("Spot Light", obj, null);
+                        var light = Core.ActiveLevel.BuildObject("Light", lightParent, "Light").Type as Light;
+                        Core.ActiveLevel.BuildObject("Transform", lightParent, "Transform");
                         light?.Type = 2;
                         SelectObject(lightParent);
                     }
@@ -162,9 +166,9 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
                         
                         if (!ImGui.MenuItem(path)) continue;
                         
-                        var parentObj = editor.Core.ActiveLevel.RecordedBuildObject(name, obj, null);
-                        var model = editor.Core.ActiveLevel.BuildObject("Model", parentObj, "Model").Type as Model;
-                        editor.Core.ActiveLevel.BuildObject("Transform", parentObj, "Transform");
+                        var parentObj = Core.ActiveLevel.RecordedBuildObject(name, obj, null);
+                        var model = Core.ActiveLevel.BuildObject("Model", parentObj, "Model").Type as Model;
+                        Core.ActiveLevel.BuildObject("Transform", parentObj, "Transform");
                         model?.Path = path;
                         SelectObject(parentObj);
                     }
@@ -186,9 +190,9 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
                         
                         if (!ImGui.MenuItem(path)) continue;
                         
-                        var parentObj = editor.Core.ActiveLevel.RecordedBuildObject(name, obj, null);
-                        var script = editor.Core.ActiveLevel.BuildObject("Script", parentObj, "Script").Type as Script;
-                        editor.Core.ActiveLevel.BuildObject("Transform", parentObj, "Transform");
+                        var parentObj = Core.ActiveLevel.RecordedBuildObject(name, obj, null);
+                        var script = Core.ActiveLevel.BuildObject("Script", parentObj, "Script").Type as Script;
+                        Core.ActiveLevel.BuildObject("Transform", parentObj, "Transform");
                         script?.Path = path;
                         SelectObject(parentObj);
                     }
@@ -204,15 +208,10 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
                         
                         if (!ImGui.MenuItem(type.Name)) continue;
                         
-                        var builtObject = editor.Core.ActiveLevel.RecordedBuildObject(type.Name, obj, type.Name);
+                        var builtObject = Core.ActiveLevel.RecordedBuildObject(type.Name, obj, type.Name);
 
-                        if (builtObject.Type is Animation animation) {
-
-                            if (builtObject.Parent?.Type is Model model) {
-
-                                animation.Path = model.Path;
-                            }
-                        }
+                        if (builtObject is { Type: Animation animation, Parent.Type: Model model })
+                            animation.Path = model.Path;
                         
                         SelectObject(builtObject);
                     }
@@ -231,10 +230,10 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
         // start drag
         if (ImGui.BeginDragDropSource()) {
             
-            DragObject = obj;
+            _dragObject = obj;
             
             ImGui.SetDragDropPayload("object", IntPtr.Zero, 0);
-            ImGui.Text($"Moving {DragObject.Name}");
+            ImGui.Text($"Moving {_dragObject.Name}");
             ImGui.EndDragDropSource();
         }
 
@@ -243,10 +242,10 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
             
             ImGui.AcceptDragDropPayload("object");
             
-            if (DragObject != null && ImGui.IsMouseReleased(ImGuiMouseButton.Left)) {
+            if (_dragObject != null && ImGui.IsMouseReleased(ImGuiMouseButton.Left)) {
                 
-                DragTarget = obj;
-                SavedScroll = ImGui.GetScrollY();
+                _dragTarget = obj;
+                _savedScroll = ImGui.GetScrollY();
             }
             
             ImGui.EndDragDropTarget();
@@ -256,7 +255,7 @@ internal class LevelBrowser(Editor editor) : Viewport("Level") {
         ImGui.SameLine();
         ImGui.PushFont(Fonts.ImFontAwesomeSmall);
         ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 15, ImGui.GetCursorPosY() + 2.5f));
-        ImGui.TextColored(obj.Color.to_vector4(), obj.Icon);
+        ImGui.TextColored(obj.ScytheColor.to_vector4(), obj.Icon);
         ImGui.PopFont();
 
         // object name

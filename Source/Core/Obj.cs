@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using MoonSharp.Interpreter;
 using Newtonsoft.Json;
 using Raylib_cs;
 
@@ -8,7 +9,7 @@ internal class Obj {
     public Obj() { Name = ""; }
     
     public string Icon => Type?.LabelIcon ?? Icons.Obj;
-    public Color Color => Type?.LabelColor ?? Colors.GuiTypeObject;
+    public ScytheColor ScytheColor => Type?.LabelScytheColor ?? Colors.GuiTypeObject;
     
     [RecordHistory] [JsonProperty] [Label("Name")] public string Name { get; set; }
 
@@ -58,6 +59,7 @@ internal class Obj {
         History.StopRecording();
     }
     
+    [MoonSharpHidden]
     public void SetParent(Obj? obj) {
         
         if (obj == null) return;
@@ -75,7 +77,9 @@ internal class Obj {
 
     private void OrderChildren() {
     
-        Children.Sort((a, b) => NaturalCompare(a.Name, b.Name));
+        if (CommandLine.Editor)
+             Children.Sort((a, b) => NaturalCompare(a.Name, b.Name));
+        else Children.Sort(ObjType.Comparer.Instance);
     }
     
     private static int NaturalCompare(string a, string b) {

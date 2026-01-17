@@ -81,9 +81,9 @@ internal static class Style {
         _pushes++;
     }
     
-    private static void Set(ImGuiCol id, Color color) {
+    private static void Set(ImGuiCol id, ScytheColor scytheColor) {
         
-        ImGui.PushStyleColor(id, color.to_vector4());
+        ImGui.PushStyleColor(id, scytheColor.to_vector4());
         PushedColors[_pushes]++;
     }
     
