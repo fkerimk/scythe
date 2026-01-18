@@ -281,10 +281,13 @@ internal unsafe class Transform(Obj obj) : ObjType(obj) {
                                 newRot = _activeRot * localDeltaInParentSpace;
                             }
 
-                            else newRot = _activeRot * deltaRot ;
+                            else newRot = _activeRot * deltaRot;
                         }
 
                         else newRot = deltaRot * _activeRot;
+
+                        // Preserve hemisphere to prevent sudden Euler flips
+                        if (Quaternion.Dot(newRot, _activeRot) < 0) newRot = Quaternion.Negate(newRot);
                     }
                     
                     break;
