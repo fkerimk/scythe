@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 internal class Script(Obj obj) : ObjType(obj) {
     
-    public override int Priority => 3;
+    public override int Priority => 40;
     [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
 
     public required MoonSharp.Interpreter.Script LuaScript;

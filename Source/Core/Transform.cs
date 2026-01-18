@@ -3,9 +3,9 @@ using Newtonsoft.Json;
 using Raylib_cs;
 using static Raylib_cs.Raylib;
 
-internal unsafe class Transform(Obj obj) : ObjType(obj) {
+internal class Transform(Obj obj) : ObjType(obj) {
     
-    public override int Priority => 0;
+    public override int Priority => 10;
 
     public override string LabelIcon => Icons.Transform;
     public override ScytheColor LabelScytheColor => Colors.GuiTypeTransform;
@@ -110,36 +110,44 @@ internal unsafe class Transform(Obj obj) : ObjType(obj) {
 
     private bool _canUseShortcuts;
 
-    private void UpdateTransform() {
-
+    public void UpdateTransform() {
+        
         if (Obj.Parent == null) return;
 
         var rotMatrix = Matrix4x4.Transpose(Matrix4x4.CreateFromQuaternion(Rot));
         
         var matrix = Raymath.MatrixMultiply(
-
+            
             Raymath.MatrixMultiply(
-    
+                
                 Raymath.MatrixScale(Scale.X, Scale.Y, Scale.Z),
                 rotMatrix
             ),
-
+            
             Raymath.MatrixTranslate(Pos.X, Pos.Y, Pos.Z)
         );
-        
+    
         Obj.Parent.RotMatrix = rotMatrix;
         Obj.Parent.Matrix = matrix;
 
-        if (Obj.Parent.Parent != null) {
+        RefreshWorldMatrices(Obj.Parent);
+    }
 
-            Obj.Parent.WorldMatrix = Obj.Parent.Parent.WorldMatrix * Obj.Parent.Matrix;
-            Obj.Parent.WorldRotMatrix = Obj.Parent.Parent.WorldRotMatrix * Obj.Parent.RotMatrix;
+    private static void RefreshWorldMatrices(Obj entity) {
+        
+        if (entity.Parent != null) {
+            
+            entity.WorldMatrix = entity.Parent.WorldMatrix * entity.Matrix;
+            entity.WorldRotMatrix = entity.Parent.WorldRotMatrix * entity.RotMatrix;
             
         } else {
-
-            Obj.Parent.WorldMatrix = Obj.Parent.Matrix;
-            Obj.Parent.WorldRotMatrix = Obj.Parent.RotMatrix;
+            
+            entity.WorldMatrix = entity.Matrix;
+            entity.WorldRotMatrix = entity.RotMatrix;
         }
+
+        foreach (var child in entity.Children)
+            RefreshWorldMatrices(child);
     }
 
     public override void Loop3D() {
@@ -422,19 +430,19 @@ internal unsafe class Transform(Obj obj) : ObjType(obj) {
         var c = Vector3.Dot(ray.Direction, ray.Direction);
         var d = Vector3.Dot(lineDir, w0);
         var e = Vector3.Dot(ray.Direction, w0);
-        var denom = a * c - b * b;
-        if (MathF.Abs(denom) < 1e-6f) return lineStart;
-        var s = (b * e - c * d) / denom;
+        var denominator = a * c - b * b;
+        if (MathF.Abs(denominator) < 1e-6f) return lineStart;
+        var s = (b * e - c * d) / denominator;
         return lineStart + lineDir * s;
     }
 
     private static bool IntersectRayPlane(Ray ray, Vector3 planePos, Vector3 planeNormal, out Vector3 intersection) {
         
-        var denom = Vector3.Dot(planeNormal, ray.Direction);
+        var denominator = Vector3.Dot(planeNormal, ray.Direction);
         
-        if (MathF.Abs(denom) > 1e-6f) {
+        if (MathF.Abs(denominator) > 1e-6f) {
             
-            var t = Vector3.Dot(planePos - ray.Position, planeNormal) / denom;
+            var t = Vector3.Dot(planePos - ray.Position, planeNormal) / denominator;
             
             if (t >= 0) {
                 

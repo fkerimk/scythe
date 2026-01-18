@@ -1,4 +1,6 @@
 ﻿using Raylib_cs;
+using static Raylib_cs.Raylib;
+using static Raylib_cs.ShaderLocationIndex;
 
 #pragma warning disable CS8981
 internal static class Shaders {
@@ -15,12 +17,12 @@ internal static class Shaders {
 
     public static void Begin(Shader shader) {
         
-        Raylib.BeginShaderMode(shader);
+        BeginShaderMode(shader);
     }
     
     public static void End () {
         
-        Raylib.EndShaderMode();
+        EndShaderMode();
     }
     
     public static unsafe void Init() {
@@ -30,18 +32,18 @@ internal static class Shaders {
         
         // load pbr shader
         Pbr = Load("pbr");
-        Pbr.Locs[(int)ShaderLocationIndex.MapAlbedo] = Raylib.GetShaderLocation(Pbr, "albedo_map");
-        Pbr.Locs[(int)ShaderLocationIndex.MapMetalness] = Raylib.GetShaderLocation(Pbr, "mra_map");
-        Pbr.Locs[(int)ShaderLocationIndex.MapNormal] = Raylib.GetShaderLocation(Pbr, "normal_map");
-        Pbr.Locs[(int)ShaderLocationIndex.MapEmission] = Raylib.GetShaderLocation(Pbr, "emissive_map");
-        Pbr.Locs[(int)ShaderLocationIndex.ColorDiffuse] = Raylib.GetShaderLocation(Pbr, "albedo_color");
-        Pbr.Locs[(int)ShaderLocationIndex.VectorView] = Raylib.GetShaderLocation(Pbr, "view_pos");
-        PbrLightCount = Raylib.GetShaderLocation(Pbr, "light_count");
-        PbrMetallicValue = Raylib.GetShaderLocation(Pbr, "metallic_value");
-        PbrEmissiveIntensity = Raylib.GetShaderLocation(Pbr, "emissive_intensity");
-        PbrRoughnessValue = Raylib.GetShaderLocation(Pbr, "roughness_value");
-        PbrEmissiveColor = Raylib.GetShaderLocation(Pbr, "emissive_color");
-        PbrTiling = Raylib.GetShaderLocation(Pbr, "tiling");
+        Pbr.Locs[(int)MapAlbedo] = GetShaderLocation(Pbr, "albedo_map");
+        Pbr.Locs[(int)MapMetalness] = GetShaderLocation(Pbr, "mra_map");
+        Pbr.Locs[(int)MapNormal] = GetShaderLocation(Pbr, "normal_map");
+        Pbr.Locs[(int)MapEmission] = GetShaderLocation(Pbr, "emissive_map");
+        Pbr.Locs[(int)ColorDiffuse] = GetShaderLocation(Pbr, "albedo_color");
+        Pbr.Locs[(int)VectorView] = GetShaderLocation(Pbr, "view_pos");
+        PbrLightCount = GetShaderLocation(Pbr, "light_count");
+        PbrMetallicValue = GetShaderLocation(Pbr, "metallic_value");
+        PbrEmissiveIntensity = GetShaderLocation(Pbr, "emissive_intensity");
+        PbrRoughnessValue = GetShaderLocation(Pbr, "roughness_value");
+        PbrEmissiveColor = GetShaderLocation(Pbr, "emissive_color");
+        PbrTiling = GetShaderLocation(Pbr, "tiling");
     }
 
     private static Shader Load(string shader, bool vert = true, bool frag = true) {
@@ -52,11 +54,11 @@ internal static class Shaders {
             (frag && !PathUtil.BestPath(Path.Combine("Shaders", shader + ".fs"), out fsPath)))
             throw new FileNotFoundException("Shader not found", shader);
 
-        return Raylib.LoadShader(vsPath, fsPath);
+        return LoadShader(vsPath, fsPath);
     }
 
     public static void Quit() {
         
-        Raylib.UnloadShader(Transform);
+        UnloadShader(Transform);
     }
 }

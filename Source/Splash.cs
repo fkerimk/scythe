@@ -25,7 +25,7 @@ internal static class Splash {
             
             BeginDrawing();
                 
-            DrawTexturePro(_art, new Rectangle(0, 0, _art.Width, _art.Height), new Rectangle(0, 0, Window.Width, Window.Height), Vector2.Zero, 0, Raylib_cs.Color.White);
+            DrawTexturePro(_art, new Rectangle(0, 0, _art.Width, _art.Height), new Rectangle(0, 0, Window.Width, Window.Height), Vector2.Zero, 0, Color.White);
 
             _time += GetFrameTime();
             if (_time >= Duration) break;

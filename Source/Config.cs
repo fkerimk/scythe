@@ -2,7 +2,6 @@
 
 // ReSharper disable FieldCanBeMadeReadOnly.Global
 // ReSharper disable ConvertToConstant.Global
-#pragma warning disable CA2211
 
 internal static class Config {
     

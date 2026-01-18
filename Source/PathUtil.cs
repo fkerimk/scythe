@@ -4,8 +4,9 @@ internal abstract class PathUtil {
     private static string CurrentPath => Environment.CurrentDirectory;
     private static string ExePath => AppContext.BaseDirectory;
 
-    public static string CurrentRelative(string path) => Process(Path.Join(CurrentPath, path));
-    public static string LaunchRelative(string path) => Process(Path.Join(LaunchPath, path));
+    private static string CurrentRelative(string path) => Process(Path.Join(CurrentPath, path));
+    private static string LaunchRelative(string path) => Process(Path.Join(LaunchPath, path));
+    
     public static string ModRelative(string path) => Process(Path.Join(Config.Mod.Path, path));
     public static string ExeRelative(string path) => Process(Path.Join(ExePath, path));
 

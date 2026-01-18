@@ -23,12 +23,7 @@ internal class Obj {
     
     public Matrix4x4 WorldMatrix = Matrix4x4.Identity;
     public Matrix4x4 WorldRotMatrix = Matrix4x4.Identity;
-    
-    //public Vector3 Right => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitX, WorldRotMatrix));
-    //public Vector3 Up => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitY, WorldRotMatrix));
-    //public Vector3 Fwd => Raymath.Vector3Normalize(Vector3.Transform(Vector3.UnitZ, WorldRotMatrix));
-    
-    // Sütunlardan (Column) okuma:
+
     public Vector3 Right => Vector3.Normalize(new Vector3(WorldRotMatrix.M11, WorldRotMatrix.M21, WorldRotMatrix.M31));
     public Vector3 Up    => Vector3.Normalize(new Vector3(WorldRotMatrix.M12, WorldRotMatrix.M22, WorldRotMatrix.M32));
     public Vector3 Fwd   => Vector3.Normalize(new Vector3(WorldRotMatrix.M13, WorldRotMatrix.M23, WorldRotMatrix.M33));
@@ -59,8 +54,8 @@ internal class Obj {
         
         History.StartRecording(this, $"Delete {Name}");
 
-        History.ActiveRecord?.UndoAction = () => SetParent(parent);
-        History.ActiveRecord?.RedoAction = Delete;
+        History.SetUndoAction(() => SetParent(parent));
+        History.SetRedoAction(Delete);
         
         Delete();
         
@@ -73,11 +68,11 @@ internal class Obj {
         if (obj == null) return;
         if (obj == this) return;
         if (Parent == null) return;
-        
+
         Parent.Children.Remove(this);
         obj.Children.Add(this);
         Parent = obj;
-
+        
         Parent.OrderChildren();
     }
 
@@ -138,7 +133,8 @@ internal class Obj {
         worldRot = rotation;
     }
 
-    public T? FindType<T>() where T : ObjType => (from child in this.GetChildrenRecursive() where child.Type is T select child.Type).FirstOrDefault() as T;
+    [MoonSharpHidden] public T? FindTypeFast<T>() where T : ObjType => (from child in Children where child.Type is T select child.Type).FirstOrDefault() as T;
+    [MoonSharpHidden] public T? FindType<T>() where T : ObjType => (from child in this.GetChildrenRecursive() where child.Type is T select child.Type).FirstOrDefault() as T;
     public ObjType? FindType(string name) => (from child in this.GetChildrenRecursive() where child.Type?.Name == name select child.Type).FirstOrDefault();
     public ObjType? FindParentType(string name) => (from child in Parent?.GetChildrenRecursive() where child.Type?.Name == name select child.Type).FirstOrDefault();
 }

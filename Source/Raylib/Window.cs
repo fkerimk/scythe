@@ -18,8 +18,8 @@ internal static class Window {
     }
 
     public static void Clear(ScytheColor scytheColor) => Raylib.ClearBackground(scytheColor.ToRaylib());
-    
-    public static void CenterWindow() => Raylib.SetWindowPosition((Screen.Width - Width) / 2, (Screen.Height - Height) / 2);
+
+    private static void CenterWindow() => Raylib.SetWindowPosition((Screen.Width - Width) / 2, (Screen.Height - Height) / 2);
     
     public static void Show(
         

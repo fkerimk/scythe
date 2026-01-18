@@ -1,7 +1,6 @@
 ﻿using System.Numerics;
 using System.Reflection;
 using ImGuiNET;
-using Raylib_cs;
 
 internal class ObjectBrowser() : Viewport("Object") {
     
@@ -43,7 +42,7 @@ internal class ObjectBrowser() : Viewport("Object") {
         }
     }
 
-    public void DrawProperty(object target, PropertyInfo prop) {
+    private void DrawProperty(object target, PropertyInfo prop) {
 
         var id = $"##prop{_propIndex}";
         

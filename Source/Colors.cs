@@ -7,7 +7,7 @@
     public static ScytheColor Yellow => new(1, 1, 0);
     public static ScytheColor Debug => new(1f, 0, 0);
     public static ScytheColor Primary => new(1f, 0.27f, 0f);
-    public static ScytheColor PrimarySoft => new(0.7f, 0.3f, 0f);
+    private static ScytheColor PrimarySoft => new(0.7f, 0.3f, 0f);
     public static ScytheColor Back => new(0.23f, 0.23f, 0.26f);
     public static ScytheColor Game => new(0.1f, 0.1f, 0.11f);
     public static ScytheColor Grid => new(0.18f, 0.18f, 0.18f);

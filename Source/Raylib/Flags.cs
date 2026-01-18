@@ -9,8 +9,8 @@ internal static class Flags {
         _activeFlags |= flag;
         Raylib.SetConfigFlags(flag);
     }
-    
-    public static void Remove(ConfigFlags flag) {
+
+    private static void Remove(ConfigFlags flag) {
         
         _activeFlags &= ~flag;
         Raylib.ClearWindowState(flag);
@@ -24,7 +24,7 @@ internal static class Flags {
             Add(flag);
     }
 
-    public static void Clear() {
+    private static void Clear() {
 
         foreach (var flag in Enum.GetValues<ConfigFlags>()) {
             

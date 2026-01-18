@@ -1,7 +1,7 @@
-﻿using Raylib_cs;
+﻿using static Raylib_cs.Raylib;
 
 internal class LuaTime {
 
-    public static float Delta => Raylib.GetFrameTime();
-    public static float Passed => (float)Raylib.GetTime();
+    public static float Delta => GetFrameTime();
+    public static float Passed => (float)GetTime();
 }

@@ -45,7 +45,7 @@ function input()
     camRot.x = camRot.x + mouse.delta.y * sensitivity;
     camRot.y = camRot.y - mouse.delta.x * sensitivity;
 
-    camRot.x = mt.clamp(camRot.x, -5, -60)
+    camRot.x = mt.clamp(camRot.x, 5, 60)
 end
 
 function movement(dt)
@@ -92,5 +92,5 @@ function camera(dt)
     smoothCamDistance = mt.lerp(smoothCamDistance, camDistance, dt * 15)
 
     camTr.rot = quat.fromEuler(camRot.x, camRot.y, 0)
-    camTr.pos = tr.pos + f3.up * 0.5 - cam.obj.fwd * smoothCamDistance
+    camTr.pos = tr.pos + f3.up * 0.5 - cam.parent.fwd * smoothCamDistance
 end

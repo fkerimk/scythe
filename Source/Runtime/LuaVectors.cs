@@ -1,7 +1,7 @@
 ﻿using System.Numerics;
 using Raylib_cs;
 
-public class LuaF2 {
+internal class LuaF2 {
      
      public static Func<float, float, Vector2> New => (x, y) => new Vector2(x, y);
      public static Vector2 Lerp(Vector2 a, Vector2 b, float t) => Raymath.Vector2Lerp(a, b, t);
@@ -13,7 +13,7 @@ public class LuaF2 {
 }
 
 
-public class LuaF3 {
+internal class LuaF3 {
      
      public static Vector3 Zero => Vector3.Zero;
      public static Vector3 Up => Vector3.UnitY;

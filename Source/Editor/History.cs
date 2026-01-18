@@ -5,7 +5,7 @@ internal static class History {
     private static readonly List<Record> Records = [];
 
     private static int _currentIndex = -1;
-    public static Record? ActiveRecord;
+    private static Record? ActiveRecord;
     
     public static bool CanUndo => _currentIndex >= 0;
     public static bool CanRedo => _currentIndex < Records.Count - 1;
@@ -94,7 +94,7 @@ internal static class History {
             ApplyState(record.Reference, record.FinalState);
     }
 
-    public class Record(string? description = null) {
+    private class Record(string? description = null) {
 
         public readonly List<ObjectRecord> Objects = [];
         public readonly string? Description = description;
@@ -102,10 +102,13 @@ internal static class History {
         public Action? UndoAction, RedoAction;
     }
 
-    public class ObjectRecord(object reference) {
+    private class ObjectRecord(object reference) {
             
         public readonly object Reference = reference;
         public readonly object[] StartState = GetState(reference);
         public object[] FinalState = [];
     }
+
+    public static void SetUndoAction(Action action) => ActiveRecord?.UndoAction = action;
+    public static void SetRedoAction(Action action) => ActiveRecord?.RedoAction = action;
 }

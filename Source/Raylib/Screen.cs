@@ -1,9 +1,9 @@
-﻿using Raylib_cs;
+﻿using static Raylib_cs.Raylib;
 
 internal static class Screen {
-
-    internal static int Monitor => Raylib.GetCurrentMonitor();
-    internal static int Width => Raylib.GetMonitorWidth(Monitor);
-    internal static int Height => Raylib.GetMonitorHeight(Monitor);
-    internal static int RefreshRate => Raylib.GetMonitorRefreshRate(Monitor);
+    
+    private static int Monitor => GetCurrentMonitor();
+    internal static int Width => GetMonitorWidth(Monitor);
+    internal static int Height => GetMonitorHeight(Monitor);
+    internal static int RefreshRate => GetMonitorRefreshRate(Monitor);
 }

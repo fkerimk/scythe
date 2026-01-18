@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 // ReSharper disable once ClassNeverInstantiated.Global
 internal class Model(Obj obj) : ObjType(obj) {
 
-    public override int Priority => 2;
+    public override int Priority => 30;
     
     public override string LabelIcon => Icons.Model;
     public override ScytheColor LabelScytheColor => Colors.GuiTypeModel;
@@ -36,10 +36,10 @@ internal class Model(Obj obj) : ObjType(obj) {
             RlModel.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Value = 0;
             RlModel.Materials[i].Maps[(int)MaterialMapIndex.Roughness].Value = 0.5f;
             RlModel.Materials[i].Maps[(int)MaterialMapIndex.Occlusion].Value = 1f;
-            RlModel.Materials[i].Maps[(int)MaterialMapIndex.Emission].Color = Raylib_cs.Color.Black;
+            RlModel.Materials[i].Maps[(int)MaterialMapIndex.Emission].Color = Color.Black;
 
             // Default flat normal map (128, 128, 255) = (0, 0, 1) in normalized space
-            var normalImg = Raylib.GenImageColor(1, 1, new Raylib_cs.Color(128, 128, 255, 255));
+            var normalImg = Raylib.GenImageColor(1, 1, new Color(128, 128, 255, 255));
             var normalTex = Raylib.LoadTextureFromImage(normalImg);
             Raylib.UnloadImage(normalImg);
         

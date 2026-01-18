@@ -5,6 +5,7 @@ internal class ObjType(Obj obj) {
     
     [JsonProperty] public string Name => GetType().Name;
     public readonly Obj Obj = obj;
+    public Obj? Parent => Obj.Parent;
 
     public virtual int Priority => 100;
     public virtual string LabelIcon => Icons.Obj;

@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using ImGuiNET;
+using static ImGuiNET.ImGui;
 
 internal static class Style {
 
@@ -83,27 +84,22 @@ internal static class Style {
     
     private static void Set(ImGuiCol id, ScytheColor scytheColor) {
         
-        ImGui.PushStyleColor(id, scytheColor.to_vector4());
+        PushStyleColor(id, scytheColor.to_vector4());
         PushedColors[_pushes]++;
     }
     
     private static void Set(ImGuiStyleVar id, Vector2 value) {
         
-        ImGui.PushStyleVar(id, value);
+        PushStyleVar(id, value);
         PushedVars[_pushes]++;
-    }
-
-    private static unsafe void Debug(ImGuiCol id) {
-
-        Console.WriteLine(ImGui.GetStyleColorVec4(id)->AsVector3());
     }
 
     public static void Pop() {
 
-        for (var i = 0; i < PushedColors[_pushes - 1]; i++) ImGui.PopStyleColor();
+        for (var i = 0; i < PushedColors[_pushes - 1]; i++) PopStyleColor();
         PushedColors.RemoveAt(_pushes - 1);
         
-        for (var i = 0; i < PushedVars[_pushes - 1]; i++) ImGui.PopStyleVar();
+        for (var i = 0; i < PushedVars[_pushes - 1]; i++) PopStyleVar();
         PushedVars.RemoveAt(_pushes - 1);
 
         _pushes--;

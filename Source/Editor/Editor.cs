@@ -19,14 +19,14 @@ internal static unsafe class Editor {
         CellPadding = new Vector2(0, 0),
         SeparatorTextPadding = new Vector2(0, 0)
     }};
-    
-    public static readonly LevelBrowser LevelBrowser = new();
+
+    private static readonly LevelBrowser LevelBrowser = new();
     private static readonly ObjectBrowser ObjectBrowser = new();
     private static readonly ProjectBrowser ProjectBrowser = new();
     
     public static void Show() {
         
-        Window.Show(scale: 0.75f, flags: [ ConfigFlags.Msaa4xHint, ConfigFlags.ResizableWindow ]);
+        Window.Show(scale: 0.75f, flags: [ ConfigFlags.Msaa4xHint, ConfigFlags.ResizableWindow ], title: $"{Config.Mod.Name} - Editor");
 
         // Setup ImGui
         Setup(true, true);

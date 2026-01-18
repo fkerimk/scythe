@@ -3,10 +3,10 @@ using System.Numerics;
 
 internal class ScytheColor(float r, float g, float b, float a = 1) {
     
-    [DefaultValue(1f)] public float R = r;
-    [DefaultValue(1f)] public float G = g;
-    [DefaultValue(1f)] public float B = b;
-    [DefaultValue(1f)] public float A = a;
+    [DefaultValue(1f)] public readonly float R = r;
+    [DefaultValue(1f)] public readonly float G = g;
+    [DefaultValue(1f)] public readonly float B = b;
+    [DefaultValue(1f)] public readonly float A = a;
 }
 
 internal static partial class Extensions {
@@ -20,7 +20,7 @@ internal static partial class Extensions {
 
         public Vector4 to_vector4() => new(value.R, value.G, value.B, value.A);
 
-        public byte[] ToBytes() => [(byte)(value.R * 255), (byte)(value.G * 255), (byte)(value.B * 255), (byte)(value.A * 255)];
+        private byte[] ToBytes() => [(byte)(value.R * 255), (byte)(value.G * 255), (byte)(value.B * 255), (byte)(value.A * 255)];
 
         public uint ToUint() {
 

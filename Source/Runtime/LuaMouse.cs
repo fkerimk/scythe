@@ -1,5 +1,5 @@
 ﻿using System.Numerics;
-using Raylib_cs;
+using static Raylib_cs.Raylib;
 
 internal class LuaMouse {
 
@@ -10,21 +10,21 @@ internal class LuaMouse {
     //public static bool Released(string keyName) => Raylib.IsKeyReleased(GetKey(keyName));
     //public static bool Up(string keyName) => Raylib.IsKeyUp(GetKey(keyName));
 
-    public static Vector2 Delta => Raylib.GetMouseDelta();
-    public static float Scroll => Raylib.GetMouseWheelMove();
+    public static Vector2 Delta => GetMouseDelta();
+    public static float Scroll => GetMouseWheelMove();
 
     public static void SetVisible(bool visible) {
 
         if (visible)
-             Raylib.ShowCursor();
-        else Raylib.HideCursor();
+             ShowCursor();
+        else HideCursor();
     }
 
     public static void MoveToCenter() {
 
-        if (!Raylib.IsWindowFocused()) return;
+        if (!IsWindowFocused()) return;
         
-        var pos = Raylib.GetScreenCenter();
-        Raylib.SetMousePosition((int)pos.X, (int)pos.Y);
+        var pos = GetScreenCenter();
+        SetMousePosition((int)pos.X, (int)pos.Y);
     }
 }

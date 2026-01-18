@@ -11,11 +11,11 @@
     public const string FaFile = ""; // fa-file
     public const string FaFolder = ""; // fa-folder
     public const string FaLevelUp = ""; // fa-level-up 
-    public const string FaDotCircleO = ""; // fa-dot-circle-o
-    public const string FaCube = ""; // fa-cube
+    private const string FaDotCircleO = ""; // fa-dot-circle-o
+    private const string FaCube = ""; // fa-cube
     public const string FaArrowsAlt = ""; // fa-arrows-alt
-    public const string FaPlayCircle = ""; // fa-play-circle
-    public const string FaArrows = ""; // fa-arrows
-    public const string FaLightbulbO = ""; // fa-lightbulb-o
-    public const string FaVideoCamera = ""; // fa-video-camera
+    private const string FaPlayCircle = ""; // fa-play-circle
+    private const string FaArrows = ""; // fa-arrows
+    private const string FaLightbulbO = ""; // fa-lightbulb-o
+    private const string FaVideoCamera = ""; // fa-video-camera
 }

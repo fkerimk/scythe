@@ -64,15 +64,15 @@ function Obj:decomposeMatrix(pos, rot, scale) end
 ---@return void
 function Obj:decomposeWorldMatrix(worldPos, worldRot, worldScale) end
 
+---@param name string
 ---@return any
-function Obj:findType() end
+function Obj:findType(name) end
 
 ---@param name string
 ---@return any
 function Obj:findParentType(name) end
 
 ---@class Level
----@field name string
 ---@field root Obj
 local Level = {}
 ---@return void
@@ -91,10 +91,6 @@ function Level:buildObject(name, parent, type) end
 function Level:recordedBuildObject(name, parent, type) end
 
 ---@param source Obj
----@return any
-function Level:cloneObject(source) end
-
----@param source Obj
 ---@return void
 function Level:recordedCloneObject(source) end
 
@@ -105,6 +101,7 @@ function Level:findType() end
 ---@field labelIcon string
 ---@field labelScytheColor ScytheColor
 ---@field name string
+---@field parent Obj
 ---@field priority number
 ---@field isSelected boolean
 ---@field cam Camera3D
@@ -235,6 +232,7 @@ function LuaQuat.fromDir(dir) end
 local ScytheColor = {}
 ---@class ObjType
 ---@field name string
+---@field parent Obj
 ---@field priority number
 ---@field labelIcon string
 ---@field labelScytheColor ScytheColor

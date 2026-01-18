@@ -3,8 +3,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 internal class Level {
-
-    public readonly string Name = null!;
+    
+    private readonly string _name = null!;
     public readonly Obj Root = null!;
     
     private string _jsonPath = null!;
@@ -13,13 +13,13 @@ internal class Level {
     
     public Level(string name) {
 
-        Name = name;
+        _name = name;
         Root = Load();
     }
 
     private Obj Load() {
         
-        if (!PathUtil.BestPath($"Levels/{Name}.json", out _jsonPath))
+        if (!PathUtil.BestPath($"Levels/{_name}.json", out _jsonPath))
             throw new FileNotFoundException($"Could not find level json file {_jsonPath}");
 
         var root = new Obj("Root", null, null);
@@ -87,14 +87,14 @@ internal class Level {
         
         var obj = BuildObject(name, parent, type);
 
-        History.ActiveRecord?.UndoAction = () => obj.Delete();
-        History.ActiveRecord?.RedoAction = () => obj.SetParent(parent);
+        History.SetUndoAction(obj.Delete);
+        History.SetRedoAction(() => obj.SetParent(parent));
         
         History.StopRecording();
         return obj;
     }
 
-    public Obj CloneObject(Obj source) {
+    private Obj CloneObject(Obj source) {
         
         var typeName = source.Type?.GetType().Name;
     
@@ -119,8 +119,8 @@ internal class Level {
         var clone = CloneObject(source);
         var parent = source.Parent!;
 
-        History.ActiveRecord?.UndoAction = () => clone.Delete();
-        History.ActiveRecord?.RedoAction = () => clone.SetParent(parent);
+        History.SetUndoAction(clone.Delete);
+        History.SetRedoAction(() => clone.SetParent(parent));
         
         History.StopRecording();
     }

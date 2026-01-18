@@ -5,7 +5,7 @@ internal static class Runtime {
 
     public static void Show() {
         
-        Window.Show(fullscreen: true, flags: [ ConfigFlags.Msaa4xHint, ConfigFlags.ResizableWindow ]);
+        Window.Show(fullscreen: true, flags: [ ConfigFlags.Msaa4xHint, ConfigFlags.ResizableWindow ], title: Config.Mod.Name);
         
         // Setup core
         Core.Init();

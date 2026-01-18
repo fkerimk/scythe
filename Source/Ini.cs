@@ -2,8 +2,6 @@
 
 internal class Ini : IDisposable {
     
-    public readonly bool IsValid;
-    
     private readonly string _path;
     private readonly Dictionary<string, Dictionary<string, string>> _data;
     
@@ -14,8 +12,6 @@ internal class Ini : IDisposable {
         _path = path;
         _data = new Dictionary<string, Dictionary<string, string>>(_comparer);
 
-        IsValid = false;
-        
         if (!File.Exists(path)) return;
         
         Dictionary<string, string>? current = null;
@@ -54,8 +50,6 @@ internal class Ini : IDisposable {
 
             (current ??= GetOrCreateDefaultSection())[key] = val;
         }
-
-        if (_data.Count > 0) IsValid = true;
     }
 
     private Dictionary<string, string> GetOrCreateDefaultSection() {
@@ -84,14 +78,14 @@ internal class Ini : IDisposable {
         return value;
     }
 
-    public string Read(string section, string key, string defaultValue = "") {
+    private string Read(string section, string key, string defaultValue = "") {
         
         return _data.TryGetValue(section, out var sec) && sec.TryGetValue(key, out var val)
             ? val
             : defaultValue;
     }
-    
-    public int Read(string section, string key, int defaultValue = 0) {
+
+    private int Read(string section, string key, int defaultValue = 0) {
         
         if (!_data.TryGetValue(section, out var sec) ||
             !sec.TryGetValue(key, out var val) ||
@@ -100,8 +94,8 @@ internal class Ini : IDisposable {
         
         return result;
     }
-    
-    public bool Read(string section, string key, bool defaultValue = false) {
+
+    private bool Read(string section, string key, bool defaultValue = false) {
         
         if (!_data.TryGetValue(section, out var sec) ||
             !sec.TryGetValue(key, out var val) ||

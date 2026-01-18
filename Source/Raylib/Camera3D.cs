@@ -1,5 +1,7 @@
 using System.Numerics;
 using Raylib_cs;
+using static Raylib_cs.Raylib;
+using static Raylib_cs.Raymath;
 
 internal class Camera3D {
 
@@ -23,16 +25,16 @@ internal static partial class Extensions {
     
     extension(Camera3D camera) {
         
-        public void DrawCameraFrustum(Raylib_cs.Color color) {
+        public void DrawCameraFrustum(Color color) {
         
             const float near = 0.1f, far = 10.0f;
 
             const int fov = 60;
         
-            var aspect = (float)Raylib.GetScreenWidth() / Raylib.GetScreenHeight();
-            var topNear = MathF.Tan(fov * Raylib.DEG2RAD / 2.0f) * near;
+            var aspect = (float)GetScreenWidth() / GetScreenHeight();
+            var topNear = MathF.Tan(fov * DEG2RAD / 2.0f) * near;
             var rightNear = topNear * aspect;
-            var topFar = MathF.Tan(fov * Raylib.DEG2RAD / 2.0f) * far;
+            var topFar = MathF.Tan(fov * DEG2RAD / 2.0f) * far;
             var rightFar = topFar * aspect;
 
             var forward = Vector3.Normalize(camera.Target - camera.Position);
@@ -55,14 +57,14 @@ internal static partial class Extensions {
 
             for (var i = 0; i < 4; i++) {
             
-                Raylib.DrawLine3D(corners[i], corners[(i + 1) % 4], color);
-                Raylib.DrawLine3D(corners[i + 4], corners[((i + 1) % 4) + 4], color);
-                Raylib.DrawLine3D(corners[i], corners[i + 4], color);
+                DrawLine3D(corners[i], corners[(i + 1) % 4], color);
+                DrawLine3D(corners[i + 4], corners[((i + 1) % 4) + 4], color);
+                DrawLine3D(corners[i], corners[i + 4], color);
             }
         }
 
-        public Vector3 Up => Raymath.Vector3Normalize(Raymath.Vector3CrossProduct(camera.Fwd, camera.Right));
-        public Vector3 Fwd => Raymath.Vector3Normalize(camera.Target - camera.Position);
-        public Vector3 Right => Raymath.Vector3Normalize(Raymath.Vector3CrossProduct(camera.Fwd, Vector3.UnitY));
+        public Vector3 Up => Vector3Normalize(Vector3CrossProduct(camera.Fwd, camera.Right));
+        public Vector3 Fwd => Vector3Normalize(camera.Target - camera.Position);
+        public Vector3 Right => Vector3Normalize(Vector3CrossProduct(camera.Fwd, Vector3.UnitY));
     }
 }
