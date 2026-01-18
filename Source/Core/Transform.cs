@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using Raylib_cs;
 using static Raylib_cs.Raylib;
 
-internal class Transform(Obj obj) : ObjType(obj) {
+internal unsafe class Transform(Obj obj) : ObjType(obj) {
     
     public override int Priority => 0;
 
@@ -14,14 +14,17 @@ internal class Transform(Obj obj) : ObjType(obj) {
     private Vector3 _scale = Vector3.One;
     private Quaternion _rot = Quaternion.Identity;
     
+    // Local
     [RecordHistory] [JsonProperty] [Label("Pos")] public Vector3 Pos { get => _pos; set { _pos = value; UpdateTransform(); } }
     
     [RecordHistory] [JsonProperty] [Label("Euler")] public Vector3 Euler { 
         
         get {
+            
             var e = Raymath.QuaternionToEuler(Rot).ToDeg();
             return new Vector3(e.X, -e.Y, -e.Z);
         }
+        
         set => Rot = Raymath.QuaternionFromEuler(value.X.DegToRad(), (-value.Y).DegToRad(), (-value.Z).DegToRad());
     }
     
@@ -29,20 +32,40 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
     [RecordHistory] [JsonProperty] public Quaternion Rot { get => _rot; set { _rot = value; UpdateTransform(); } }
 
+    // World
+    [Label("World Pos")] public Vector3 WorldPos {
+
+        get {
+
+            if (Obj.Parent == null) return Pos;
+            Obj.Parent.DecomposeWorldMatrix(out var trans, out _, out _);
+            return trans;
+            
+        } set {
+
+            if (Obj.Parent?.Parent == null) Pos = value; else {
+
+                var invParent = Raymath.MatrixInvert(Obj.Parent.Parent.WorldMatrix);
+                Pos = Raymath.Vector3Transform(value, invParent);
+            }
+        }
+    }
+
     private int _mode;
     private float _activeMove;
     private bool _isWorldSpace;
     
     private string _activeId = "";
     private Vector2 _activeMouseTemp;
-    private Vector3 _activePos;
-    private Vector3 _activeWorldPos;
-    private Vector3 _activeLocalAxis;
-    private Vector3 _activeScale;
+    private Vector3
+        _activePos,
+        _activeWorldPos,
+        _activeLocalAxis,
+        _activeScale,
+        _activeNormal,
+        _activeInitialPoint,
+        _activeInitialVector;
     private Quaternion _activeRot = Quaternion.Identity;
-    private Vector3 _activeNormal;
-    private Vector3 _activeInitialPoint;
-    private Vector3 _activeInitialVector;
 
     private const float MoveSnap = 0.2f;
 

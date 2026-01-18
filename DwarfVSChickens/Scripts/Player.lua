@@ -45,7 +45,7 @@ function input()
     camRot.x = camRot.x + mouse.delta.y * sensitivity;
     camRot.y = camRot.y - mouse.delta.x * sensitivity;
 
-    camRot.x = mt.clamp(camRot.x, 5, 60)
+    camRot.x = mt.clamp(camRot.x, -5, -60)
 end
 
 function movement(dt)
