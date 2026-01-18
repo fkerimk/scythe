@@ -4,16 +4,25 @@ using Newtonsoft.Json;
 using Raylib_cs;
 
 // ReSharper disable once ClassNeverInstantiated.Global
-internal unsafe class Light(Obj obj) : ObjType(obj) {
+internal class Light(Obj obj) : Component(obj, "light") {
     
     public override string LabelIcon => Icons.Light;
     public override ScytheColor LabelScytheColor => Colors.GuiTypeLight;
 
-    [RecordHistory] [JsonProperty] [Label("Enabled")] public bool Enabled { get; set; } = true;
-    [RecordHistory] [JsonProperty] [Label("Type")] [DefaultValue(1)] public int Type { get; set => field = (int)Raymath.Clamp(value, 0, 2); }
-    [RecordHistory] [JsonProperty] [Label("Color")] public ScytheColor ScytheColor { get; set; } = Colors.White;
-    [RecordHistory] [JsonProperty] [Label("Intensity")] [DefaultValue(2)] public float Intensity { get; set; }
-    [RecordHistory] [JsonProperty] [Label("Range")] [DefaultValue(10)] public float Range { get; set; }
+    [Label("Enabled"), JsonProperty, RecordHistory]
+    public bool Enabled { get; set; } = true;
+    
+    [Label("Type"), JsonProperty, RecordHistory, DefaultValue(1)]
+    public int Type { get; set => field = (int)Raymath.Clamp(value, 0, 2); } = 1;
+    
+    [Label("Color"), JsonProperty, RecordHistory]
+    public ScytheColor ScytheColor { get; set; } = Colors.White;
+    
+    [Label("Intensity"), JsonProperty, RecordHistory, DefaultValue(2)]
+    public float Intensity { get; set; } = 2;
+    
+    [Label("Range"), JsonProperty, RecordHistory, DefaultValue(10)]
+    public float Range { get; set; } = 10;
     
     private Vector3 _pos = Vector3.Zero;
     private Vector3 _target = Vector3.Zero;
@@ -35,18 +44,16 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
         Raylib.SetShaderValue(Shaders.Pbr, intensityLoc, Intensity, ShaderUniformDataType.Float);
     }
 
-    public override void Loop3D() {
+    public override unsafe void Loop(bool is2D) {
 
-        if (Obj.Parent == null) return; 
-        
         var position = Vector3.Zero;
         var rotation = Quaternion.Identity;
         var scale = Vector3.One;
     
-        Raymath.MatrixDecompose( Obj.Parent.Matrix, &position, &rotation, &scale);
+        Raymath.MatrixDecompose( Obj.Matrix, &position, &rotation, &scale);
 
         _pos = position;
-        _target = _pos + Obj.Parent.Fwd * (Type == 0 ? 1 : Range);
+        _target = _pos + Obj.Fwd * (Type == 0 ? 1 : Range);
         
         Update();
         
@@ -62,7 +69,7 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
                 
                 case 2: {
                     
-                    var baseCenter = _pos + Obj.Parent.Fwd * Range;
+                    var baseCenter = _pos + Obj.Fwd * Range;
                     var coneRadius = Range;
 
                     for (var i = 0; i < 8; i++) {
@@ -70,8 +77,8 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
                         var angle = (i / 8f) * MathF.PI * 2f;
                         var nextAngle = ((i + 1) / 8f) * MathF.PI * 2f;
 
-                        var offset1 = Obj.Parent.Right * MathF.Cos(angle) * coneRadius + Obj.Parent.Up * MathF.Sin(angle) * coneRadius;
-                        var offset2 = Obj.Parent.Right * MathF.Cos(nextAngle) * coneRadius + Obj.Parent.Up * MathF.Sin(nextAngle) * coneRadius;
+                        var offset1 = Obj.Right * MathF.Cos(angle) * coneRadius + Obj.Up * MathF.Sin(angle) * coneRadius;
+                        var offset2 = Obj.Right * MathF.Cos(nextAngle) * coneRadius + Obj.Up * MathF.Sin(nextAngle) * coneRadius;
 
                         var point1 = baseCenter + offset1;
                         var point2 = baseCenter + offset2;
@@ -86,7 +93,7 @@ internal unsafe class Light(Obj obj) : ObjType(obj) {
                     
                         var angle = (i / sides) * MathF.PI * 2f;
 
-                        var offset = Obj.Parent.Right * MathF.Cos(angle) * coneRadius + Obj.Parent.Up * MathF.Sin(angle) * coneRadius;
+                        var offset = Obj.Right * MathF.Cos(angle) * coneRadius + Obj.Up * MathF.Sin(angle) * coneRadius;
                         var point = baseCenter + offset;
 
                         Raylib.DrawLine3D(_pos, point, gizmoColor);

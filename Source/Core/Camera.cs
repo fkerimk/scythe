@@ -1,21 +1,18 @@
 ﻿using System.Numerics;
 using Raylib_cs;
 
-internal class Camera(Obj obj) : ObjType(obj) {
+internal class Camera(Obj obj) : Component(obj, "camera") {
 
-    public Camera() : this(new Obj()) { }
-    
     public override string LabelIcon => Icons.Camera;
     public override ScytheColor LabelScytheColor => Colors.GuiTypeCamera;
 
     public required Camera3D Cam = new();
 
-    public override void Loop3D() {
+    public override void Loop(bool is2D) {
 
-        var pos = Vector3.Zero;
-        var rot= Quaternion.Identity;
-        
-        Obj.Parent?.DecomposeMatrix(out pos, out rot, out _);
+        if (is2D) return;
+
+        Obj.DecomposeMatrix(out var pos, out var rot, out _);
         
         var forward = Vector3.Transform(Vector3.UnitZ, rot);
 

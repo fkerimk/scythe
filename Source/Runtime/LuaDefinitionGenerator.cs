@@ -31,6 +31,13 @@ internal static class LuaDefinitionGenerator {
             
             EnqueueType(queue, type);
         }
+        
+        var registeredTypes = UserData.GetRegisteredTypes();
+        
+        foreach (var type in registeredTypes) {
+            
+            EnqueueType(queue, type);
+        }
 
         // Types
         while (queue.Count > 0) {
@@ -147,8 +154,8 @@ internal static class LuaDefinitionGenerator {
             // 'any' optimization
             var returnType = MapType(method.ReturnType, queue);
             
-            if (method.Name.StartsWith("Find") || method.Name.StartsWith("Get") || returnType == "Obj" || returnType == "ObjType")
-                returnType = "any"; 
+            //if (method.Name.StartsWith("Find") || method.Name.StartsWith("Get") || returnType == "Obj" || returnType == "ObjType")
+            //    returnType = "any"; 
 
             sb.AppendLine($"---@return {returnType}");
             

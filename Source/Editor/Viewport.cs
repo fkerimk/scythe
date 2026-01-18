@@ -28,13 +28,6 @@ internal abstract class Viewport(string title) {
         WindowPos = ImGui.GetWindowPos();
         ContentRegion = ImGui.GetContentRegionAvail();
         RelativeMouse = ImGui.GetMousePos() - WindowPos - ImGui.GetCursorStartPos();
-        
-        //relative_mouse_3d = Raylib.GetScreenCenter()
-        //    + ImGui.GetMousePos()
-        //    - ImGui.GetWindowPos()
-        //    //- new Vector2(-ImGui.GetStyle().FramePadding.X, ImGui.GetStyle().FramePadding.Y * 2)
-        //    - content_region * 0.5f;
-        
         IsHovered = ImGui.IsWindowHovered();
         
         OnDraw();

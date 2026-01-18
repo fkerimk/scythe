@@ -86,7 +86,7 @@ internal class LevelBrowser() : Viewport("Level") {
         if (obj.Children.Count == 0)
             arrowColor = Colors.Clear.to_vector4();
         
-        var flags = ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanFullWidth;
+        var flags = ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen;
         if (isSelected) flags |= ImGuiTreeNodeFlags.Selected;
         
         ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - indent * 7.5f - 7.5f, ImGui.GetCursorPosY()));
@@ -105,6 +105,7 @@ internal class LevelBrowser() : Viewport("Level") {
         else if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left)) SelectObject(obj);
         
         // Object context
+  
         if (ImGui.BeginPopup("context##" + obj.GetHashCode())) {
     
             ImGui.Text(obj.Name);
@@ -113,44 +114,39 @@ internal class LevelBrowser() : Viewport("Level") {
 
             if (ImGui.BeginMenu("Insert")) {
                 
-                var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(ObjType)) && !t.IsAbstract);
+                var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(Component)) && !t.IsAbstract);
 
-                if (ImGui.MenuItem("Object")) Core.ActiveLevel.RecordedBuildObject("Object", obj, null);
+                if (ImGui.MenuItem("Object"))
+                    Core.ActiveLevel.RecordedBuildObject("Object", obj);
 
                 ImGui.Separator();
                 
                 if (ImGui.BeginMenu("Lighting")) {
                     
                     if (ImGui.MenuItem("Directional Light")) {
-                            
-                        var lightParent = Core.ActiveLevel.RecordedBuildObject("Directional Light", obj, null);
-                        var light = Core.ActiveLevel.BuildObject("Light", lightParent, "Light").Type as Light;
-                        Core.ActiveLevel.BuildObject("Transform", lightParent, "Transform");
-                        light?.Type = 0;
-                        SelectObject(lightParent);
+
+                        var light = Core.ActiveLevel.RecordedBuildObject("Directional Light", obj);
+                        (light.MakeComponent("Light") as Light)?.Type = 0;
+                        SelectObject(light);
                     }
                 
                     if (ImGui.MenuItem("Point Light")) {
                             
-                        var lightParent = Core.ActiveLevel.RecordedBuildObject("Point Light", obj, null);
-                        var light = Core.ActiveLevel.BuildObject("Light", lightParent, "Light").Type as Light;
-                        Core.ActiveLevel.BuildObject("Transform", lightParent, "Transform");
-                        light?.Type = 1;
-                        SelectObject(lightParent);
+                        var light = Core.ActiveLevel.RecordedBuildObject("Point Light", obj);
+                        (light.MakeComponent("Light") as Light)?.Type = 1;
+                        SelectObject(light);
                     }
                 
                     if (ImGui.MenuItem("Spot Light")) {
                             
-                        var lightParent = Core.ActiveLevel.RecordedBuildObject("Spot Light", obj, null);
-                        var light = Core.ActiveLevel.BuildObject("Light", lightParent, "Light").Type as Light;
-                        Core.ActiveLevel.BuildObject("Transform", lightParent, "Transform");
-                        light?.Type = 2;
-                        SelectObject(lightParent);
+                        var light = Core.ActiveLevel.RecordedBuildObject("Point Light", obj);
+                        (light.MakeComponent("Light") as Light)?.Type = 2;
+                        SelectObject(light);
                     }
                     
                     ImGui.EndMenu();
                 }
-                
+
                 if (ImGui.BeginMenu("Models")) {
 
                     var modelPaths = Directory.GetFiles(PathUtil.ModRelative("Models"), "*.*", SearchOption.AllDirectories);
@@ -158,23 +154,22 @@ internal class LevelBrowser() : Viewport("Level") {
                     foreach (var modelPath in modelPaths) {
 
                         if (Path.GetExtension(modelPath) != ".iqm") continue;
-                        
+
                         var pre = PathUtil.ModRelative("Models") + "\\";
                         var path = modelPath[pre.Length..^4].Replace('\\', '/');
                         var name = Path.GetFileName(path);
-                        
+
                         if (!ImGui.MenuItem(path)) continue;
-                        
-                        var parentObj = Core.ActiveLevel.RecordedBuildObject(name, obj, null);
-                        var model = Core.ActiveLevel.BuildObject("Model", parentObj, "Model").Type as Model;
-                        Core.ActiveLevel.BuildObject("Transform", parentObj, "Transform");
-                        model?.Path = path;
-                        SelectObject(parentObj);
+
+                        var model = Level.MakeObject(name, obj);
+                        (model.MakeComponent("Model") as Model)?.Path = path;
+                        SelectObject(model);
                     }
-                    
+
                     ImGui.EndMenu();
                 }
-                
+
+                /*
                 if (ImGui.BeginMenu("Scripts")) {
 
                     var modelPaths = Directory.GetFiles(PathUtil.ModRelative("Scripts"), "*.*", SearchOption.AllDirectories);
@@ -182,41 +177,42 @@ internal class LevelBrowser() : Viewport("Level") {
                     foreach (var modelPath in modelPaths) {
 
                         if (Path.GetExtension(modelPath) != ".lua") continue;
-                        
+
                         var pre = PathUtil.ModRelative("Scripts") + "\\";
                         var path = modelPath[pre.Length..^4].Replace('\\', '/');
                         var name = Path.GetFileName(path);
-                        
+
                         if (!ImGui.MenuItem(path)) continue;
-                        
+
                         var parentObj = Core.ActiveLevel.RecordedBuildObject(name, obj, null);
-                        var script = Core.ActiveLevel.BuildObject("Script", parentObj, "Script").Type as Script;
+                        var script = Core.ActiveLevel.BuildObject("Script", parentObj, "Script").Components["script"] as Script;
                         Core.ActiveLevel.BuildObject("Transform", parentObj, "Transform");
                         script?.Path = path;
                         SelectObject(parentObj);
                     }
-                    
+
                     ImGui.EndMenu();
                 }
-                
+
                 ImGui.Separator();
-                
+
                 if (ImGui.BeginMenu("Types")) {
-                    
+
                     foreach (var type in types) {
-                        
+
                         if (!ImGui.MenuItem(type.Name)) continue;
-                        
+
                         var builtObject = Core.ActiveLevel.RecordedBuildObject(type.Name, obj, type.Name);
 
-                        if (builtObject is { Type: Animation animation, Parent.Type: Model model })
-                            animation.Path = model.Path;
-                        
+                        //if (builtObject is { Components: Animation animation, Parent.Components: Model model })
+                        //    animation.Path = model.Path;
+
                         SelectObject(builtObject);
                     }
-                    
+
                     ImGui.EndMenu();
                 }
+                */
 
                 ImGui.EndMenu();
             }
@@ -254,7 +250,7 @@ internal class LevelBrowser() : Viewport("Level") {
         ImGui.SameLine();
         ImGui.PushFont(Fonts.ImFontAwesomeSmall);
         ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 15, ImGui.GetCursorPosY() + 2.5f));
-        ImGui.TextColored(obj.ScytheColor.to_vector4(), obj.Icon);
+        //ImGui.TextColored(Obj.Color.to_vector4(), Obj.Icon);
         ImGui.PopFont();
 
         // object name
@@ -267,7 +263,7 @@ internal class LevelBrowser() : Viewport("Level") {
         // draw child nodes
         if (!tree) return true;
         
-        if (obj.Children.Any(child => !DrawObject(child, indent + 1))) {
+        if (obj.Children.Any(child => !DrawObject(child.Value, indent + 1))) {
             
             ImGui.TreePop();
             return false;

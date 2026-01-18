@@ -2,7 +2,7 @@
 using Raylib_cs;
 
 // ReSharper disable once ClassNeverInstantiated.Global
-internal unsafe class Animation(Obj obj) : ObjType(obj) {
+internal unsafe class Animation(Obj obj) : Component(obj, "animation") {
     
     public override int Priority => 20;
     
@@ -49,9 +49,9 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
         return true;
     }
 
-    public override void Loop3D() {
+    public override void Loop(bool is2D) {
         
-        if (!IsLoaded || _count == -1 || !IsPlaying || Obj.Parent?.Type is not Model model) return;
+        if (is2D || !IsLoaded || _count == -1 || !IsPlaying || !Obj.Components.TryGetValue("Model", out var model)) return;
         
         _frame = (int)MathF.Floor(_frameRaw);
             
@@ -63,7 +63,7 @@ internal unsafe class Animation(Obj obj) : ObjType(obj) {
             IsPlaying = Looping;
         }
         
-        Raylib.UpdateModelAnimation(model.RlModel, _rlAnims[Track], _frame);
+        Raylib.UpdateModelAnimation((model as Model)!.RlModel, _rlAnims[Track], _frame);
             
         _frameRaw += Raylib.GetFrameTime() * 60;
     }

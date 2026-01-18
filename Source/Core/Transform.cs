@@ -1,9 +1,12 @@
 ﻿using System.Numerics;
+using MoonSharp.Interpreter;
 using Newtonsoft.Json;
 using Raylib_cs;
 using static Raylib_cs.Raylib;
 
-internal class Transform(Obj obj) : ObjType(obj) {
+[MoonSharpUserData]
+[JsonObject(MemberSerialization.OptIn)]
+internal class Transform(Obj obj) : Component(obj, "transform") {
     
     public override int Priority => 10;
 
@@ -13,31 +16,38 @@ internal class Transform(Obj obj) : ObjType(obj) {
     private Vector3 _pos = Vector3.Zero;
     private Vector3 _scale = Vector3.One;
     private Quaternion _rot = Quaternion.Identity;
+
+    #region Local Transform
     
-    // Local
-    [RecordHistory] [JsonProperty] [Label("Pos")] public Vector3 Pos { get => _pos; set { _pos = value; UpdateTransform(); } }
+    [Label("Pos"), RecordHistory, JsonProperty] 
+    public Vector3 Pos { get => _pos; set { _pos = value; UpdateTransform(); } }
     
-    [RecordHistory] [JsonProperty] [Label("Euler")] public Vector3 Euler { 
+    [Label("Euler"), RecordHistory, JsonProperty]
+    public Vector3 Euler { 
         
         get {
             
             var e = Raymath.QuaternionToEuler(Rot).ToDeg();
             return new Vector3(e.X, -e.Y, -e.Z);
-        }
-        
-        set {
+            
+        } set {
+            
             var q = Raymath.QuaternionFromEuler(value.X.DegToRad(), (-value.Y).DegToRad(), (-value.Z).DegToRad());
             if (MathF.Abs(Quaternion.Dot(Rot, q)) > 0.9999f) return;
             Rot = q;
         }
     }
     
-    [RecordHistory] [JsonProperty] [Label("Scale")] public Vector3 Scale { get => _scale; set { _scale = value; UpdateTransform(); } }
-
-    [RecordHistory] [JsonProperty] public Quaternion Rot { get => _rot; set { _rot = value; UpdateTransform(); } }
-
-    // World
-    [Label("World Pos")] public Vector3 WorldPos {
+    [Label("Scale"), RecordHistory, JsonProperty]
+    public Vector3 Scale { get => _scale; set { _scale = value; UpdateTransform(); } }
+    
+    [RecordHistory, JsonProperty]
+    public Quaternion Rot { get => _rot; set { _rot = value; UpdateTransform(); } }
+    
+    #endregion
+    
+    #region World Transform
+    public Vector3 WorldPos {
 
         get {
 
@@ -75,27 +85,32 @@ internal class Transform(Obj obj) : ObjType(obj) {
         }
     }
 
-    [Label("World Euler")] public Vector3 WorldEuler { 
+    public Vector3 WorldEuler { 
         
         get {
             
             var e = Raymath.QuaternionToEuler(WorldRot).ToDeg();
             return new Vector3(e.X, -e.Y, -e.Z);
-        }
-        
-        set {
+            
+        } set {
+            
             var q = Raymath.QuaternionFromEuler(value.X.DegToRad(), (-value.Y).DegToRad(), (-value.Z).DegToRad());
             if (MathF.Abs(Quaternion.Dot(WorldRot, q)) > 0.9999f) return;
             WorldRot = q;
         }
     }
+    #endregion
 
+    private const float MoveSnap = 0.2f;
+    
     private int _mode;
     private float _activeMove;
-    private bool _isWorldSpace;
-    
     private string _activeId = "";
-    private Vector2 _activeMouseTemp;
+
+    private bool
+        _isWorldSpace,
+        _canUseShortcuts;
+    
     private Vector3
         _activePos,
         _activeWorldPos,
@@ -104,16 +119,12 @@ internal class Transform(Obj obj) : ObjType(obj) {
         _activeNormal,
         _activeInitialPoint,
         _activeInitialVector;
+    
+    private Vector2 _activeMouseTemp;
     private Quaternion _activeRot = Quaternion.Identity;
-
-    private const float MoveSnap = 0.2f;
-
-    private bool _canUseShortcuts;
 
     public void UpdateTransform() {
         
-        if (Obj.Parent == null) return;
-
         var rotMatrix = Matrix4x4.Transpose(Matrix4x4.CreateFromQuaternion(Rot));
         
         var matrix = Raymath.MatrixMultiply(
@@ -127,100 +138,99 @@ internal class Transform(Obj obj) : ObjType(obj) {
             Raymath.MatrixTranslate(Pos.X, Pos.Y, Pos.Z)
         );
     
-        Obj.Parent.RotMatrix = rotMatrix;
-        Obj.Parent.Matrix = matrix;
+        Obj.RotMatrix = rotMatrix;
+        Obj.Matrix = matrix;
 
-        RefreshWorldMatrices(Obj.Parent);
+        RefreshWorldMatrices(Obj);
     }
 
-    private static void RefreshWorldMatrices(Obj entity) {
+    private static void RefreshWorldMatrices(Obj obj) {
         
-        if (entity.Parent != null) {
+        if (obj.Parent != null) {
             
-            entity.WorldMatrix = entity.Parent.WorldMatrix * entity.Matrix;
-            entity.WorldRotMatrix = entity.Parent.WorldRotMatrix * entity.RotMatrix;
+            obj.WorldMatrix = obj.Parent.WorldMatrix * obj.Matrix;
+            obj.WorldRotMatrix = obj.Parent.WorldRotMatrix * obj.RotMatrix;
             
         } else {
             
-            entity.WorldMatrix = entity.Matrix;
-            entity.WorldRotMatrix = entity.RotMatrix;
+            obj.WorldMatrix = obj.Matrix;
+            obj.WorldRotMatrix = obj.RotMatrix;
         }
 
-        foreach (var child in entity.Children)
-            RefreshWorldMatrices(child);
+        foreach (var child in obj.Children)
+            RefreshWorldMatrices(child.Value);
     }
 
-    public override void Loop3D() {
+    public override void Loop(bool is2D) {
 
-        UpdateTransform();
-    }
-
-    public override void Loop3DEditor(Viewport viewport) {
-        
-        if (Core.ActiveCamera == null|| viewport is not Level3D level3d) return;
-
-        if (Obj.Parent == null || Obj is { IsSelected: false, Parent: not { IsSelected: true } }) return;
-        
-        if (_canUseShortcuts && _activeMove == 0) {
-        
-            if (IsKeyPressed(KeyboardKey.Q)) _mode = 0;
-            if (IsKeyPressed(KeyboardKey.W)) _mode = 1;
-            if (IsKeyPressed(KeyboardKey.E)) _mode = 2;
-            if (IsKeyPressed(KeyboardKey.X)) _isWorldSpace = !_isWorldSpace;
-        }
-        
-        Shaders.Begin(Shaders.Transform);
-
-        var ray = GetScreenToWorldRay(level3d.RelativeMouse3D, Core.ActiveCamera.Raylib);
-
-        var useWorld = _isWorldSpace && _mode != 2;
-
-        var r = useWorld ? Vector3.UnitX : Obj.Parent.Right;
-        var u = useWorld ? Vector3.UnitY : Obj.Parent.Up;
-        var f = useWorld ? Vector3.UnitZ : Obj.Parent.Fwd;
-        
-        Axis("x", Vector3.UnitX, r, new Color(0.9f, 0.3f, 0.3f), ray);
-        Axis("y", Vector3.UnitY, u, new Color(0.3f, 0.9f, 0.3f), ray);
-        Axis("z", Vector3.UnitZ, f, new Color(0.3f, 0.3f, 0.9f), ray);
-        
-        Shaders.End();
-    }
-
-    public override void LoopUiEditor(Viewport viewport) {
-
-        _canUseShortcuts = false;
-        
-        if (IsCursorHidden()) return;
-        
-        if (Obj.Parent == null || Obj is { IsSelected: false, Parent: not { IsSelected: true } }) return;
-
-        _canUseShortcuts = true;
-        
-        var modeName = _mode switch { 0 => "Pos", 1 => "Rot", 2 => "Scale", _ => "Bruh" };
-        var spaceName = (_mode == 2) ? ("") : (_isWorldSpace ? "(World)" : "(Local)");
-
-        var textA = $"{modeName} {spaceName}";
-        var textPosA = viewport.RelativeMouse with { Y = viewport.RelativeMouse.Y - 15 };
-        
-        DrawText(textA, (int)textPosA.X - 14, (int)textPosA.Y - 19, 20, Color.Black);
-        DrawText(textA, (int)textPosA.X - 15, (int)textPosA.Y - 20, 20, Color.Yellow);
-        
-        if (_activeMove == 0) return;
-        
-        var textB = _mode switch { 0 or 2 => $"{_activeMove:F2}m", 1 => $"{_activeMove:F2}°", _ => $"{_activeMove:F2}" }; 
-        var textPosB = viewport.RelativeMouse with { Y = viewport.RelativeMouse.Y - 15 };
+        if (is2D) {
             
-        DrawText(textB, (int)textPosB.X - 14, (int)textPosB.Y - 39, 20, Color.Black);
-        DrawText(textB, (int)textPosB.X - 15, (int)textPosB.Y - 40, 20, Color.Yellow);
+            _canUseShortcuts = false;
+        
+            if (IsCursorHidden()) return;
+        
+            if (Obj.Parent == null || Obj is { IsSelected: false, Parent: not { IsSelected: true } }) return;
+
+            _canUseShortcuts = true;
+        
+            var modeName = _mode switch { 0 => "Pos", 1 => "Rot", 2 => "Scale", _ => "Bruh" };
+            var spaceName = (_mode == 2) ? ("") : (_isWorldSpace ? "(World)" : "(Local)");
+
+            var textA = $"{modeName} {spaceName}";
+            var textPosA = Editor.Level3D.RelativeMouse with { Y = Editor.Level3D.RelativeMouse.Y - 15 };
+        
+            DrawText(textA, (int)textPosA.X - 14, (int)textPosA.Y - 19, 20, Color.Black);
+            DrawText(textA, (int)textPosA.X - 15, (int)textPosA.Y - 20, 20, Color.Yellow);
+        
+            if (_activeMove == 0) return;
+        
+            var textB = _mode switch { 0 or 2 => $"{_activeMove:F2}m", 1 => $"{_activeMove:F2}°", _ => $"{_activeMove:F2}" }; 
+            var textPosB = Editor.Level3D.RelativeMouse with { Y = Editor.Level3D.RelativeMouse.Y - 15 };
+            
+            DrawText(textB, (int)textPosB.X - 14, (int)textPosB.Y - 39, 20, Color.Black);
+            DrawText(textB, (int)textPosB.X - 15, (int)textPosB.Y - 40, 20, Color.Yellow);
+            
+        } else {
+        
+            UpdateTransform();
+            
+            if (!CommandLine.Editor || Core.ActiveCamera == null) return;
+
+            if (!Obj.IsSelected) return;
+            
+            if (_canUseShortcuts && _activeMove == 0) {
+            
+                if (IsKeyPressed(KeyboardKey.Q)) _mode = 0;
+                if (IsKeyPressed(KeyboardKey.W)) _mode = 1;
+                if (IsKeyPressed(KeyboardKey.E)) _mode = 2;
+                if (IsKeyPressed(KeyboardKey.X)) _isWorldSpace = !_isWorldSpace;
+            }
+            
+            Shaders.Begin(Shaders.Transform);
+
+            var ray = GetScreenToWorldRay(Level3D.RelativeMouse3D, Core.ActiveCamera.Raylib);
+
+            var useWorld = _isWorldSpace && _mode != 2;
+
+            var r = useWorld ? Vector3.UnitX : Obj.Right;
+            var u = useWorld ? Vector3.UnitY : Obj.Up;
+            var f = useWorld ? Vector3.UnitZ : Obj.Fwd;
+            
+            Axis("x", Vector3.UnitX, r, new Color(0.9f, 0.3f, 0.3f), ray);
+            Axis("y", Vector3.UnitY, u, new Color(0.3f, 0.9f, 0.3f), ray);
+            Axis("z", Vector3.UnitZ, f, new Color(0.3f, 0.3f, 0.9f), ray);
+            
+            Shaders.End();
+        }
     }
 
     private void Axis(string id, Vector3 axis, Vector3 normal, Color color, Ray ray) {
 
-        if (Obj.Parent == null || Core.ActiveCamera == null) return;
+        if (Core.ActiveCamera == null) return;
         
         var isActive = _activeId == id;
         
-        Obj.Parent.DecomposeWorldMatrix(out var worldPos, out _, out _);
+        Obj.DecomposeWorldMatrix(out var worldPos, out _, out _);
         
         var a = worldPos + (Raymath.Vector3Normalize(normal) * 0.1f);
         var b = a + normal * 1.5f;
@@ -253,9 +263,9 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
                     var newWorldPos = _activeWorldPos - delta;
 
-                    if (Obj.Parent?.Parent != null) {
+                    if (Obj.Parent != null) {
 
-                        var inverseParentMatrix = Raymath.MatrixInvert(Obj.Parent.Parent.WorldMatrix);
+                        var inverseParentMatrix = Raymath.MatrixInvert(Obj.Parent.WorldMatrix);
                         newPos = Raymath.Vector3Transform(newWorldPos, inverseParentMatrix);
                     }
                     
@@ -281,9 +291,9 @@ internal class Transform(Obj obj) : ObjType(obj) {
 
                         if (_isWorldSpace) {
 
-                            if (Obj.Parent?.Parent != null) {
+                            if (Obj.Parent != null) {
 
-                                var parentRot = Quaternion.CreateFromRotationMatrix(Obj.Parent.Parent.WorldRotMatrix);
+                                var parentRot = Quaternion.CreateFromRotationMatrix(Obj.Parent.WorldRotMatrix);
                                 var localDeltaInParentSpace = Quaternion.Inverse(parentRot) * deltaRot * parentRot;
 
                                 newRot = localDeltaInParentSpace * _activeRot;

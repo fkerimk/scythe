@@ -15,7 +15,7 @@ internal static class Splash {
         
         if (!PathUtil.BestPath("Images/Splash.png", out var splashPath)) return;
         
-        Window.Show(width: 320, height: 190, flags: ConfigFlags.UndecoratedWindow, isSplash: true);
+        Window.Show(scale: 1, width: 320, height: 190, flags: ConfigFlags.UndecoratedWindow, isSplash: true);
         
         _art = LoadTexture(splashPath);
         

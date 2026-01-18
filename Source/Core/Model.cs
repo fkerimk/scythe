@@ -3,7 +3,7 @@ using Raylib_cs;
 using Newtonsoft.Json;
 
 // ReSharper disable once ClassNeverInstantiated.Global
-internal class Model(Obj obj) : ObjType(obj) {
+internal class Model(Obj obj) : Component(obj, "model") {
 
     public override int Priority => 30;
     
@@ -54,12 +54,15 @@ internal class Model(Obj obj) : ObjType(obj) {
         return true;
     }
 
-    public override unsafe void Loop3D() {
+    public override unsafe void Loop(bool is2D) {
 
-        RlModel.Transform = Obj.Parent!.WorldMatrix;
+        if (is2D) return;
+        
+        RlModel.Transform = Obj.WorldMatrix;
         
         // Draw test model
         for (var i = 0; i < RlModel.MaterialCount; i++) {
+            
             var emissiveColor = Raylib.ColorNormalize(RlModel.Materials[i].Maps[(int)MaterialMapIndex.Emission].Color);
             Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrEmissiveColor, emissiveColor, ShaderUniformDataType.Vec4);
             Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrMetallicValue, RlModel.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Value, ShaderUniformDataType.Float);

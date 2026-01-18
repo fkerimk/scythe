@@ -1,50 +1,74 @@
 ﻿using System.Numerics;
+using Raylib_cs;
 using MoonSharp.Interpreter;
 using Newtonsoft.Json;
-using Raylib_cs;
 
 [JsonObject(MemberSerialization.OptIn)]
 internal class Obj {
 
-    public Obj() { Name = ""; }
-    
-    public string Icon => Type?.LabelIcon ?? Icons.Obj;
-    public ScytheColor ScytheColor => Type?.LabelScytheColor ?? Colors.GuiTypeObject;
-    
-    [RecordHistory] [JsonProperty] [Label("Name")] public string Name { get; set; }
+    public string Icon => Icons.Obj;
+    public ScytheColor Color => Colors.GuiTypeObject;
+
+    [Label("Name"), RecordHistory] public string Name {
+        
+        get; set {
+            
+            if (field == value) return;
+
+            if (Parent != null) {
+                
+                if (Parent.Children.ContainsKey(value)) return; 
+
+                if (!string.IsNullOrEmpty(field))
+                    Parent.Children.Remove(field);
+                
+                Parent.Children.Add(value, this);
+            }
+            
+            field = value;
+        }
+    } = null!;
 
     public Obj? Parent; 
-    [JsonProperty] public readonly List<Obj> Children = [];
+    [JsonProperty] public readonly Dictionary<string, Obj> Children = [];
     
-    [JsonProperty] public ObjType? Type { get; set; }
+    // Components
+    [JsonProperty] public Transform Transform = null!;
     
+    [JsonProperty] public Dictionary<string, Component> Components { get; set; } = null!;
+
+    // Transform
     public Matrix4x4 Matrix = Matrix4x4.Identity;
     public Matrix4x4 RotMatrix = Matrix4x4.Identity;
     
     public Matrix4x4 WorldMatrix = Matrix4x4.Identity;
     public Matrix4x4 WorldRotMatrix = Matrix4x4.Identity;
 
-    public Vector3 Right => Vector3.Normalize(new Vector3(WorldRotMatrix.M11, WorldRotMatrix.M21, WorldRotMatrix.M31));
     public Vector3 Up    => Vector3.Normalize(new Vector3(WorldRotMatrix.M12, WorldRotMatrix.M22, WorldRotMatrix.M32));
     public Vector3 Fwd   => Vector3.Normalize(new Vector3(WorldRotMatrix.M13, WorldRotMatrix.M23, WorldRotMatrix.M33));
+    public Vector3 Right => Vector3.Normalize(new Vector3(WorldRotMatrix.M11, WorldRotMatrix.M21, WorldRotMatrix.M31));
+    public Vector3 FwdFlat { get { var fwd = Fwd; fwd.Y = 0; Vector3.Normalize(fwd); return fwd;  } }
+    public Vector3 RightFlat { get { var right = Right; right.Y = 0; Vector3.Normalize(right); return right;  } }
     
     public bool IsSelected;
     
-    public Obj(string name, Type? type, Obj? parent) {
+    public Obj(string? name, Obj? parent) {
         
-        Name = name;
+        if (name == null) return;
+        
         Parent = parent;
-
-        if (type == null || type == typeof(Obj)) Type = null;
-        else Type = (ObjType?)(Activator.CreateInstance(type, this) ?? Activator.CreateInstance(type));
+        Name = name;
+        
+        // Components
+        Transform = new Transform(this);
+        Components = new Dictionary<string, Component>();
     }
-
 
     public void Delete() {
 
         if (Parent == null) return;
         
-        Parent.Children.Remove(this);
+        Parent.Children.Remove(Name);
         Parent.OrderChildren();
     }
 
@@ -65,12 +89,10 @@ internal class Obj {
     [MoonSharpHidden]
     public void SetParent(Obj? obj) {
         
-        if (obj == null) return;
-        if (obj == this) return;
-        if (Parent == null) return;
+        if (obj == null || obj == this || Parent == null) return;
 
-        Parent.Children.Remove(this);
-        obj.Children.Add(this);
+        Parent.Children.Remove(Name);
+        obj.Children.Add(Name, this);
         Parent = obj;
         
         Parent.OrderChildren();
@@ -80,9 +102,9 @@ internal class Obj {
 
     private void OrderChildren() {
     
-        if (CommandLine.Editor)
-             Children.Sort((a, b) => NaturalCompare(a.Name, b.Name));
-        else Children.Sort(ObjType.Comparer.Instance);
+        //if (CommandLine.Editor)
+        //     Children.Sort((a, b) => NaturalCompare(a.Name, b.Name));
+        //else Children.Sort(Component.Comparer.Instance);
     }
     
     private static int NaturalCompare(string a, string b) {
@@ -132,11 +154,46 @@ internal class Obj {
         worldScale = lossyScale;
         worldRot = rotation;
     }
+    
+    [MoonSharpHidden]
+    public Obj? Find(params string[] names) {
+        
+        if (names.Length == 0) return this;
+        
+        var current = this;
 
-    [MoonSharpHidden] public T? FindTypeFast<T>() where T : ObjType => (from child in Children where child.Type is T select child.Type).FirstOrDefault() as T;
-    [MoonSharpHidden] public T? FindType<T>() where T : ObjType => (from child in this.GetChildrenRecursive() where child.Type is T select child.Type).FirstOrDefault() as T;
-    public ObjType? FindType(string name) => (from child in this.GetChildrenRecursive() where child.Type?.Name == name select child.Type).FirstOrDefault();
-    public ObjType? FindParentType(string name) => (from child in Parent?.GetChildrenRecursive() where child.Type?.Name == name select child.Type).FirstOrDefault();
+        foreach (var name in names)
+            current = current.Children[name];
+
+        return current.Name != names[^1] ? null : current;
+    }
+    
+    [MoonSharpHidden]
+    public Component? FindComponent(params string[] names) => Find(names[..^1])?.Components[names[^1]];
+    
+    public Obj? Find(Table t) => Find(t.Values.Select(v => v.String).ToArray());
+    public Component? FindComponent(Table t) => FindComponent(t.Values.Select(v => v.String).ToArray());
+
+    public Component MakeComponent(string name) {
+        
+        if (Components.ContainsKey(name)) throw new TypeLoadException();
+        var component = Activator.CreateInstance(Type.GetType(name) ?? throw new KeyNotFoundException(), this) as Component ?? throw new InvalidOperationException();
+        Components[name] = component;
+        return component;
+    }
+    
+    public string SafeNameForChild(string name) {
+        
+        var i = 0;
+
+        while (Children.ContainsKey(name)) {
+            
+            i++;
+            name = "Object " + i;
+        }
+        
+        return name;
+    }
 }
 
 internal static partial class Extensions {
@@ -145,9 +202,9 @@ internal static partial class Extensions {
 
         foreach (var child in obj.Children) {
             
-            yield return child;
+            yield return child.Value;
 
-            foreach (var grandChild in child.GetChildrenRecursive()) {
+            foreach (var grandChild in child.Value.GetChildrenRecursive()) {
                 
                 yield return grandChild;
             }

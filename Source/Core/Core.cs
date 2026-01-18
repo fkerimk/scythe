@@ -29,7 +29,7 @@ internal static class Core {
         
         // Level & camera
         ActiveLevel = new Level("Main");
-        ActiveCamera = CommandLine.Editor ? new Camera3D() : ActiveLevel.FindType<Camera>()?.Cam;
+        ActiveCamera = CommandLine.Editor ? new Camera3D() : (ActiveLevel.Root.Children["Camera"].Components["Camera"] as Camera)?.Cam;
     }
 
     public static void Load() {
@@ -37,96 +37,60 @@ internal static class Core {
         if (ActiveLevel == null) return;
         
         LoadObj(ActiveLevel.Root);
+        
+        return;
+        
+        void LoadObj(Obj obj) {
+
+            foreach (var component in obj.Components.Values) {
+            
+                if (!component.IsLoaded && component.Load())
+                    component.IsLoaded = true;
+            }
+
+            //obj.Children.Sort(Component.Comparer.Instance);
+        
+            foreach (var child in obj.Children)
+                LoadObj(child.Value);
+        }
     }
     
-    private static void LoadObj(Obj obj) {
-
-        if (obj.Type?.IsLoaded != true)
-            if (obj.Type?.Load() == true)
-                obj.Type?.IsLoaded = true;
-
-        obj.Children.Sort(ObjType.Comparer.Instance);
-        
-        foreach (var child in obj.Children)
-            LoadObj(child);
-    }
-
-    public static unsafe void Loop3D() {
+    public static unsafe void Loop(bool is2D) {
 
         if (ActiveLevel == null) return;
 
         Lights.Clear();
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.Pbr.Locs[(int)ShaderLocationIndex.VectorView], ActiveCamera?.Position ?? Vector3.Zero, ShaderUniformDataType.Vec3);
         
-        Loop3DObj(ActiveLevel.Root);
+        LoopObj(ActiveLevel.Root);
         
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrLightCount, Lights.Count, ShaderUniformDataType.Int);
         
         foreach (var light in Lights.Values) light.Update();
-    }
-    
-    private static void Loop3DObj(Obj obj) {
         
-        if (obj.Parent != null) {
+        return;
+        
+        void LoopObj(Obj obj) {
+        
+            if (obj.Parent != null) {
             
-            obj.WorldMatrix = obj.Parent.WorldMatrix * obj.Matrix;
-            obj.WorldRotMatrix = obj.Parent.WorldRotMatrix * obj.RotMatrix;
+                obj.WorldMatrix = obj.Parent.WorldMatrix * obj.Matrix;
+                obj.WorldRotMatrix = obj.Parent.WorldRotMatrix * obj.RotMatrix;
+            }
+            else {
+
+                obj.WorldMatrix = obj.Matrix;
+                obj.WorldRotMatrix = obj.RotMatrix;
+            }
+
+            obj.Transform.Loop(is2D);
+            
+            foreach (var component in obj.Components.Values)
+                component.Loop(is2D);
+        
+            foreach (var child in obj.Children)
+                LoopObj(child.Value);
         }
-        else {
-
-            obj.WorldMatrix = obj.Matrix;
-            obj.WorldRotMatrix = obj.RotMatrix;
-        }
-        
-        obj.Type?.Loop3D();
-        
-        foreach (var child in obj.Children)
-            Loop3DObj(child);
-    }
-
-    public static void LoopUi() {
-
-        if (ActiveLevel == null) return;
-        
-        LoopUiObj(ActiveLevel.Root);
-    }
-    
-    private static void LoopUiObj(Obj obj) {
-        
-        obj.Type?.LoopUi();
-        
-        foreach (var child in obj.Children)
-            LoopUiObj(child);
-    }
-
-    public static void Loop3DEditor(Viewport viewport) {
-
-        if (ActiveLevel == null) return;
-        
-        Loop3DEditorObj(ActiveLevel.Root, viewport);
-    }
-    
-    private static void Loop3DEditorObj(Obj obj, Viewport viewport) {
-        
-        obj.Type?.Loop3DEditor(viewport);
-        
-        foreach (var child in obj.Children)
-            Loop3DEditorObj(child, viewport);
-    }
-    
-    public static void LoopUiEditor(Viewport viewport) {
-
-        if (ActiveLevel == null) return;
-        
-        LoopUiEditorObj(ActiveLevel.Root, viewport);
-    }
-    
-    private static void LoopUiEditorObj(Obj obj, Viewport viewport) {
-        
-        obj.Type?.LoopUiEditor(viewport);
-        
-        foreach (var child in obj.Children)
-            LoopUiEditorObj(child, viewport);
     }
 
     public static void Quit() {
@@ -137,13 +101,13 @@ internal static class Core {
         if (ActiveLevel == null) return;
         
         QuitObj(ActiveLevel.Root);
-    }
+        
+        return;
+        
+        void QuitObj(Obj obj) {
 
-    private static void QuitObj(Obj obj) {
-        
-        obj.Type?.Quit();
-        
-        foreach (var child in obj.Children)
-             QuitObj(child);
+            foreach (var component in obj.Components.Values) component.Quit();
+            foreach (var child in obj.Children) QuitObj(child.Value);
+        }
     }
 }

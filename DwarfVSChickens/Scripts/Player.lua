@@ -1,9 +1,7 @@
-local tr = obj:findParentType("Transform")
-local camTr = cam:findParentType("Transform")
-local anim = obj:findParentType("Model"):findType("Animation")
+local anim = obj:findComponent({"Animation"}) --[[@as Animation]]
 
 local moveInput = f2.zero
-local movePos = tr.pos
+local movePos = obj.transform.pos
 local moveRot = quat.fromEuler(-90, 0, 0)
 local moveSpeed = 3
 
@@ -12,25 +10,19 @@ local camRot = f2.zero
 local camDistance = 5;
 local smoothCamDistance = 5;
 
---newObj = level:cloneObject(obj)
---newObj.setParent(level.root)
---newObj:findParentType("Script").path = ""
---newObjTr = newObj.findParentType("Transform")
---newObjTr.pos = f3.new(0, 3, 0)
-
-mouse.setVisible(false)
+mouse.isLocked = true;
 
 function loop(dt)
 
     input();
-
-    mouse.moveToCenter()
 
     movement(dt)
     rotation(dt)
     camera(dt)
 
     anim.track = moveInput == f2.zero and 6 or 7
+
+    if kb.pressed("Escape") then game.quit() end
 end
 
 function input()
@@ -50,18 +42,10 @@ end
 
 function movement(dt)
 
-    local fwd = cam.obj.fwd
-    fwd.y = 0
-    fwd = f3.normalize(fwd)
+    movePos = movePos - moveInput.x * dt * moveSpeed * cam.rightFlat
+                      + moveInput.y * dt * moveSpeed * cam.fwdFlat
 
-    local right = cam.obj.right
-    right.y = 0
-    right = f3.normalize(right)
-
-    movePos = movePos - moveInput.x * dt * moveSpeed * right
-                      + moveInput.y * dt * moveSpeed * fwd
-
-    tr.pos = f3.lerp(tr.pos, movePos, dt * 15)
+    obj.transform.pos = f3.lerp(obj.transform.pos, movePos, dt * 15)
 end
 
 function rotation(dt)
@@ -80,7 +64,7 @@ function rotation(dt)
             quat.fromEuler(-90, 0, 90)
     end
 
-    tr.rot = quat.lerp(tr.rot, moveRot, dt * 15)
+    obj.transform.rot = quat.lerp(obj.transform.rot, moveRot, dt * 15)
 end
 
 function camera(dt)
@@ -91,6 +75,6 @@ function camera(dt)
 
     smoothCamDistance = mt.lerp(smoothCamDistance, camDistance, dt * 15)
 
-    camTr.rot = quat.fromEuler(camRot.x, camRot.y, 0)
-    camTr.pos = tr.pos + f3.up * 0.5 - cam.parent.fwd * smoothCamDistance
+    cam.obj.transform.rot = quat.fromEuler(camRot.x, camRot.y, 0)
+    cam.obj.transform.pos = obj.transform.pos + f3.up * 0.5 - cam.obj.fwd * smoothCamDistance
 end

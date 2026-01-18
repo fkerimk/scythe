@@ -14,7 +14,7 @@
     
     // ImGui
     public static ScytheColor GuiText => White;
-    public static ScytheColor GuiTextDisabled => new(0.41f, 0.41f, 0.41f);
+    public static ScytheColor GuiTextDisabled => new(0.75f, 0.75f, 0.75f);
     public static ScytheColor GuiWindowBg => new(0.15f, 0.16f, 0.17f);
     //ChildBg,
     //PopupBg,

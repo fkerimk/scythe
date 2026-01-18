@@ -13,7 +13,7 @@ internal static unsafe class Editor {
     
     public static ImGuiIOPtr ImGuiIoPtr;
 
-    private static readonly Level3D Level3D = new() { CustomStyle = new CustomStyle {
+    public static readonly Level3D Level3D = new() { CustomStyle = new CustomStyle {
         
         WindowPadding = new Vector2(0, 0),
         CellPadding = new Vector2(0, 0),
@@ -26,7 +26,7 @@ internal static unsafe class Editor {
     
     public static void Show() {
         
-        Window.Show(scale: 0.75f, flags: [ ConfigFlags.Msaa4xHint, ConfigFlags.ResizableWindow ], title: $"{Config.Mod.Name} - Editor");
+        Window.Show(flags: [ ConfigFlags.Msaa4xHint, ConfigFlags.ResizableWindow ], title: $"{Config.Mod.Name} - Editor");
 
         // Setup ImGui
         Setup(true, true);
@@ -49,7 +49,6 @@ internal static unsafe class Editor {
             if (Core.ActiveCamera == null) break;
 
             Window.UpdateFps();
-
             Core.Load();
 
             // Reload viewport render
@@ -66,12 +65,10 @@ internal static unsafe class Editor {
             FreeCam.Loop(Level3D);
             BeginMode3D(Core.ActiveCamera.Raylib);
             Grid.Draw(Core.ActiveCamera);
-            Core.Loop3D();
-            Core.Loop3DEditor(Level3D);
+            Core.Loop(false);
             EndMode3D();
-            Core.LoopUi();
-            Core.LoopUiEditor(Level3D);
-            if (Config.Editor.DrawFps) DrawText($"{GetFPS()}", 10, 10, 20, Colors.Primary.ToRaylib());
+            Core.Loop(true);
+            Window.DrawFps();
             EndTextureMode();
 
             // Render editor
@@ -85,7 +82,6 @@ internal static unsafe class Editor {
             MenuBar.Draw();
             Level3D.Draw();
             LevelBrowser.Draw();
-            ObjectBrowser.Obj = LevelBrowser.SelectedObject;
             ObjectBrowser.Draw();
             ProjectBrowser.Draw();
             PopFont();

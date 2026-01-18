@@ -3,7 +3,7 @@ using Raylib_cs;
 using MoonSharp.Interpreter;
 using Newtonsoft.Json;
 
-internal class Script(Obj obj) : ObjType(obj) {
+internal class Script(Obj obj) : Component(obj, "script") {
     
     public override int Priority => 40;
     [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
@@ -18,6 +18,7 @@ internal class Script(Obj obj) : ObjType(obj) {
     public static LuaF2? LuaF2;
     public static LuaF3? LuaF3;
     public static LuaQuat? LuaQuat;
+    public static LuaGame? LuaGame;
     
     public static void Register() {
         
@@ -28,6 +29,7 @@ internal class Script(Obj obj) : ObjType(obj) {
         UserData.RegisterType<LuaF2>(); LuaF2 = new LuaF2();
         UserData.RegisterType<LuaF3>(); LuaF3 = new LuaF3();
         UserData.RegisterType<LuaQuat>(); LuaQuat = new LuaQuat();
+        UserData.RegisterType<LuaGame>(); LuaGame = new LuaGame();
         
         UserData.RegisterType<Vector2>();
         UserData.RegisterType<Vector3>();
@@ -36,7 +38,8 @@ internal class Script(Obj obj) : ObjType(obj) {
         UserData.RegisterType<Level>();
         
         UserData.RegisterType<Obj>();
-        UserData.RegisterType<ObjType>();
+        UserData.RegisterType<Obj?>();
+        UserData.RegisterType<Component>();
         UserData.RegisterType<Animation>();
         UserData.RegisterType<Camera>();
         UserData.RegisterType<Light>();
@@ -58,9 +61,9 @@ internal class Script(Obj obj) : ObjType(obj) {
             
             Globals = {
                 
-                ["obj"] = generateDefinitions ? new Obj() : obj,
-                ["level"] = generateDefinitions ? new Level() : Core.ActiveLevel,
-                ["cam"] = generateDefinitions ? new Camera { Cam = null! } : Core.ActiveLevel?.FindType<Camera>(),
+                ["obj"] = generateDefinitions ? new Obj(null!, null) : obj,
+                ["level"] = generateDefinitions ? new Level(null!) : Core.ActiveLevel,
+                ["cam"] = generateDefinitions ? new Camera(null!) { Cam = new Camera3D() } : Core.ActiveLevel?.Root.FindComponent("Camera", "Camera"),
                 ["f2"] = LuaF2,
                 ["f3"] = LuaF3,
                 ["mt"] = LuaMt,
@@ -68,6 +71,7 @@ internal class Script(Obj obj) : ObjType(obj) {
                 ["kb"] = LuaKb,
                 ["mouse"] = LuaMouse,
                 ["quat"] = LuaQuat,
+                ["game"] = LuaGame,
             }
         };
 
@@ -84,22 +88,44 @@ internal class Script(Obj obj) : ObjType(obj) {
         if (CommandLine.Editor) return true;
         
         if (!PathUtil.BestPath($"Scripts/{Path}.lua", out var scriptPath)) return false;
-
+        
         LuaScript = Make(Obj);
 
         var code = File.ReadAllText(scriptPath);
         
-        LuaScript.DoString(code);
+        SafeLuaCall(() => LuaScript.DoString(code));
         LuaLoop = LuaScript.Globals.Get("loop");
 
         return true;
     }
 
-    public override void Loop3D() {
+    public override void Loop(bool is2D) {
+        
+        if (is2D) return;
         
         if (CommandLine.Editor || !IsLoaded) return;
         if (LuaLoop == null || LuaLoop.IsNil()) return;
+
+        SafeLuaCall(() => LuaScript.Call(LuaLoop, Raylib.GetFrameTime()));
+    }
+
+    public void SafeLuaCall(Action action) {
         
-        LuaScript.Call(LuaLoop, Raylib.GetFrameTime());
+        try { action.Invoke(); } catch (InterpreterException ex) {
+
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.Write($"[LUA] ");
+            Console.ForegroundColor = ConsoleColor.DarkBlue;
+            Console.WriteLine($"{ex.DecoratedMessage}");
+            Console.ResetColor();
+        }
+        catch (Exception ex) {
+            
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Write($"[SCYTHE] ");
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.WriteLine($"{ex.Message}");
+            Console.ResetColor();
+        }
     }
 }

@@ -6,7 +6,7 @@ internal class Level3D() : Viewport("3D") {
 
     public RenderTexture2D Rt = new();
     public Vector2 TexSize = Vector2.One, TexTemp = Vector2.Zero;
-    public Vector2 RelativeMouse3D;
+    public static Vector2 RelativeMouse3D;
 
     protected override void OnDraw() {
         

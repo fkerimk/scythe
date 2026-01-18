@@ -30,16 +30,22 @@ mouse = nil
 ---@type LuaQuat
 quat = nil
 
+---@type LuaGame
+game = nil
+
 ---@class Obj
 ---@field icon string
----@field scytheColor ScytheColor
+---@field color ScytheColor
 ---@field name string
----@field type ObjType
----@field right Vector3
+---@field components Dictionary
 ---@field up Vector3
 ---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
 ---@field parent Obj
----@field children List
+---@field children Dictionary
+---@field transform Transform
 ---@field matrix Matrix4x4
 ---@field rotMatrix Matrix4x4
 ---@field worldMatrix Matrix4x4
@@ -64,13 +70,21 @@ function Obj:decomposeMatrix(pos, rot, scale) end
 ---@return void
 function Obj:decomposeWorldMatrix(worldPos, worldRot, worldScale) end
 
----@param name string
----@return any
-function Obj:findType(name) end
+---@param t Table
+---@return Obj
+function Obj:find(t) end
+
+---@param t Table
+---@return Component
+function Obj:findComponent(t) end
 
 ---@param name string
----@return any
-function Obj:findParentType(name) end
+---@return Component
+function Obj:makeComponent(name) end
+
+---@param name string
+---@return string
+function Obj:safeNameForChild(name) end
 
 ---@class Level
 ---@field root Obj
@@ -80,36 +94,44 @@ function Level:save() end
 
 ---@param name string
 ---@param parent Obj
----@param type string
----@return any
-function Level:buildObject(name, parent, type) end
+---@return Obj
+function Level.makeObject(name, parent) end
 
 ---@param name string
 ---@param parent Obj
----@param type string
----@return any
-function Level:recordedBuildObject(name, parent, type) end
+---@return Obj
+function Level:recordedBuildObject(name, parent) end
 
 ---@param source Obj
 ---@return void
 function Level:recordedCloneObject(source) end
 
----@return any
-function Level:findType() end
+---@param t Table
+---@return Obj
+function Level:find(t) end
 
----@class Camera : ObjType
+---@param t Table
+---@return Component
+function Level:findComponent(t) end
+
+---@class Camera : Component
 ---@field labelIcon string
 ---@field labelScytheColor ScytheColor
 ---@field name string
----@field parent Obj
 ---@field priority number
 ---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
 ---@field cam Camera3D
 ---@field obj Obj
 ---@field isLoaded boolean
 local Camera = {}
+---@param is2D boolean
 ---@return void
-function Camera:loop3D() end
+function Camera:loop(is2D) end
 
 ---@class LuaF2
 ---@field new Func
@@ -190,9 +212,13 @@ function LuaKb.released(keyName) end
 function LuaKb.up(keyName) end
 
 ---@class LuaMouse
----@field delta Vector2
 ---@field scroll number
+---@field isLocked boolean
+---@field delta Vector2
 local LuaMouse = {}
+---@return void
+function LuaMouse.loop() end
+
 ---@param visible boolean
 ---@return void
 function LuaMouse.setVisible(visible) end
@@ -224,49 +250,498 @@ function LuaQuat.lerp(a, b, t) end
 ---@return Quaternion
 function LuaQuat.fromDir(dir) end
 
----@class ScytheColor
----@field r number
----@field g number
----@field b number
----@field a number
-local ScytheColor = {}
----@class ObjType
----@field name string
----@field parent Obj
----@field priority number
----@field labelIcon string
----@field labelScytheColor ScytheColor
----@field isSelected boolean
----@field obj Obj
----@field isLoaded boolean
-local ObjType = {}
+---@class LuaGame
+local LuaGame = {}
+---@return void
+function LuaGame.quit() end
+
+---@class Vector2
+---@field allBitsSet Vector2
+---@field e Vector2
+---@field epsilon Vector2
+---@field naN Vector2
+---@field negativeInfinity Vector2
+---@field negativeZero Vector2
+---@field one Vector2
+---@field pi Vector2
+---@field positiveInfinity Vector2
+---@field tau Vector2
+---@field unitX Vector2
+---@field unitY Vector2
+---@field zero Vector2
+---@field item number
+---@field x number
+---@field y number
+local Vector2 = {}
+---@param value Vector2
+---@return Vector2
+function Vector2.abs(value) end
+
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.add(left, right) end
+
+---@param vector Vector2
+---@param value number
 ---@return boolean
-function ObjType:load() end
+function Vector2.all(vector, value) end
 
+---@param vector Vector2
+---@return boolean
+function Vector2.allWhereAllBitsSet(vector) end
+
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.andNot(left, right) end
+
+---@param vector Vector2
+---@param value number
+---@return boolean
+function Vector2.any(vector, value) end
+
+---@param vector Vector2
+---@return boolean
+function Vector2.anyWhereAllBitsSet(vector) end
+
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.bitwiseAnd(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.bitwiseOr(left, right) end
+
+---@param value1 Vector2
+---@param min Vector2
+---@param max Vector2
+---@return Vector2
+function Vector2.clamp(value1, min, max) end
+
+---@param value1 Vector2
+---@param min Vector2
+---@param max Vector2
+---@return Vector2
+function Vector2.clampNative(value1, min, max) end
+
+---@param condition Vector2
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.conditionalSelect(condition, left, right) end
+
+---@param value Vector2
+---@param sign Vector2
+---@return Vector2
+function Vector2.copySign(value, sign) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.cos(vector) end
+
+---@param vector Vector2
+---@param value number
+---@return number
+function Vector2.count(vector, value) end
+
+---@param vector Vector2
+---@return number
+function Vector2.countWhereAllBitsSet(vector) end
+
+---@param value number
+---@return Vector2
+function Vector2.create(value) end
+
+---@param x number
+---@return Vector2
+function Vector2.createScalar(x) end
+
+---@param x number
+---@return Vector2
+function Vector2.createScalarUnsafe(x) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return number
+function Vector2.cross(value1, value2) end
+
+---@param degrees Vector2
+---@return Vector2
+function Vector2.degreesToRadians(degrees) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return number
+function Vector2.distance(value1, value2) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return number
+function Vector2.distanceSquared(value1, value2) end
+
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.divide(left, right) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return number
+function Vector2.dot(value1, value2) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.exp(vector) end
+
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.equals(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@return boolean
+function Vector2.equalsAll(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@return boolean
+function Vector2.equalsAny(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@param addend Vector2
+---@return Vector2
+function Vector2.fusedMultiplyAdd(left, right, addend) end
+
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.greaterThan(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@return boolean
+function Vector2.greaterThanAll(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@return boolean
+function Vector2.greaterThanAny(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.greaterThanOrEqual(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@return boolean
+function Vector2.greaterThanOrEqualAll(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@return boolean
+function Vector2.greaterThanOrEqualAny(left, right) end
+
+---@param x Vector2
+---@param y Vector2
+---@return Vector2
+function Vector2.hypot(x, y) end
+
+---@param vector Vector2
+---@param value number
+---@return number
+function Vector2.indexOf(vector, value) end
+
+---@param vector Vector2
+---@return number
+function Vector2.indexOfWhereAllBitsSet(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.isEvenInteger(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.isFinite(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.isInfinity(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.isInteger(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.isNaN(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.isNegative(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.isNegativeInfinity(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.isNormal(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.isOddInteger(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.isPositive(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.isPositiveInfinity(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.isSubnormal(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.isZero(vector) end
+
+---@param vector Vector2
+---@param value number
+---@return number
+function Vector2.lastIndexOf(vector, value) end
+
+---@param vector Vector2
+---@return number
+function Vector2.lastIndexOfWhereAllBitsSet(vector) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@param amount number
+---@return Vector2
+function Vector2.lerp(value1, value2, amount) end
+
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.lessThan(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@return boolean
+function Vector2.lessThanAll(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@return boolean
+function Vector2.lessThanAny(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.lessThanOrEqual(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@return boolean
+function Vector2.lessThanOrEqualAll(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@return boolean
+function Vector2.lessThanOrEqualAny(left, right) end
+
+---@param source Single
+---@return Vector2
+function Vector2.load(source) end
+
+---@param source Single
+---@return Vector2
+function Vector2.loadAligned(source) end
+
+---@param source Single
+---@return Vector2
+function Vector2.loadAlignedNonTemporal(source) end
+
+---@param source number
+---@return Vector2
+function Vector2.loadUnsafe(source) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.log(vector) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.log2(vector) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return Vector2
+function Vector2.max(value1, value2) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return Vector2
+function Vector2.maxMagnitude(value1, value2) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return Vector2
+function Vector2.maxMagnitudeNumber(value1, value2) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return Vector2
+function Vector2.maxNative(value1, value2) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return Vector2
+function Vector2.maxNumber(value1, value2) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return Vector2
+function Vector2.min(value1, value2) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return Vector2
+function Vector2.minMagnitude(value1, value2) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return Vector2
+function Vector2.minMagnitudeNumber(value1, value2) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return Vector2
+function Vector2.minNative(value1, value2) end
+
+---@param value1 Vector2
+---@param value2 Vector2
+---@return Vector2
+function Vector2.minNumber(value1, value2) end
+
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.multiply(left, right) end
+
+---@param left Vector2
+---@param right Vector2
+---@param addend Vector2
+---@return Vector2
+function Vector2.multiplyAddEstimate(left, right, addend) end
+
+---@param value Vector2
+---@return Vector2
+function Vector2.negate(value) end
+
+---@param vector Vector2
+---@param value number
+---@return boolean
+function Vector2.none(vector, value) end
+
+---@param vector Vector2
+---@return boolean
+function Vector2.noneWhereAllBitsSet(vector) end
+
+---@param value Vector2
+---@return Vector2
+function Vector2.normalize(value) end
+
+---@param value Vector2
+---@return Vector2
+function Vector2.onesComplement(value) end
+
+---@param radians Vector2
+---@return Vector2
+function Vector2.radiansToDegrees(radians) end
+
+---@param vector Vector2
+---@param normal Vector2
+---@return Vector2
+function Vector2.reflect(vector, normal) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.round(vector) end
+
+---@param vector Vector2
+---@param xIndex number
+---@param yIndex number
+---@return Vector2
+function Vector2.shuffle(vector, xIndex, yIndex) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.sin(vector) end
+
+---@param vector Vector2
+---@return ValueTuple
+function Vector2.sinCos(vector) end
+
+---@param value Vector2
+---@return Vector2
+function Vector2.squareRoot(value) end
+
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.subtract(left, right) end
+
+---@param value Vector2
+---@return number
+function Vector2.sum(value) end
+
+---@param position Vector2
+---@param matrix Matrix3x2
+---@return Vector2
+function Vector2.transform(position, matrix) end
+
+---@param normal Vector2
+---@param matrix Matrix3x2
+---@return Vector2
+function Vector2.transformNormal(normal, matrix) end
+
+---@param vector Vector2
+---@return Vector2
+function Vector2.truncate(vector) end
+
+---@param left Vector2
+---@param right Vector2
+---@return Vector2
+function Vector2.xor(left, right) end
+
+---@param array Single
 ---@return void
-function ObjType:loop3D() end
+function Vector2:copyTo(array) end
 
----@return void
-function ObjType:loopUi() end
+---@param destination Span
+---@return boolean
+function Vector2:tryCopyTo(destination) end
 
----@param viewport Viewport
----@return void
-function ObjType:loop3DEditor(viewport) end
+---@return number
+function Vector2:getHashCode() end
 
----@param viewport Viewport
----@return void
-function ObjType:loopUiEditor(viewport) end
+---@return number
+function Vector2:length() end
 
----@return void
-function ObjType:quit() end
+---@return number
+function Vector2:lengthSquared() end
 
----@param name string
----@return any
-function ObjType:findType(name) end
-
----@param name string
----@return any
-function ObjType:findParentType(name) end
+---@return string
+function Vector2:toString() end
 
 ---@class Vector3
 ---@field allBitsSet Vector3
@@ -747,7 +1222,7 @@ function Vector3:copyTo(array) end
 ---@return boolean
 function Vector3:tryCopyTo(destination) end
 
----@return any
+---@return number
 function Vector3:getHashCode() end
 
 ---@return number
@@ -759,6 +1234,308 @@ function Vector3:lengthSquared() end
 ---@return string
 function Vector3:toString() end
 
+---@class Quaternion
+---@field zero Quaternion
+---@field identity Quaternion
+---@field item number
+---@field isIdentity boolean
+---@field x number
+---@field y number
+---@field z number
+---@field w number
+local Quaternion = {}
+---@param value1 Quaternion
+---@param value2 Quaternion
+---@return Quaternion
+function Quaternion.add(value1, value2) end
+
+---@param value1 Quaternion
+---@param value2 Quaternion
+---@return Quaternion
+function Quaternion.concatenate(value1, value2) end
+
+---@param value Quaternion
+---@return Quaternion
+function Quaternion.conjugate(value) end
+
+---@param x number
+---@param y number
+---@param z number
+---@param w number
+---@return Quaternion
+function Quaternion.create(x, y, z, w) end
+
+---@param axis Vector3
+---@param angle number
+---@return Quaternion
+function Quaternion.createFromAxisAngle(axis, angle) end
+
+---@param matrix Matrix4x4
+---@return Quaternion
+function Quaternion.createFromRotationMatrix(matrix) end
+
+---@param yaw number
+---@param pitch number
+---@param roll number
+---@return Quaternion
+function Quaternion.createFromYawPitchRoll(yaw, pitch, roll) end
+
+---@param value1 Quaternion
+---@param value2 Quaternion
+---@return Quaternion
+function Quaternion.divide(value1, value2) end
+
+---@param quaternion1 Quaternion
+---@param quaternion2 Quaternion
+---@return number
+function Quaternion.dot(quaternion1, quaternion2) end
+
+---@param value Quaternion
+---@return Quaternion
+function Quaternion.inverse(value) end
+
+---@param quaternion1 Quaternion
+---@param quaternion2 Quaternion
+---@param amount number
+---@return Quaternion
+function Quaternion.lerp(quaternion1, quaternion2, amount) end
+
+---@param value1 Quaternion
+---@param value2 Quaternion
+---@return Quaternion
+function Quaternion.multiply(value1, value2) end
+
+---@param value Quaternion
+---@return Quaternion
+function Quaternion.negate(value) end
+
+---@param value Quaternion
+---@return Quaternion
+function Quaternion.normalize(value) end
+
+---@param quaternion1 Quaternion
+---@param quaternion2 Quaternion
+---@param amount number
+---@return Quaternion
+function Quaternion.slerp(quaternion1, quaternion2, amount) end
+
+---@param value1 Quaternion
+---@param value2 Quaternion
+---@return Quaternion
+function Quaternion.subtract(value1, value2) end
+
+---@param obj Object
+---@return boolean
+function Quaternion:equals(obj) end
+
+---@return number
+function Quaternion:getHashCode() end
+
+---@return number
+function Quaternion:length() end
+
+---@return number
+function Quaternion:lengthSquared() end
+
+---@return string
+function Quaternion:toString() end
+
+---@class Component
+---@field name string
+---@field priority number
+---@field labelIcon string
+---@field labelScytheColor ScytheColor
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field obj Obj
+---@field isLoaded boolean
+local Component = {}
+---@return boolean
+function Component:load() end
+
+---@param is2D boolean
+---@return void
+function Component:loop(is2D) end
+
+---@return void
+function Component:quit() end
+
+---@class Animation : Component
+---@field priority number
+---@field labelIcon string
+---@field labelScytheColor ScytheColor
+---@field path string
+---@field track number
+---@field isPlaying boolean
+---@field looping boolean
+---@field name string
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field obj Obj
+---@field isLoaded boolean
+local Animation = {}
+---@return boolean
+function Animation:load() end
+
+---@param is2D boolean
+---@return void
+function Animation:loop(is2D) end
+
+---@return void
+function Animation:quit() end
+
+---@class Light : Component
+---@field labelIcon string
+---@field labelScytheColor ScytheColor
+---@field enabled boolean
+---@field type number
+---@field scytheColor ScytheColor
+---@field intensity number
+---@field range number
+---@field name string
+---@field priority number
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field obj Obj
+---@field isLoaded boolean
+local Light = {}
+---@return void
+function Light:update() end
+
+---@param is2D boolean
+---@return void
+function Light:loop(is2D) end
+
+---@class Model : Component
+---@field priority number
+---@field labelIcon string
+---@field labelScytheColor ScytheColor
+---@field path string
+---@field scytheColor ScytheColor
+---@field name string
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field rlModel Model
+---@field obj Obj
+---@field isLoaded boolean
+local Model = {}
+---@return boolean
+function Model:load() end
+
+---@param is2D boolean
+---@return void
+function Model:loop(is2D) end
+
+---@return void
+function Model:quit() end
+
+---@class Script : Component
+---@field priority number
+---@field path string
+---@field name string
+---@field labelIcon string
+---@field labelScytheColor ScytheColor
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field luaScript Script
+---@field luaLoop DynValue
+---@field luaMt LuaMt
+---@field luaTime LuaTime
+---@field luaKb LuaKb
+---@field luaMouse LuaMouse
+---@field luaF2 LuaF2
+---@field luaF3 LuaF3
+---@field luaQuat LuaQuat
+---@field luaGame LuaGame
+---@field obj Obj
+---@field isLoaded boolean
+local Script = {}
+---@return void
+function Script.register() end
+
+---@return boolean
+function Script:load() end
+
+---@param is2D boolean
+---@return void
+function Script:loop(is2D) end
+
+---@param action Action
+---@return void
+function Script:safeLuaCall(action) end
+
+---@class Transform : Component
+---@field priority number
+---@field labelIcon string
+---@field labelScytheColor ScytheColor
+---@field pos Vector3
+---@field euler Vector3
+---@field scale Vector3
+---@field rot Quaternion
+---@field worldPos Vector3
+---@field worldRot Quaternion
+---@field worldEuler Vector3
+---@field name string
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field obj Obj
+---@field isLoaded boolean
+local Transform = {}
+---@return void
+function Transform:updateTransform() end
+
+---@param is2D boolean
+---@return void
+function Transform:loop(is2D) end
+
+---@param deg number
+---@return void
+function Transform:rotateX(deg) end
+
+---@param deg number
+---@return void
+function Transform:rotateY(deg) end
+
+---@param deg number
+---@return void
+function Transform:rotateZ(deg) end
+
+---@param x number
+---@param y number
+---@param z number
+---@return void
+function Transform:addEuler(x, y, z) end
+
+---@class ScytheColor
+---@field r number
+---@field g number
+---@field b number
+---@field a number
+local ScytheColor = {}
 ---@class Matrix4x4
 ---@field identity Matrix4x4
 ---@field isIdentity boolean
@@ -1041,19 +1818,19 @@ function Matrix4x4.transpose(matrix) end
 ---@return boolean
 function Matrix4x4:equals(obj) end
 
----@return any
+---@return number
 function Matrix4x4:getDeterminant() end
 
 ---@param row number
 ---@param column number
----@return any
+---@return number
 function Matrix4x4:getElement(row, column) end
 
 ---@param index number
----@return any
+---@return Vector4
 function Matrix4x4:getRow(index) end
 
----@return any
+---@return number
 function Matrix4x4:getHashCode() end
 
 ---@return string
@@ -1070,112 +1847,6 @@ function Matrix4x4:withElement(row, column, value) end
 ---@return Matrix4x4
 function Matrix4x4:withRow(index, value) end
 
----@class Quaternion
----@field zero Quaternion
----@field identity Quaternion
----@field item number
----@field isIdentity boolean
----@field x number
----@field y number
----@field z number
----@field w number
-local Quaternion = {}
----@param value1 Quaternion
----@param value2 Quaternion
----@return Quaternion
-function Quaternion.add(value1, value2) end
-
----@param value1 Quaternion
----@param value2 Quaternion
----@return Quaternion
-function Quaternion.concatenate(value1, value2) end
-
----@param value Quaternion
----@return Quaternion
-function Quaternion.conjugate(value) end
-
----@param x number
----@param y number
----@param z number
----@param w number
----@return Quaternion
-function Quaternion.create(x, y, z, w) end
-
----@param axis Vector3
----@param angle number
----@return Quaternion
-function Quaternion.createFromAxisAngle(axis, angle) end
-
----@param matrix Matrix4x4
----@return Quaternion
-function Quaternion.createFromRotationMatrix(matrix) end
-
----@param yaw number
----@param pitch number
----@param roll number
----@return Quaternion
-function Quaternion.createFromYawPitchRoll(yaw, pitch, roll) end
-
----@param value1 Quaternion
----@param value2 Quaternion
----@return Quaternion
-function Quaternion.divide(value1, value2) end
-
----@param quaternion1 Quaternion
----@param quaternion2 Quaternion
----@return number
-function Quaternion.dot(quaternion1, quaternion2) end
-
----@param value Quaternion
----@return Quaternion
-function Quaternion.inverse(value) end
-
----@param quaternion1 Quaternion
----@param quaternion2 Quaternion
----@param amount number
----@return Quaternion
-function Quaternion.lerp(quaternion1, quaternion2, amount) end
-
----@param value1 Quaternion
----@param value2 Quaternion
----@return Quaternion
-function Quaternion.multiply(value1, value2) end
-
----@param value Quaternion
----@return Quaternion
-function Quaternion.negate(value) end
-
----@param value Quaternion
----@return Quaternion
-function Quaternion.normalize(value) end
-
----@param quaternion1 Quaternion
----@param quaternion2 Quaternion
----@param amount number
----@return Quaternion
-function Quaternion.slerp(quaternion1, quaternion2, amount) end
-
----@param value1 Quaternion
----@param value2 Quaternion
----@return Quaternion
-function Quaternion.subtract(value1, value2) end
-
----@param obj Object
----@return boolean
-function Quaternion:equals(obj) end
-
----@return any
-function Quaternion:getHashCode() end
-
----@return number
-function Quaternion:length() end
-
----@return number
-function Quaternion:lengthSquared() end
-
----@return string
-function Quaternion:toString() end
-
 ---@class Camera3D
 ---@field projection CameraProjection
 ---@field fovY number
@@ -1184,503 +1855,104 @@ function Quaternion:toString() end
 ---@field up Vector3
 ---@field raylib Camera3D
 local Camera3D = {}
----@class Vector2
----@field allBitsSet Vector2
----@field e Vector2
----@field epsilon Vector2
----@field naN Vector2
----@field negativeInfinity Vector2
----@field negativeZero Vector2
----@field one Vector2
----@field pi Vector2
----@field positiveInfinity Vector2
----@field tau Vector2
----@field unitX Vector2
----@field unitY Vector2
----@field zero Vector2
----@field item number
----@field x number
----@field y number
-local Vector2 = {}
----@param value Vector2
----@return Vector2
-function Vector2.abs(value) end
-
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.add(left, right) end
-
----@param vector Vector2
----@param value number
----@return boolean
-function Vector2.all(vector, value) end
-
----@param vector Vector2
----@return boolean
-function Vector2.allWhereAllBitsSet(vector) end
-
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.andNot(left, right) end
-
----@param vector Vector2
----@param value number
----@return boolean
-function Vector2.any(vector, value) end
-
----@param vector Vector2
----@return boolean
-function Vector2.anyWhereAllBitsSet(vector) end
-
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.bitwiseAnd(left, right) end
-
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.bitwiseOr(left, right) end
-
----@param value1 Vector2
----@param min Vector2
----@param max Vector2
----@return Vector2
-function Vector2.clamp(value1, min, max) end
-
----@param value1 Vector2
----@param min Vector2
----@param max Vector2
----@return Vector2
-function Vector2.clampNative(value1, min, max) end
-
----@param condition Vector2
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.conditionalSelect(condition, left, right) end
-
----@param value Vector2
----@param sign Vector2
----@return Vector2
-function Vector2.copySign(value, sign) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.cos(vector) end
-
----@param vector Vector2
----@param value number
----@return number
-function Vector2.count(vector, value) end
-
----@param vector Vector2
----@return number
-function Vector2.countWhereAllBitsSet(vector) end
+---@class Matrix3x2
+---@field identity Matrix3x2
+---@field isIdentity boolean
+---@field translation Vector2
+---@field x Vector2
+---@field y Vector2
+---@field z Vector2
+---@field item Vector2
+---@field m11 number
+---@field m12 number
+---@field m21 number
+---@field m22 number
+---@field m31 number
+---@field m32 number
+local Matrix3x2 = {}
+---@param value1 Matrix3x2
+---@param value2 Matrix3x2
+---@return Matrix3x2
+function Matrix3x2.add(value1, value2) end
 
 ---@param value number
----@return Vector2
-function Vector2.create(value) end
-
----@param x number
----@return Vector2
-function Vector2.createScalar(x) end
-
----@param x number
----@return Vector2
-function Vector2.createScalarUnsafe(x) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return number
-function Vector2.cross(value1, value2) end
-
----@param degrees Vector2
----@return Vector2
-function Vector2.degreesToRadians(degrees) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return number
-function Vector2.distance(value1, value2) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return number
-function Vector2.distanceSquared(value1, value2) end
-
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.divide(left, right) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return number
-function Vector2.dot(value1, value2) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.exp(vector) end
-
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.equals(left, right) end
-
----@param left Vector2
----@param right Vector2
----@return boolean
-function Vector2.equalsAll(left, right) end
-
----@param left Vector2
----@param right Vector2
----@return boolean
-function Vector2.equalsAny(left, right) end
-
----@param left Vector2
----@param right Vector2
----@param addend Vector2
----@return Vector2
-function Vector2.fusedMultiplyAdd(left, right, addend) end
-
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.greaterThan(left, right) end
-
----@param left Vector2
----@param right Vector2
----@return boolean
-function Vector2.greaterThanAll(left, right) end
-
----@param left Vector2
----@param right Vector2
----@return boolean
-function Vector2.greaterThanAny(left, right) end
-
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.greaterThanOrEqual(left, right) end
-
----@param left Vector2
----@param right Vector2
----@return boolean
-function Vector2.greaterThanOrEqualAll(left, right) end
-
----@param left Vector2
----@param right Vector2
----@return boolean
-function Vector2.greaterThanOrEqualAny(left, right) end
-
----@param x Vector2
----@param y Vector2
----@return Vector2
-function Vector2.hypot(x, y) end
-
----@param vector Vector2
----@param value number
----@return number
-function Vector2.indexOf(vector, value) end
-
----@param vector Vector2
----@return number
-function Vector2.indexOfWhereAllBitsSet(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.isEvenInteger(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.isFinite(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.isInfinity(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.isInteger(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.isNaN(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.isNegative(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.isNegativeInfinity(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.isNormal(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.isOddInteger(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.isPositive(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.isPositiveInfinity(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.isSubnormal(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.isZero(vector) end
-
----@param vector Vector2
----@param value number
----@return number
-function Vector2.lastIndexOf(vector, value) end
-
----@param vector Vector2
----@return number
-function Vector2.lastIndexOfWhereAllBitsSet(vector) end
-
----@param value1 Vector2
----@param value2 Vector2
----@param amount number
----@return Vector2
-function Vector2.lerp(value1, value2, amount) end
-
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.lessThan(left, right) end
-
----@param left Vector2
----@param right Vector2
----@return boolean
-function Vector2.lessThanAll(left, right) end
-
----@param left Vector2
----@param right Vector2
----@return boolean
-function Vector2.lessThanAny(left, right) end
-
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.lessThanOrEqual(left, right) end
-
----@param left Vector2
----@param right Vector2
----@return boolean
-function Vector2.lessThanOrEqualAll(left, right) end
-
----@param left Vector2
----@param right Vector2
----@return boolean
-function Vector2.lessThanOrEqualAny(left, right) end
-
----@param source Single
----@return Vector2
-function Vector2.load(source) end
-
----@param source Single
----@return Vector2
-function Vector2.loadAligned(source) end
-
----@param source Single
----@return Vector2
-function Vector2.loadAlignedNonTemporal(source) end
-
----@param source number
----@return Vector2
-function Vector2.loadUnsafe(source) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.log(vector) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.log2(vector) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return Vector2
-function Vector2.max(value1, value2) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return Vector2
-function Vector2.maxMagnitude(value1, value2) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return Vector2
-function Vector2.maxMagnitudeNumber(value1, value2) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return Vector2
-function Vector2.maxNative(value1, value2) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return Vector2
-function Vector2.maxNumber(value1, value2) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return Vector2
-function Vector2.min(value1, value2) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return Vector2
-function Vector2.minMagnitude(value1, value2) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return Vector2
-function Vector2.minMagnitudeNumber(value1, value2) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return Vector2
-function Vector2.minNative(value1, value2) end
-
----@param value1 Vector2
----@param value2 Vector2
----@return Vector2
-function Vector2.minNumber(value1, value2) end
-
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.multiply(left, right) end
-
----@param left Vector2
----@param right Vector2
----@param addend Vector2
----@return Vector2
-function Vector2.multiplyAddEstimate(left, right, addend) end
-
----@param value Vector2
----@return Vector2
-function Vector2.negate(value) end
-
----@param vector Vector2
----@param value number
----@return boolean
-function Vector2.none(vector, value) end
-
----@param vector Vector2
----@return boolean
-function Vector2.noneWhereAllBitsSet(vector) end
-
----@param value Vector2
----@return Vector2
-function Vector2.normalize(value) end
-
----@param value Vector2
----@return Vector2
-function Vector2.onesComplement(value) end
-
----@param radians Vector2
----@return Vector2
-function Vector2.radiansToDegrees(radians) end
-
----@param vector Vector2
----@param normal Vector2
----@return Vector2
-function Vector2.reflect(vector, normal) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.round(vector) end
-
----@param vector Vector2
----@param xIndex number
----@param yIndex number
----@return Vector2
-function Vector2.shuffle(vector, xIndex, yIndex) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.sin(vector) end
-
----@param vector Vector2
----@return ValueTuple
-function Vector2.sinCos(vector) end
-
----@param value Vector2
----@return Vector2
-function Vector2.squareRoot(value) end
-
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.subtract(left, right) end
-
----@param value Vector2
----@return number
-function Vector2.sum(value) end
+---@return Matrix3x2
+function Matrix3x2.create(value) end
+
+---@param radians number
+---@return Matrix3x2
+function Matrix3x2.createRotation(radians) end
+
+---@param scales Vector2
+---@return Matrix3x2
+function Matrix3x2.createScale(scales) end
+
+---@param radiansX number
+---@param radiansY number
+---@return Matrix3x2
+function Matrix3x2.createSkew(radiansX, radiansY) end
 
 ---@param position Vector2
+---@return Matrix3x2
+function Matrix3x2.createTranslation(position) end
+
 ---@param matrix Matrix3x2
----@return Vector2
-function Vector2.transform(position, matrix) end
-
----@param normal Vector2
----@param matrix Matrix3x2
----@return Vector2
-function Vector2.transformNormal(normal, matrix) end
-
----@param vector Vector2
----@return Vector2
-function Vector2.truncate(vector) end
-
----@param left Vector2
----@param right Vector2
----@return Vector2
-function Vector2.xor(left, right) end
-
----@param array Single
----@return void
-function Vector2:copyTo(array) end
-
----@param destination Span
+---@param result Matrix3x2
 ---@return boolean
-function Vector2:tryCopyTo(destination) end
+function Matrix3x2.invert(matrix, result) end
 
----@return any
-function Vector2:getHashCode() end
+---@param matrix1 Matrix3x2
+---@param matrix2 Matrix3x2
+---@param amount number
+---@return Matrix3x2
+function Matrix3x2.lerp(matrix1, matrix2, amount) end
+
+---@param value1 Matrix3x2
+---@param value2 Matrix3x2
+---@return Matrix3x2
+function Matrix3x2.multiply(value1, value2) end
+
+---@param value Matrix3x2
+---@return Matrix3x2
+function Matrix3x2.negate(value) end
+
+---@param value1 Matrix3x2
+---@param value2 Matrix3x2
+---@return Matrix3x2
+function Matrix3x2.subtract(value1, value2) end
+
+---@param obj Object
+---@return boolean
+function Matrix3x2:equals(obj) end
 
 ---@return number
-function Vector2:length() end
+function Matrix3x2:getDeterminant() end
+
+---@param row number
+---@param column number
+---@return number
+function Matrix3x2:getElement(row, column) end
+
+---@param index number
+---@return Vector2
+function Matrix3x2:getRow(index) end
 
 ---@return number
-function Vector2:lengthSquared() end
+function Matrix3x2:getHashCode() end
 
 ---@return string
-function Vector2:toString() end
+function Matrix3x2:toString() end
 
----@class Viewport
----@field customStyle Nullable
----@field windowPos Vector2
----@field contentRegion Vector2
----@field relativeMouse Vector2
----@field isHovered boolean
-local Viewport = {}
----@return void
-function Viewport:draw() end
+---@param row number
+---@param column number
+---@param value number
+---@return Matrix3x2
+function Matrix3x2:withElement(row, column, value) end
+
+---@param index number
+---@param value Vector2
+---@return Matrix3x2
+function Matrix3x2:withRow(index, value) end
 
 ---@class Vector4
 ---@field allBitsSet Vector4
@@ -2154,7 +2426,7 @@ function Vector4:copyTo(array) end
 ---@return boolean
 function Vector4:tryCopyTo(destination) end
 
----@return any
+---@return number
 function Vector4:getHashCode() end
 
 ---@return number
@@ -2208,7 +2480,7 @@ function Plane.transform(plane, matrix) end
 ---@return boolean
 function Plane:equals(obj) end
 
----@return any
+---@return number
 function Plane:getHashCode() end
 
 ---@return string
@@ -2219,102 +2491,3 @@ function Plane:toString() end
 ---@field perspective CameraProjection
 ---@field orthographic CameraProjection
 local CameraProjection = {}
----@class Matrix3x2
----@field identity Matrix3x2
----@field isIdentity boolean
----@field translation Vector2
----@field x Vector2
----@field y Vector2
----@field z Vector2
----@field item Vector2
----@field m11 number
----@field m12 number
----@field m21 number
----@field m22 number
----@field m31 number
----@field m32 number
-local Matrix3x2 = {}
----@param value1 Matrix3x2
----@param value2 Matrix3x2
----@return Matrix3x2
-function Matrix3x2.add(value1, value2) end
-
----@param value number
----@return Matrix3x2
-function Matrix3x2.create(value) end
-
----@param radians number
----@return Matrix3x2
-function Matrix3x2.createRotation(radians) end
-
----@param scales Vector2
----@return Matrix3x2
-function Matrix3x2.createScale(scales) end
-
----@param radiansX number
----@param radiansY number
----@return Matrix3x2
-function Matrix3x2.createSkew(radiansX, radiansY) end
-
----@param position Vector2
----@return Matrix3x2
-function Matrix3x2.createTranslation(position) end
-
----@param matrix Matrix3x2
----@param result Matrix3x2
----@return boolean
-function Matrix3x2.invert(matrix, result) end
-
----@param matrix1 Matrix3x2
----@param matrix2 Matrix3x2
----@param amount number
----@return Matrix3x2
-function Matrix3x2.lerp(matrix1, matrix2, amount) end
-
----@param value1 Matrix3x2
----@param value2 Matrix3x2
----@return Matrix3x2
-function Matrix3x2.multiply(value1, value2) end
-
----@param value Matrix3x2
----@return Matrix3x2
-function Matrix3x2.negate(value) end
-
----@param value1 Matrix3x2
----@param value2 Matrix3x2
----@return Matrix3x2
-function Matrix3x2.subtract(value1, value2) end
-
----@param obj Object
----@return boolean
-function Matrix3x2:equals(obj) end
-
----@return any
-function Matrix3x2:getDeterminant() end
-
----@param row number
----@param column number
----@return any
-function Matrix3x2:getElement(row, column) end
-
----@param index number
----@return any
-function Matrix3x2:getRow(index) end
-
----@return any
-function Matrix3x2:getHashCode() end
-
----@return string
-function Matrix3x2:toString() end
-
----@param row number
----@param column number
----@param value number
----@return Matrix3x2
-function Matrix3x2:withElement(row, column, value) end
-
----@param index number
----@param value Vector2
----@return Matrix3x2
-function Matrix3x2:withRow(index, value) end
-

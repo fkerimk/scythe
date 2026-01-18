@@ -1,38 +1,33 @@
-﻿using System.Reflection;
+﻿using MoonSharp.Interpreter;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
+[JsonObject(MemberSerialization.OptIn)]
 internal class Level {
     
     private readonly string _name = null!;
-    public readonly Obj Root = null!;
-    
     private string _jsonPath = null!;
-
-    public Level() {}
     
-    public Level(string name) {
+    [JsonProperty] public readonly Obj Root = null!;
 
+    public Level(string? name) {
+
+        if (name == null) return;
+        
         _name = name;
-        Root = Load();
-    }
-
-    private Obj Load() {
         
         if (!PathUtil.BestPath($"Levels/{_name}.json", out _jsonPath))
             throw new FileNotFoundException($"Could not find level json file {_jsonPath}");
 
-        var root = new Obj("Root", null, null);
+        Root = new Obj("Root", null);
 
         var jsonText = File.ReadAllText(_jsonPath);
         var rawData = JObject.Parse(jsonText);
 
-        if (rawData["Children"] is not JArray children) return root;
+        if (rawData["Root"]?["Children"] is not JObject children) return;
         
-        foreach (var childData in children)
-            BuildHierarchy((JObject)childData, root);
-            
-        return root;
+        foreach (var property in children.Properties())
+            BuildHierarchy(new KeyValuePair<string, JToken>(property.Name, property.Value), Root);
     }
 
     public void Save() {
@@ -47,45 +42,57 @@ internal class Level {
         if (!Enum.TryParse(Config.Level.Formatting, out Formatting formatting))
             formatting = Formatting.None;
         
-        var json = JsonConvert.SerializeObject(Root,formatting, settings);
+        var json = JsonConvert.SerializeObject(this, formatting, settings);
 
         File.WriteAllText(_jsonPath, json);
     }
     
-    private void BuildHierarchy(JObject data, Obj parent) {
+    private void BuildHierarchy(KeyValuePair<string, JToken> dataPair, Obj parent) {
         
-        var name = data["Name"]?.ToString() ?? "Object";
+        if (dataPair.Value is not JObject data) return;
         
-        var typeStr = data["Type"]?.Type == JTokenType.Object 
-            ? data["Type"]?["Name"]?.ToString() 
-            : null;
-
-        var currentObj = BuildObject(name, parent, typeStr);
-
-        if (currentObj.Type != null && data["Type"] != null)
-            JsonConvert.PopulateObject(data["Type"]!.ToString(), currentObj.Type);
-
-        if (data["Children"] is not JArray children) return;
+        var name = dataPair.Key;
+        var obj = MakeObject(name, parent);
         
-        foreach (var childData in children)
-            BuildHierarchy((JObject)childData, currentObj);
+        // Load transform
+        if (data["Transform"] is JObject)
+            JsonConvert.PopulateObject(data["Transform"]!.ToString(), obj.Transform);
+        
+        // Load components
+        var components = new Dictionary<string, Component>();
+
+        if (data["Components"] is JObject jsonComponents) {
+
+            foreach (var property in jsonComponents.Properties()) {
+                
+                if (Activator.CreateInstance(Type.GetType(property.Name) ?? throw new KeyNotFoundException($"{property.Name} cant be found"), obj) is not Component component) continue;
+                JsonConvert.PopulateObject(data["Components"]![property.Name]!.ToString(), component);
+                components[property.Name] = component;
+            }
+        }
+
+        obj.Components = components;
+
+        if (data["Children"] is JObject children) {
+            
+            foreach (var property in children.Properties())
+                BuildHierarchy(new KeyValuePair<string, JToken>(property.Name, property.Value), obj);
+        }
     }
     
-    public Obj BuildObject(string name, Obj? parent, string? type) {
+    public static Obj MakeObject(string name, Obj? parent) {
 
-        var typeClass = Assembly.GetExecutingAssembly().GetTypes().FirstOrDefault(t => t.Name.Equals(type, StringComparison.OrdinalIgnoreCase));
-        
-        var obj = new Obj(name, typeClass, parent);
+        var obj = new Obj(parent == null ? name : parent.SafeNameForChild(name), parent);
         obj.SetParent(parent);
 
         return obj;
     }
 
-    public Obj RecordedBuildObject(string name, Obj? parent, string? type) {
+    public Obj RecordedBuildObject(string name, Obj? parent) {
         
         History.StartRecording(parent!,  $"Create {name}");
         
-        var obj = BuildObject(name, parent, type);
+        var obj = MakeObject(name, parent);
 
         History.SetUndoAction(obj.Delete);
         History.SetRedoAction(() => obj.SetParent(parent));
@@ -96,17 +103,17 @@ internal class Level {
 
     private Obj CloneObject(Obj source) {
         
-        var typeName = source.Type?.GetType().Name;
+        var typeName = source.Components?.GetType().Name;
     
-        var clone = BuildObject(source.Name + "_Clone", source.Parent, typeName);
+        var clone = MakeObject(source.Name + "_Clone", source.Parent);
 
-        if (source.Type != null && clone.Type != null) {
+        if (source.Components != null && clone.Components != null) {
             
-            var data = JsonConvert.SerializeObject(source.Type);
-            JsonConvert.PopulateObject(data, clone.Type);
+            var data = JsonConvert.SerializeObject(source.Components);
+            JsonConvert.PopulateObject(data, clone.Components);
         }
 
-        foreach (var childClone in source.Children.ToList().Select(CloneObject))
+        foreach (var childClone in source.Children.ToList().Select(c => CloneObject(c.Value)))
             childClone.SetParent(clone);
 
         return clone;
@@ -124,7 +131,16 @@ internal class Level {
         
         History.StopRecording();
     }
+
+    [MoonSharpHidden]
+    public Obj? Find(string[] names) => Root.Find(names);
     
-    public T? FindType<T>() where T : ObjType => (from obj in Root.GetChildrenRecursive() where obj.Type is T select obj.Type).FirstOrDefault() as T;
-    public ObjType? FindType(string name) => (from child in Root.GetChildrenRecursive() where child.Type?.Name == name select child.Type).FirstOrDefault();
+    [MoonSharpHidden]
+    public Component? FindComponent(string[] names) => Root.FindComponent(names);
+    
+    public Obj? Find(Table t) => Root.Find(t.Values.Select(v => v.String).ToArray());
+    public Component? FindComponent(Table t) => Root.FindComponent(t.Values.Select(v => v.String).ToArray());
+    
+    //public T? FindType<T>() where T : Component => (from obj in Root.GetChildrenRecursive() where obj.Components is T select obj.Components).FirstOrDefault() as T;
+    //public Component? FindType(string name) => (from child in Root.GetChildrenRecursive() where child.Components?.Name == name select child.Components).FirstOrDefault();
 }

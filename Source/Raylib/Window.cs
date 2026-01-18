@@ -1,9 +1,10 @@
 ﻿using Raylib_cs;
+using static Raylib_cs.Raylib;
 
 internal static class Window {
     
-    public static int Width => Raylib.GetScreenWidth();
-    public static int Height => Raylib.GetScreenHeight();
+    public static int Width => GetScreenWidth();
+    public static int Height => GetScreenHeight();
     
     public static void UpdateFps() {
         
@@ -14,18 +15,24 @@ internal static class Window {
         if (targetFps == -1)
             targetFps = Screen.RefreshRate;
         
-        Raylib.SetTargetFPS(targetFps);
+        SetTargetFPS(targetFps);
     }
 
-    public static void Clear(ScytheColor scytheColor) => Raylib.ClearBackground(scytheColor.ToRaylib());
+    public static void Clear(ScytheColor scytheColor) => ClearBackground(scytheColor.ToRaylib());
 
-    private static void CenterWindow() => Raylib.SetWindowPosition((Screen.Width - Width) / 2, (Screen.Height - Height) / 2);
+    public static void DrawFps() {
+        
+        if (CommandLine.Editor ? Config.Editor.DrawFps : Config.Runtime.DrawFps)
+            DrawText($"{GetFPS()}", 10, 10, 20, Colors.Primary.ToRaylib());
+    }
+
+    private static void CenterWindow() => SetWindowPosition((Screen.Width - Width) / 2, (Screen.Height - Height) / 2);
     
     public static void Show(
         
         int width = 0,
         int height = 0,
-        float scale = 0.5f,
+        float scale = 0.75f,
         bool maximize = false,
         bool fullscreen = false,
         bool borderless = true,
@@ -35,28 +42,28 @@ internal static class Window {
     ) {
         
         // Close old window
-        if (Raylib.IsWindowReady()) Raylib.CloseWindow();
+        if (IsWindowReady()) CloseWindow();
 
         // Flags
         Flags.Set(flags);
         
         // Logging
-        if (isSplash) Raylib.SetTraceLogLevel(TraceLogLevel.None);
+        if (isSplash) SetTraceLogLevel(TraceLogLevel.None);
         
         else if (Enum.TryParse(CommandLine.Editor ? Config.Editor.RaylibLogLevel : Config.Runtime.RaylibLogLevel, out TraceLogLevel state))
-            Raylib.SetTraceLogLevel(state);
+            SetTraceLogLevel(state);
         
         // New window     
-        Raylib.InitWindow(0, 0, title);
+        InitWindow(0, 0, title);
         
         if (width == 0) width = Screen.Width;
         if (height == 0) height = Screen.Height;
         width = (int)Math.Floor(width * scale);
         height = (int)Math.Floor(height * scale);
         
-        Raylib.SetWindowSize(width, height);
+        SetWindowSize(width, height);
         
-        Raylib.SetExitKey(KeyboardKey.Null);
+        SetExitKey(KeyboardKey.Null);
 
         CenterWindow();
         
@@ -66,20 +73,20 @@ internal static class Window {
             if (borderless) {
                 
                 Flags.Add(ConfigFlags.UndecoratedWindow);
-                Raylib.SetWindowSize(Raylib.GetMonitorWidth(Raylib.GetCurrentMonitor()), Raylib.GetMonitorHeight(Raylib.GetCurrentMonitor()));
+                SetWindowSize(GetMonitorWidth(GetCurrentMonitor()), GetMonitorHeight(GetCurrentMonitor()));
                 CenterWindow();
             }
             
-            else if (!Raylib.IsWindowFullscreen()) Raylib.ToggleFullscreen();
+            else if (!IsWindowFullscreen()) ToggleFullscreen();
             
-        } else if (maximize) Raylib.MaximizeWindow();
+        } else if (maximize) MaximizeWindow();
         
         // Window icon
         if (PathUtil.BestPath("Images/Icon.png", out var iconPath)) {
 
-            var img = Raylib.LoadImage(iconPath);
-            Raylib.SetWindowIcon(img);
-            Raylib.UnloadImage(img);
+            var img = LoadImage(iconPath);
+            SetWindowIcon(img);
+            UnloadImage(img);
         }
         
         //while (!Raylib.IsWindowReady()) Task.Delay(0);
