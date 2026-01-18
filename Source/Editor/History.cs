@@ -7,6 +7,9 @@ internal static class History {
     private static int _currentIndex = -1;
     public static Record? ActiveRecord;
     
+    public static bool CanUndo => _currentIndex >= 0;
+    public static bool CanRedo => _currentIndex < Records.Count - 1;
+    
     public static void StartRecording(object reference, string? description = null) {
 
         ActiveRecord ??= new Record(description);
@@ -59,7 +62,8 @@ internal static class History {
 
     public static void Undo() {
         
-        if (_currentIndex < 0) return;
+        if (!CanUndo) return;
+        
         var currentRecord = Records[_currentIndex];
         
         if (currentRecord.Description != null)
@@ -73,9 +77,11 @@ internal static class History {
         _currentIndex--;
     }
     
+    
     public static void Redo() {
         
-        if (_currentIndex >= Records.Count - 1) return;
+        if (!CanRedo) return;
+        
         _currentIndex++;
         var currentRecord = Records[_currentIndex];
         

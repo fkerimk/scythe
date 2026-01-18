@@ -114,7 +114,7 @@ internal unsafe class Transform(Obj obj) : ObjType(obj) {
 
         if (Obj.Parent == null) return;
 
-        var rotMatrix = Matrix4x4.CreateFromQuaternion(Rot);
+        var rotMatrix = Matrix4x4.Transpose(Matrix4x4.CreateFromQuaternion(Rot));
         
         var matrix = Raymath.MatrixMultiply(
 
@@ -264,7 +264,7 @@ internal unsafe class Transform(Obj obj) : ObjType(obj) {
                         
                         var currentVector = Vector3.Normalize(currentPoint - _activeWorldPos);
                         var angleRad = MathF.Atan2(Vector3.Dot(_activeNormal, Vector3.Cross(_activeInitialVector, currentVector)), Vector3.Dot(_activeInitialVector, currentVector));
-                        var angleDeg = -angleRad * (180f / MathF.PI);
+                        var angleDeg = angleRad * (180f / MathF.PI);
 
                         if (!IsKeyDown(KeyboardKey.LeftShift)) angleDeg = MathF.Round(angleDeg / 22.5f) * 22.5f;
                         _activeMove = angleDeg;
@@ -278,13 +278,13 @@ internal unsafe class Transform(Obj obj) : ObjType(obj) {
                                 var parentRot = Quaternion.CreateFromRotationMatrix(Obj.Parent.Parent.WorldRotMatrix);
                                 var localDeltaInParentSpace = Quaternion.Inverse(parentRot) * deltaRot * parentRot;
 
-                                newRot = _activeRot * localDeltaInParentSpace;
+                                newRot = localDeltaInParentSpace * _activeRot;
                             }
 
-                            else newRot = _activeRot * deltaRot;
+                            else newRot = deltaRot * _activeRot;
                         }
 
-                        else newRot = deltaRot * _activeRot;
+                        else newRot = _activeRot * deltaRot;
 
                         // Preserve hemisphere to prevent sudden Euler flips
                         if (Quaternion.Dot(newRot, _activeRot) < 0) newRot = Quaternion.Negate(newRot);

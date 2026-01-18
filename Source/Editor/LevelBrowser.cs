@@ -7,13 +7,12 @@ internal class LevelBrowser() : Viewport("Level") {
     // cache
     private float? _savedScroll;
 
-    private Obj?
+    private static Obj?
         _dragObject,
-        _dragTarget;
+        _dragTarget,
+        _scheduledDeleteObject;
     
-    public Obj? DeleteObject;
-
-    public Obj? SelectedObject { get; private set; }
+    public static Obj? SelectedObject { get; private set; }
     
     protected override void OnDraw() {
 
@@ -38,14 +37,14 @@ internal class LevelBrowser() : Viewport("Level") {
         }
 
         // Delete object
-        if (DeleteObject != null) {
+        if (_scheduledDeleteObject != null) {
 
-            if (DeleteObject != Core.ActiveLevel.Root) {
+            if (_scheduledDeleteObject != Core.ActiveLevel.Root) {
                 
-                DeleteObject.RecordedDelete();
+                _scheduledDeleteObject.RecordedDelete();
             }
             
-            DeleteObject = null;
+            _scheduledDeleteObject = null;
         }
         
         // draw objects
@@ -54,7 +53,7 @@ internal class LevelBrowser() : Viewport("Level") {
         ImGui.EndChild();
     }
 
-    private bool IsAncestorOf(Obj ancestor, Obj target) {
+    private static bool IsAncestorOf(Obj ancestor, Obj target) {
 
         var current = target.Parent;
 
@@ -222,7 +221,7 @@ internal class LevelBrowser() : Viewport("Level") {
                 ImGui.EndMenu();
             }
             
-            if (ImGui.MenuItem("Delete")) DeleteObject = obj;
+            if (ImGui.MenuItem("Delete")) _scheduledDeleteObject = obj;
     
             ImGui.EndPopup();
         }
@@ -279,10 +278,19 @@ internal class LevelBrowser() : Viewport("Level") {
         return true;
     }
 
-    public void SelectObject(Obj? obj) {
+    private static void SelectObject(Obj? obj) {
         
         SelectedObject?.IsSelected = false;
         SelectedObject = obj;
         obj?.IsSelected = true;
     }
+
+    public static void Delete(Obj? obj) => _scheduledDeleteObject = obj;
+    public static void DeleteSelectedObject() {
+        
+        if (!CanDeleteSelectedObject) return;
+        _scheduledDeleteObject = SelectedObject;
+    }
+
+    public static bool CanDeleteSelectedObject => SelectedObject != Core.ActiveLevel?.Root;
 }
