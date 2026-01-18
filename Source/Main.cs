@@ -8,6 +8,9 @@ if (PathUtil.BestPath("Scythe.ini", out var scytheIniPath)) {
     
 else throw new FileNotFoundException("Scythe.ini not found");
     
+if (PathUtil.BestPath(Config.Mod.Path, out var modPath))
+    Config.Mod.Path = modPath;
+
 if (PathUtil.BestPath("Mod.ini", out var modIniPath)) {
         
     var iniFile = new Ini(modIniPath);

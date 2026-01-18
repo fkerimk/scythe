@@ -14,4 +14,6 @@ internal class LuaMt {
         
         return (float)angle;
     }
+    
+    public static float Sign(float value) => MathF.Sign(value);
 }

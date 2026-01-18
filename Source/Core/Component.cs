@@ -23,6 +23,8 @@ internal class Component(Obj obj, string name) {
     public Vector3 Right => Obj.Right;
     public Vector3 FwdFlat => Obj.FwdFlat;
     public Vector3 RightFlat => Obj.RightFlat;
+    public Vector3 Pos { get => Obj.Transform.Pos; set => Obj.Transform.Pos = value; }
+    public Quaternion Rot { get => Obj.Transform.Rot; set => Obj.Transform.Rot = value; }
 
     //internal class Comparer : IComparer<Obj> {
     //

@@ -11,7 +11,7 @@ internal class LuaMouse {
     //public static bool Released(string keyName) => Raylib.IsKeyReleased(GetKey(keyName));
     //public static bool Up(string keyName) => Raylib.IsKeyUp(GetKey(keyName));
 
-    public static bool IsLocked;
+    public static bool IsLocked = false;
     
     public static Vector2 Delta;
     public static float Scroll => GetMouseWheelMove();

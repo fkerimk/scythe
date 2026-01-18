@@ -20,7 +20,7 @@ internal class Transform(Obj obj) : Component(obj, "transform") {
     #region Local Transform
     
     [Label("Pos"), RecordHistory, JsonProperty] 
-    public Vector3 Pos { get => _pos; set { _pos = value; UpdateTransform(); } }
+    public new Vector3 Pos { get => _pos; set { _pos = value; UpdateTransform(); } }
     
     [Label("Euler"), RecordHistory, JsonProperty]
     public Vector3 Euler { 
@@ -42,7 +42,7 @@ internal class Transform(Obj obj) : Component(obj, "transform") {
     public Vector3 Scale { get => _scale; set { _scale = value; UpdateTransform(); } }
     
     [RecordHistory, JsonProperty]
-    public Quaternion Rot { get => _rot; set { _rot = value; UpdateTransform(); } }
+    public new Quaternion Rot { get => _rot; set { _rot = value; UpdateTransform(); } }
     
     #endregion
     

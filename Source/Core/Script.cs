@@ -61,7 +61,7 @@ internal class Script(Obj obj) : Component(obj, "script") {
             
             Globals = {
                 
-                ["obj"] = generateDefinitions ? new Obj(null!, null) : obj,
+                ["self"] = generateDefinitions ? new Obj(null!, null) : obj,
                 ["level"] = generateDefinitions ? new Level(null!) : Core.ActiveLevel,
                 ["cam"] = generateDefinitions ? new Camera(null!) { Cam = new Camera3D() } : Core.ActiveLevel?.Root.FindComponent("Camera", "Camera"),
                 ["f2"] = LuaF2,

@@ -1,7 +1,7 @@
 ---@meta
 
 ---@type Obj
-obj = nil
+self = nil
 
 ---@type Level
 level = nil
@@ -43,6 +43,8 @@ game = nil
 ---@field right Vector3
 ---@field fwdFlat Vector3
 ---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
 ---@field parent Obj
 ---@field children Dictionary
 ---@field transform Transform
@@ -125,6 +127,8 @@ function Level:findComponent(t) end
 ---@field right Vector3
 ---@field fwdFlat Vector3
 ---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
 ---@field cam Camera3D
 ---@field obj Obj
 ---@field isLoaded boolean
@@ -188,6 +192,10 @@ function LuaMt.clamp(value, min, max) end
 ---@param dir Vector2
 ---@return number
 function LuaMt.dirAngle(dir) end
+
+---@param value number
+---@return number
+function LuaMt.sign(value) end
 
 ---@class LuaTime
 ---@field delta number
@@ -1351,6 +1359,8 @@ function Quaternion:toString() end
 ---@field right Vector3
 ---@field fwdFlat Vector3
 ---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
 ---@field obj Obj
 ---@field isLoaded boolean
 local Component = {}
@@ -1379,6 +1389,8 @@ function Component:quit() end
 ---@field right Vector3
 ---@field fwdFlat Vector3
 ---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
 ---@field obj Obj
 ---@field isLoaded boolean
 local Animation = {}
@@ -1408,6 +1420,8 @@ function Animation:quit() end
 ---@field right Vector3
 ---@field fwdFlat Vector3
 ---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
 ---@field obj Obj
 ---@field isLoaded boolean
 local Light = {}
@@ -1431,6 +1445,8 @@ function Light:loop(is2D) end
 ---@field right Vector3
 ---@field fwdFlat Vector3
 ---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
 ---@field rlModel Model
 ---@field obj Obj
 ---@field isLoaded boolean
@@ -1457,6 +1473,8 @@ function Model:quit() end
 ---@field right Vector3
 ---@field fwdFlat Vector3
 ---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
 ---@field luaScript Script
 ---@field luaLoop DynValue
 ---@field luaMt LuaMt
