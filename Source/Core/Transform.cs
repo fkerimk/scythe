@@ -25,7 +25,11 @@ internal unsafe class Transform(Obj obj) : ObjType(obj) {
             return new Vector3(e.X, -e.Y, -e.Z);
         }
         
-        set => Rot = Raymath.QuaternionFromEuler(value.X.DegToRad(), (-value.Y).DegToRad(), (-value.Z).DegToRad());
+        set {
+            var q = Raymath.QuaternionFromEuler(value.X.DegToRad(), (-value.Y).DegToRad(), (-value.Z).DegToRad());
+            if (MathF.Abs(Quaternion.Dot(Rot, q)) > 0.9999f) return;
+            Rot = q;
+        }
     }
     
     [RecordHistory] [JsonProperty] [Label("Scale")] public Vector3 Scale { get => _scale; set { _scale = value; UpdateTransform(); } }
@@ -48,6 +52,41 @@ internal unsafe class Transform(Obj obj) : ObjType(obj) {
                 var invParent = Raymath.MatrixInvert(Obj.Parent.Parent.WorldMatrix);
                 Pos = Raymath.Vector3Transform(value, invParent);
             }
+        }
+    }
+
+    public Quaternion WorldRot {
+
+        get {
+
+            if (Obj.Parent == null) return Rot;
+            Obj.Parent.DecomposeWorldMatrix(out _, out var rot, out _);
+            return rot;
+            
+        } set {
+
+            if (Obj.Parent?.Parent == null) Rot = value; else {
+
+                var parentRot = Quaternion.CreateFromRotationMatrix(Obj.Parent.Parent.WorldRotMatrix);
+                var q = Quaternion.Inverse(parentRot) * value;
+                if (MathF.Abs(Quaternion.Dot(Rot, q)) > 0.9999f) return;
+                Rot = q;
+            }
+        }
+    }
+
+    [Label("World Euler")] public Vector3 WorldEuler { 
+        
+        get {
+            
+            var e = Raymath.QuaternionToEuler(WorldRot).ToDeg();
+            return new Vector3(e.X, -e.Y, -e.Z);
+        }
+        
+        set {
+            var q = Raymath.QuaternionFromEuler(value.X.DegToRad(), (-value.Y).DegToRad(), (-value.Z).DegToRad());
+            if (MathF.Abs(Quaternion.Dot(WorldRot, q)) > 0.9999f) return;
+            WorldRot = q;
         }
     }
 
