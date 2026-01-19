@@ -46,8 +46,7 @@
             "Children": {},
             "Transform": {
               "Pos": {
-                "Y": 1.0,
-                "Z": -0.8000001
+                "Y": 10.0
               },
               "Euler": {
                 "X": 54.735615,
@@ -73,7 +72,7 @@
                 "Type": 0,
                 "ScytheColor": {},
                 "Intensity": 15.0,
-                "Range": 2.0,
+                "Range": 25.0,
                 "Shadows": true,
                 "ShadowStrength": 1.0,
                 "Name": "light"

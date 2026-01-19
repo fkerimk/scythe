@@ -105,7 +105,7 @@ function Level.makeObject(name, parent) end
 function Level:recordedBuildObject(name, parent) end
 
 ---@param source Obj
----@return void
+---@return Obj
 function Level:recordedCloneObject(source) end
 
 ---@param t Table

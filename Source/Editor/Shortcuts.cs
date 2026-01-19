@@ -21,8 +21,11 @@ internal static class Shortcuts {
 
     private static void DuplicateSelectedObject() {
         
-        if (LevelBrowser.SelectedObject != null)
-            Core.ActiveLevel?.RecordedCloneObject(LevelBrowser.SelectedObject);
+        if (LevelBrowser.SelectedObject != null) {
+            
+            var clone = Core.ActiveLevel?.RecordedCloneObject(LevelBrowser.SelectedObject);
+            if (clone != null) LevelBrowser.SelectObject(clone);
+        }
     }
     private static void SaveActiveLevel() {
         

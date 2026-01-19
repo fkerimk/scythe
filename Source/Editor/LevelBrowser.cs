@@ -318,11 +318,11 @@ internal class LevelBrowser() : Viewport("Level") {
         return true;
     }
 
-    private static void SelectObject(Obj? obj) {
+    public static void SelectObject(Obj? obj) {
         
         SelectedObject?.IsSelected = false;
         SelectedObject = obj;
-        obj?.IsSelected = true;
+        if (obj != null) obj.IsSelected = true;
     }
 
     public static void Delete(Obj? obj) => _scheduledDeleteObject = obj;

@@ -101,25 +101,48 @@ internal class Level {
         return obj;
     }
 
-    private Obj CloneObject(Obj source) {
+    private Obj CloneObject(Obj source, Obj? newParent = null) {
         
-        var typeName = source.Components?.GetType().Name;
-    
-        var clone = MakeObject(source.Name + "_Clone", source.Parent);
+        //var name = (newParent == null) ? source.Name + "_Clone" : source.Name;
+        
+        var parentToUse = newParent ?? source.Parent;
 
-        if (source.Components != null && clone.Components != null) {
+        var name = source.Name;
+        
+        if (newParent == null && parentToUse != null)
+            name = parentToUse.SafeNameForChild(name);
+
+        var clone = new Obj(name, parentToUse);
+
+        // Copy Transform
+        var transformJson = JsonConvert.SerializeObject(source.Transform);
+        JsonConvert.PopulateObject(transformJson, clone.Transform);
+
+        // Copy Components
+        if (source.Components != null) {
             
-            var data = JsonConvert.SerializeObject(source.Components);
-            JsonConvert.PopulateObject(data, clone.Components);
+            foreach (var compPair in source.Components) {
+                
+                var sourceComp = compPair.Value;
+                var compType = sourceComp.GetType();
+                
+                if (Activator.CreateInstance(compType, clone) is not Component cloneComp) continue;
+                
+                var compJson = JsonConvert.SerializeObject(sourceComp);
+                JsonConvert.PopulateObject(compJson, cloneComp);
+                
+                clone.Components[compPair.Key] = cloneComp;
+            }
         }
 
-        foreach (var childClone in source.Children.ToList().Select(c => CloneObject(c.Value)))
-            childClone.SetParent(clone);
+        // Clone children recursively
+        foreach (var child in source.Children.Values.ToList())
+            CloneObject(child, clone);
 
         return clone;
     }
 
-    public void RecordedCloneObject(Obj source) {
+    public Obj RecordedCloneObject(Obj source) {
         
         History.StartRecording(source.Parent!, $"Duplicate {source.Name}");
 
@@ -130,6 +153,7 @@ internal class Level {
         History.SetRedoAction(() => clone.SetParent(parent));
         
         History.StopRecording();
+        return clone;
     }
 
     [MoonSharpHidden]

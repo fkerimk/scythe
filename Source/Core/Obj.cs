@@ -186,15 +186,17 @@ internal class Obj {
     
     public string SafeNameForChild(string name) {
         
+        var newName = name;
+        
         var i = 0;
 
-        while (Children.ContainsKey(name)) {
+        while (Children.ContainsKey(newName)) {
             
             i++;
-            name = "Object " + i;
+            newName = name + i;
         }
         
-        return name;
+        return newName;
     }
 }
 
