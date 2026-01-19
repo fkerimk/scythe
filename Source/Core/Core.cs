@@ -8,6 +8,13 @@ internal static class Core {
     
     public static readonly Dictionary<int, Light> Lights = [];
     
+    public struct TransparentDrawCall {
+        public Model Model;
+        public float Distance;
+    }
+    
+    public static readonly List<TransparentDrawCall> TransparentRenderQueue = [];
+
     public static void Init() {
 
         // Ambient
@@ -48,8 +55,6 @@ internal static class Core {
                     component.IsLoaded = true;
             }
 
-            //obj.Children.Sort(Component.Comparer.Instance);
-        
             foreach (var child in obj.Children)
                 LoadObj(child.Value);
         }
@@ -60,6 +65,8 @@ internal static class Core {
         if (ActiveLevel == null) return;
 
         Lights.Clear();
+        TransparentRenderQueue.Clear();
+        
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.Pbr.Locs[(int)ShaderLocationIndex.VectorView], ActiveCamera?.Position ?? Vector3.Zero, ShaderUniformDataType.Vec3);
         
         LoopObj(ActiveLevel.Root);
@@ -67,6 +74,16 @@ internal static class Core {
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrLightCount, Lights.Count, ShaderUniformDataType.Int);
         
         foreach (var light in Lights.Values) light.Update();
+
+        if (!is2D && TransparentRenderQueue.Count > 0) {
+            
+            TransparentRenderQueue.Sort((a, b) => b.Distance.CompareTo(a.Distance));
+            
+            foreach (var call in TransparentRenderQueue) {
+                
+                call.Model.DrawTransparent();
+            }
+        }
         
         return;
         

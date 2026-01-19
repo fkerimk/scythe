@@ -5,8 +5,6 @@ using Newtonsoft.Json;
 // ReSharper disable once ClassNeverInstantiated.Global
 internal class Model(Obj obj) : Component(obj, "model") {
 
-    public override int Priority => 30;
-    
     public override string LabelIcon => Icons.Model;
     public override ScytheColor LabelScytheColor => Colors.GuiTypeModel;
     
@@ -62,6 +60,26 @@ internal class Model(Obj obj) : Component(obj, "model") {
         
         RlModel.Transform = Obj.WorldMatrix;
         
+        if (IsTransparent) {
+            
+            var worldPos = new Vector3(Obj.WorldMatrix.M41, Obj.WorldMatrix.M42, Obj.WorldMatrix.M43);
+            var distance = Vector3.Distance(Core.ActiveCamera?.Position ?? Vector3.Zero, worldPos);
+            Core.TransparentRenderQueue.Add(new Core.TransparentDrawCall { Model = this, Distance = distance });
+            return;
+        }
+
+        Draw();
+    }
+
+    public void DrawTransparent() {
+        
+        Raylib.BeginBlendMode(BlendMode.Alpha);
+        Draw();
+        Raylib.EndBlendMode();
+    }
+
+    private unsafe void Draw() {
+        
         // Draw test model
         for (var i = 0; i < RlModel.MaterialCount; i++) {
             
@@ -73,17 +91,8 @@ internal class Model(Obj obj) : Component(obj, "model") {
 
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrTiling, new Vector2(0.5f, 0.5f), ShaderUniformDataType.Vec2);
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrAlphaCutoff, AlphaCutoff, ShaderUniformDataType.Float);
-
-        if (IsTransparent) {
-            
-            Raylib.BeginBlendMode(BlendMode.Alpha);
-            Raylib.DrawModel(RlModel, Vector3.Zero, 1, ScytheColor.ToRaylib());
-            Raylib.EndBlendMode();
-        }
-        else {
-            
-            Raylib.DrawModel(RlModel, Vector3.Zero, 1, ScytheColor.ToRaylib());
-        }
+        
+        Raylib.DrawModel(RlModel, Vector3.Zero, 1, ScytheColor.ToRaylib());
     }
 
     public override void Quit() {

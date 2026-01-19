@@ -22,6 +22,7 @@
           "Model": {
             "Path": "Wizard_Gnome/Wizard_Gnome",
             "ScytheColor": {},
+            "AlphaCutoff": 0.5,
             "Name": "model"
           },
           "Animation": {
@@ -97,6 +98,7 @@
                   "Model": {
                     "Path": "kenney_platformer-kit/block-grass-overhang-large-tall",
                     "ScytheColor": {},
+                    "AlphaCutoff": 0.5,
                     "Name": "model"
                   }
                 }

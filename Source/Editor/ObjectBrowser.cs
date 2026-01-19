@@ -93,7 +93,17 @@ internal class ObjectBrowser : Viewport {
         }
 
         if (!string.IsNullOrEmpty(title)) {
-            
+
+            if (obj is Component iconComponent) {
+                
+                SameLine();
+                PushFont(Fonts.ImFontAwesomeSmall);
+                SetCursorPos(new Vector2(GetCursorPosX() - 7.5f, GetCursorPosY() + 2.5f));
+                TextColored(iconComponent.LabelScytheColor.to_vector4(), iconComponent.LabelIcon);
+                PopFont();
+                SameLine();
+            }
+
             Text(title);
 
             if (obj is Component component and not Transform) {

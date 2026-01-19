@@ -249,11 +249,11 @@ internal class LevelBrowser() : Viewport("Level") {
         }
         
         // object icon
-        ImGui.SameLine();
-        ImGui.PushFont(Fonts.ImFontAwesomeSmall);
-        ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 15, ImGui.GetCursorPosY() + 2.5f));
-        //ImGui.TextColored(Obj.Color.to_vector4(), Obj.Icon);
-        ImGui.PopFont();
+        //ImGui.SameLine();
+        //ImGui.PushFont(Fonts.ImFontAwesomeSmall);
+        //ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 15, ImGui.GetCursorPosY() + 2.5f));
+        ////ImGui.TextColored(Obj.Color.to_vector4(), Obj.Icon);
+        //ImGui.PopFont();
 
         // object name
         ImGui.SameLine();

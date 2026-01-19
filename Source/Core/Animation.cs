@@ -4,8 +4,6 @@ using Raylib_cs;
 // ReSharper disable once ClassNeverInstantiated.Global
 internal unsafe class Animation(Obj obj) : Component(obj, "animation") {
     
-    public override int Priority => 20;
-    
     public override string LabelIcon => Icons.Animation;
     public override ScytheColor LabelScytheColor => Colors.GuiTypeAnimation;
 

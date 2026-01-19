@@ -8,8 +8,6 @@ using static Raylib_cs.Raylib;
 [JsonObject(MemberSerialization.OptIn)]
 internal class Transform(Obj obj) : Component(obj, "transform") {
     
-    public override int Priority => 10;
-
     public override string LabelIcon => Icons.Transform;
     public override ScytheColor LabelScytheColor => Colors.GuiTypeTransform;
     

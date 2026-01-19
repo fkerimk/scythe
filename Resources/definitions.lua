@@ -120,7 +120,6 @@ function Level:findComponent(t) end
 ---@field labelIcon string
 ---@field labelScytheColor ScytheColor
 ---@field name string
----@field priority number
 ---@field isSelected boolean
 ---@field up Vector3
 ---@field fwd Vector3
@@ -1350,7 +1349,6 @@ function Quaternion:toString() end
 
 ---@class Component
 ---@field name string
----@field priority number
 ---@field labelIcon string
 ---@field labelScytheColor ScytheColor
 ---@field isSelected boolean
@@ -1375,7 +1373,6 @@ function Component:loop(is2D) end
 function Component:quit() end
 
 ---@class Animation : Component
----@field priority number
 ---@field labelIcon string
 ---@field labelScytheColor ScytheColor
 ---@field path string
@@ -1413,7 +1410,6 @@ function Animation:quit() end
 ---@field intensity number
 ---@field range number
 ---@field name string
----@field priority number
 ---@field isSelected boolean
 ---@field up Vector3
 ---@field fwd Vector3
@@ -1433,7 +1429,6 @@ function Light:update() end
 function Light:loop(is2D) end
 
 ---@class Model : Component
----@field priority number
 ---@field labelIcon string
 ---@field labelScytheColor ScytheColor
 ---@field path string
@@ -1461,10 +1456,12 @@ function Model:load() end
 function Model:loop(is2D) end
 
 ---@return void
+function Model:drawTransparent() end
+
+---@return void
 function Model:quit() end
 
 ---@class Script : Component
----@field priority number
 ---@field path string
 ---@field name string
 ---@field labelIcon string
@@ -1505,7 +1502,6 @@ function Script:loop(is2D) end
 function Script:safeLuaCall(action) end
 
 ---@class Transform : Component
----@field priority number
 ---@field labelIcon string
 ---@field labelScytheColor ScytheColor
 ---@field pos Vector3
