@@ -1,6 +1,3 @@
-[Dd]evtest/
-Raylib Examples/
-
 ## Get latest from https://github.com/github/gitignore/blob/main/Dotnet.gitignore
 
 # Build results
@@ -48,3 +45,11 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
+# SCYTHE
+
+.idea/
+Folder.DotSettings
+Folder.DotSettings.user
+
+Raylib Examples/
