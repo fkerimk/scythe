@@ -2,44 +2,41 @@
 using static Raylib_cs.Raylib;
 using static Raylib_cs.ShaderLocationIndex;
 
-#pragma warning disable CS8981
 internal static class Shaders {
 
-    public static Shader Transform;
-    public static Shader Pbr;
-    public static Shader Depth;
+    // Shaders
+    public static Shader
+        Transform,
+        Pbr,
+        Depth,
+        Skybox;
 
-    public static int PbrLightCount;
-    public static int PbrMetallicValue;
-    public static int PbrRoughnessValue;
-    public static int PbrEmissiveIntensity;
-    public static int PbrEmissiveColor;
-    public static int PbrTiling;
-    public static int PbrAlphaCutoff;
-    
-    public static int PbrLightVP;
-    public static int PbrShadowMap;
-    public static int PbrShadowLightIndex;
-    public static int PbrShadowStrength;
-    public static int PbrShadowMapResolution;
-    public static int PbrReceiveShadows;
+    #region PBR information
 
-    public static void Begin(Shader shader) {
-        
-        BeginShaderMode(shader);
-    }
-    
-    public static void End () {
-        
-        EndShaderMode();
-    }
+    public static int 
+        PbrLightCount,
+        PbrMetallicValue,
+        PbrRoughnessValue,
+        PbrEmissiveIntensity,
+        PbrEmissiveColor,
+        PbrTiling,
+        PbrAlphaCutoff,
+        PbrLightVp,
+        PbrShadowMap,
+        PbrShadowLightIndex,
+        PbrShadowStrength,
+        PbrShadowMapResolution,
+        PbrReceiveShadows;
+
+    #endregion 
     
     public static unsafe void Init() {
 
-        // load generic shaders
+        // Editor shaders
         Transform = Load("transform", vert: false);
+
+        #region PBR shader
         
-        // load pbr shader
         Pbr = Load("pbr");
         Pbr.Locs[(int)MapAlbedo] = GetShaderLocation(Pbr, "albedo_map");
         Pbr.Locs[(int)MapMetalness] = GetShaderLocation(Pbr, "mra_map");
@@ -54,17 +51,25 @@ internal static class Shaders {
         PbrEmissiveColor = GetShaderLocation(Pbr, "emissive_color");
         PbrTiling = GetShaderLocation(Pbr, "tiling");
         PbrAlphaCutoff = GetShaderLocation(Pbr, "alpha_cutoff");
-        
-        PbrLightVP = GetShaderLocation(Pbr, "lightVP");
+        PbrLightVp = GetShaderLocation(Pbr, "lightVP");
         PbrShadowMap = GetShaderLocation(Pbr, "shadowMap");
         PbrShadowLightIndex = GetShaderLocation(Pbr, "shadow_light_index");
         PbrShadowStrength = GetShaderLocation(Pbr, "shadow_strength");
         PbrShadowMapResolution = GetShaderLocation(Pbr, "shadow_map_resolution");
         PbrReceiveShadows = GetShaderLocation(Pbr, "receive_shadows");
         
-        // load depth shader
+        #endregion 
+        
+        // Depth shader
         Depth = Load("depth");
+        
+        // Skybox shader
+        Skybox = Load("skybox");
+        SetShaderValue(Skybox, GetShaderLocation(Skybox, "environmentMap"), (int)MaterialMapIndex.Cubemap, ShaderUniformDataType.Int);
+        SetShaderValue(Skybox, GetShaderLocation(Skybox, "doGamma"), 1, ShaderUniformDataType.Int);
+        SetShaderValue(Skybox, GetShaderLocation(Skybox, "vflipped"), 0, ShaderUniformDataType.Int);
     }
+    
 
     private static Shader Load(string shader, bool vert = true, bool frag = true) {
 
@@ -80,5 +85,8 @@ internal static class Shaders {
     public static void Quit() {
         
         UnloadShader(Transform);
+        UnloadShader(Pbr);
+        UnloadShader(Depth);
+        UnloadShader(Skybox);
     }
 }

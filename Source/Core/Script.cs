@@ -18,24 +18,11 @@ internal class Script(Obj obj) : Component(obj, "script") {
     public static LuaF3? LuaF3;
     public static LuaQuat? LuaQuat;
     public static LuaGame? LuaGame;
+    public static LuaColor? LuaColor;
     
     public static void Register() {
         
-        UserData.RegisterType<LuaMt>(); LuaMt = new LuaMt();
-        UserData.RegisterType<LuaTime>(); LuaTime = new LuaTime();
-        UserData.RegisterType<LuaKb>(); LuaKb = new LuaKb();
-        UserData.RegisterType<LuaMouse>(); LuaMouse = new LuaMouse();
-        UserData.RegisterType<LuaF2>(); LuaF2 = new LuaF2();
-        UserData.RegisterType<LuaF3>(); LuaF3 = new LuaF3();
-        UserData.RegisterType<LuaQuat>(); LuaQuat = new LuaQuat();
-        UserData.RegisterType<LuaGame>(); LuaGame = new LuaGame();
-        
-        UserData.RegisterType<Vector2>();
-        UserData.RegisterType<Vector3>();
-        UserData.RegisterType<Quaternion>();
-        
-        UserData.RegisterType<Level>();
-        
+        // Objects & components
         UserData.RegisterType<Obj>();
         UserData.RegisterType<Obj?>();
         UserData.RegisterType<Component>();
@@ -45,7 +32,29 @@ internal class Script(Obj obj) : Component(obj, "script") {
         UserData.RegisterType<Model>();
         UserData.RegisterType<Script>();
         UserData.RegisterType<Transform>();
+        
+        // Libraries & class data types
+        UserData.RegisterType<LuaMt>(); LuaMt = new LuaMt();
+        UserData.RegisterType<LuaTime>(); LuaTime = new LuaTime();
+        UserData.RegisterType<LuaKb>(); LuaKb = new LuaKb();
+        UserData.RegisterType<LuaMouse>(); LuaMouse = new LuaMouse();
+        UserData.RegisterType<LuaF2>(); LuaF2 = new LuaF2();
+        UserData.RegisterType<LuaF3>(); LuaF3 = new LuaF3();
+        UserData.RegisterType<LuaQuat>(); LuaQuat = new LuaQuat();
+        UserData.RegisterType<LuaGame>(); LuaGame = new LuaGame();
+        UserData.RegisterType<LuaColor>(); LuaColor = new LuaColor();
+        
+        // Core classes
+        UserData.RegisterType<Level>();
+        UserData.RegisterType<RenderSettings>();
+        
+        // Data structures
+        UserData.RegisterType<Vector2>();
+        UserData.RegisterType<Vector3>();
+        UserData.RegisterType<Quaternion>();
+        UserData.RegisterType<Color>();
 
+        // Generate definitions
         Make(generateDefinitions: true);
     }
 
@@ -63,6 +72,7 @@ internal class Script(Obj obj) : Component(obj, "script") {
                 ["self"] = generateDefinitions ? new Obj(null!, null) : obj,
                 ["level"] = generateDefinitions ? new Level(null!) : Core.ActiveLevel,
                 ["cam"] = generateDefinitions ? new Camera(null!) { Cam = new Camera3D() } : Core.ActiveLevel?.Root.FindComponent("Camera", "Camera"),
+                ["renderSettings"] = generateDefinitions ? new RenderSettings(true) : Core.RenderSettings,
                 ["f2"] = LuaF2,
                 ["f3"] = LuaF3,
                 ["mt"] = LuaMt,
@@ -71,6 +81,7 @@ internal class Script(Obj obj) : Component(obj, "script") {
                 ["mouse"] = LuaMouse,
                 ["quat"] = LuaQuat,
                 ["game"] = LuaGame,
+                ["color"] = LuaColor,
             }
         };
 

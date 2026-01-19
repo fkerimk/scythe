@@ -9,6 +9,9 @@ level = nil
 ---@type Camera
 cam = nil
 
+---@type RenderSettings
+renderSettings = nil
+
 ---@type LuaF2
 f2 = nil
 
@@ -32,6 +35,9 @@ quat = nil
 
 ---@type LuaGame
 game = nil
+
+---@type LuaColor
+color = nil
 
 ---@class Obj
 ---@field icon string
@@ -136,6 +142,11 @@ local Camera = {}
 ---@return void
 function Camera:loop(is2D) end
 
+---@class RenderSettings
+---@field ambientIntensity number
+---@field ambientColor Color
+---@field shadowFovScale number
+local RenderSettings = {}
 ---@class LuaF2
 ---@field new Func
 ---@field zero Vector2
@@ -261,6 +272,226 @@ function LuaQuat.fromDir(dir) end
 local LuaGame = {}
 ---@return void
 function LuaGame.quit() end
+
+---@class LuaColor
+local LuaColor = {}
+---@param r number
+---@param g number
+---@param b number
+---@param a number
+---@return Color
+function LuaColor.new(r, g, b, a) end
+
+---@class Component
+---@field name string
+---@field labelIcon string
+---@field labelScytheColor ScytheColor
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
+---@field obj Obj
+---@field isLoaded boolean
+local Component = {}
+---@return boolean
+function Component:load() end
+
+---@param is2D boolean
+---@return void
+function Component:loop(is2D) end
+
+---@return void
+function Component:quit() end
+
+---@class Animation : Component
+---@field labelIcon string
+---@field labelScytheColor ScytheColor
+---@field path string
+---@field track number
+---@field isPlaying boolean
+---@field looping boolean
+---@field name string
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
+---@field obj Obj
+---@field isLoaded boolean
+local Animation = {}
+---@return boolean
+function Animation:load() end
+
+---@param is2D boolean
+---@return void
+function Animation:loop(is2D) end
+
+---@return void
+function Animation:quit() end
+
+---@class Light : Component
+---@field labelIcon string
+---@field labelScytheColor ScytheColor
+---@field enabled boolean
+---@field type number
+---@field scytheColor ScytheColor
+---@field intensity number
+---@field range number
+---@field shadows boolean
+---@field shadowStrength number
+---@field name string
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
+---@field obj Obj
+---@field isLoaded boolean
+local Light = {}
+---@param index number
+---@return void
+function Light:update(index) end
+
+---@param is2D boolean
+---@return void
+function Light:loop(is2D) end
+
+---@class Model : Component
+---@field labelIcon string
+---@field labelScytheColor ScytheColor
+---@field path string
+---@field scytheColor ScytheColor
+---@field isTransparent boolean
+---@field alphaCutoff number
+---@field castShadows boolean
+---@field receiveShadows boolean
+---@field name string
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
+---@field rlModel Model
+---@field obj Obj
+---@field isLoaded boolean
+local Model = {}
+---@return boolean
+function Model:load() end
+
+---@param is2D boolean
+---@return void
+function Model:loop(is2D) end
+
+---@return void
+function Model:drawTransparent() end
+
+---@return void
+function Model:drawShadow() end
+
+---@return void
+function Model:draw() end
+
+---@return void
+function Model:quit() end
+
+---@class Script : Component
+---@field path string
+---@field name string
+---@field labelIcon string
+---@field labelScytheColor ScytheColor
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
+---@field luaScript Script
+---@field luaLoop DynValue
+---@field luaMt LuaMt
+---@field luaTime LuaTime
+---@field luaKb LuaKb
+---@field luaMouse LuaMouse
+---@field luaF2 LuaF2
+---@field luaF3 LuaF3
+---@field luaQuat LuaQuat
+---@field luaGame LuaGame
+---@field luaColor LuaColor
+---@field obj Obj
+---@field isLoaded boolean
+local Script = {}
+---@return void
+function Script.register() end
+
+---@return boolean
+function Script:load() end
+
+---@param is2D boolean
+---@return void
+function Script:loop(is2D) end
+
+---@param action Action
+---@return void
+function Script:safeLuaCall(action) end
+
+---@class Transform : Component
+---@field labelIcon string
+---@field labelScytheColor ScytheColor
+---@field pos Vector3
+---@field euler Vector3
+---@field scale Vector3
+---@field rot Quaternion
+---@field worldPos Vector3
+---@field worldRot Quaternion
+---@field worldEuler Vector3
+---@field name string
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field obj Obj
+---@field isLoaded boolean
+local Transform = {}
+---@return void
+function Transform:updateTransform() end
+
+---@param is2D boolean
+---@return void
+function Transform:loop(is2D) end
+
+---@param deg number
+---@return void
+function Transform:rotateX(deg) end
+
+---@param deg number
+---@return void
+function Transform:rotateY(deg) end
+
+---@param deg number
+---@return void
+function Transform:rotateZ(deg) end
+
+---@param x number
+---@param y number
+---@param z number
+---@return void
+function Transform:addEuler(x, y, z) end
 
 ---@class Vector2
 ---@field allBitsSet Vector2
@@ -1347,209 +1578,58 @@ function Quaternion:lengthSquared() end
 ---@return string
 function Quaternion:toString() end
 
----@class Component
----@field name string
----@field labelIcon string
----@field labelScytheColor ScytheColor
----@field isSelected boolean
----@field up Vector3
----@field fwd Vector3
----@field right Vector3
----@field fwdFlat Vector3
----@field rightFlat Vector3
----@field pos Vector3
----@field rot Quaternion
----@field obj Obj
----@field isLoaded boolean
-local Component = {}
----@return boolean
-function Component:load() end
-
----@param is2D boolean
+---@class Color
+---@field r number
+---@field g number
+---@field b number
+---@field a number
+---@field lightGray Color
+---@field gray Color
+---@field darkGray Color
+---@field yellow Color
+---@field gold Color
+---@field orange Color
+---@field pink Color
+---@field red Color
+---@field maroon Color
+---@field green Color
+---@field lime Color
+---@field darkGreen Color
+---@field skyBlue Color
+---@field blue Color
+---@field darkBlue Color
+---@field purple Color
+---@field violet Color
+---@field darkPurple Color
+---@field beige Color
+---@field brown Color
+---@field darkBrown Color
+---@field white Color
+---@field black Color
+---@field blank Color
+---@field magenta Color
+---@field rayWhite Color
+local Color = {}
+---@param h number
+---@param s number
+---@param v number
 ---@return void
-function Component:loop(is2D) end
+function Color:getHSV(h, s, v) end
 
----@return void
-function Component:quit() end
+---@param h number
+---@param s number
+---@param v number
+---@return Color
+function Color.fromHSV(h, s, v) end
 
----@class Animation : Component
----@field labelIcon string
----@field labelScytheColor ScytheColor
----@field path string
----@field track number
----@field isPlaying boolean
----@field looping boolean
----@field name string
----@field isSelected boolean
----@field up Vector3
----@field fwd Vector3
----@field right Vector3
----@field fwdFlat Vector3
----@field rightFlat Vector3
----@field pos Vector3
----@field rot Quaternion
----@field obj Obj
----@field isLoaded boolean
-local Animation = {}
----@return boolean
-function Animation:load() end
+---@param origin Color
+---@param target Color
+---@param t number
+---@return Color
+function Color.lerp(origin, target, t) end
 
----@param is2D boolean
----@return void
-function Animation:loop(is2D) end
-
----@return void
-function Animation:quit() end
-
----@class Light : Component
----@field labelIcon string
----@field labelScytheColor ScytheColor
----@field enabled boolean
----@field type number
----@field scytheColor ScytheColor
----@field intensity number
----@field range number
----@field shadows boolean
----@field shadowStrength number
----@field name string
----@field isSelected boolean
----@field up Vector3
----@field fwd Vector3
----@field right Vector3
----@field fwdFlat Vector3
----@field rightFlat Vector3
----@field pos Vector3
----@field rot Quaternion
----@field obj Obj
----@field isLoaded boolean
-local Light = {}
----@param index number
----@return void
-function Light:update(index) end
-
----@param is2D boolean
----@return void
-function Light:loop(is2D) end
-
----@class Model : Component
----@field labelIcon string
----@field labelScytheColor ScytheColor
----@field path string
----@field scytheColor ScytheColor
----@field isTransparent boolean
----@field alphaCutoff number
----@field castShadows boolean
----@field receiveShadows boolean
----@field name string
----@field isSelected boolean
----@field up Vector3
----@field fwd Vector3
----@field right Vector3
----@field fwdFlat Vector3
----@field rightFlat Vector3
----@field pos Vector3
----@field rot Quaternion
----@field rlModel Model
----@field obj Obj
----@field isLoaded boolean
-local Model = {}
----@return boolean
-function Model:load() end
-
----@param is2D boolean
----@return void
-function Model:loop(is2D) end
-
----@return void
-function Model:drawTransparent() end
-
----@return void
-function Model:quit() end
-
----@class Script : Component
----@field path string
----@field name string
----@field labelIcon string
----@field labelScytheColor ScytheColor
----@field isSelected boolean
----@field up Vector3
----@field fwd Vector3
----@field right Vector3
----@field fwdFlat Vector3
----@field rightFlat Vector3
----@field pos Vector3
----@field rot Quaternion
----@field luaScript Script
----@field luaLoop DynValue
----@field luaMt LuaMt
----@field luaTime LuaTime
----@field luaKb LuaKb
----@field luaMouse LuaMouse
----@field luaF2 LuaF2
----@field luaF3 LuaF3
----@field luaQuat LuaQuat
----@field luaGame LuaGame
----@field obj Obj
----@field isLoaded boolean
-local Script = {}
----@return void
-function Script.register() end
-
----@return boolean
-function Script:load() end
-
----@param is2D boolean
----@return void
-function Script:loop(is2D) end
-
----@param action Action
----@return void
-function Script:safeLuaCall(action) end
-
----@class Transform : Component
----@field labelIcon string
----@field labelScytheColor ScytheColor
----@field pos Vector3
----@field euler Vector3
----@field scale Vector3
----@field rot Quaternion
----@field worldPos Vector3
----@field worldRot Quaternion
----@field worldEuler Vector3
----@field name string
----@field isSelected boolean
----@field up Vector3
----@field fwd Vector3
----@field right Vector3
----@field fwdFlat Vector3
----@field rightFlat Vector3
----@field obj Obj
----@field isLoaded boolean
-local Transform = {}
----@return void
-function Transform:updateTransform() end
-
----@param is2D boolean
----@return void
-function Transform:loop(is2D) end
-
----@param deg number
----@return void
-function Transform:rotateX(deg) end
-
----@param deg number
----@return void
-function Transform:rotateY(deg) end
-
----@param deg number
----@return void
-function Transform:rotateZ(deg) end
-
----@param x number
----@param y number
----@param z number
----@return void
-function Transform:addEuler(x, y, z) end
+---@return string
+function Color:toString() end
 
 ---@class ScytheColor
 ---@field r number

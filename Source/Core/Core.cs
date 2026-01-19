@@ -5,26 +5,22 @@ internal static class Core {
 
     public static Level? ActiveLevel;
     public static Camera3D? ActiveCamera;
-    
-    public static readonly List<Light> Lights = [];
-    
-    public struct TransparentDrawCall {
-        public Model Model;
-        public float Distance;
-    }
-    
-    public static RenderTexture2D ShadowMap;
-    public const int ShadowMapResolution = 4096;
-    public static float ShadowFovScale = 1.0f;
-    
-    public static readonly List<TransparentDrawCall> TransparentRenderQueue = [];
 
-    public static void Init() {
+    public static readonly RenderSettings RenderSettings = new(false);
 
-        // Ambient
-        const float ambientIntensity = 1f;
-        var ambientColor = new ScytheColor(1, 1, 1);
-        
+    private static readonly List<Light> Lights = [];
+    private static readonly List<TransparentDrawCall> TransparentRenderQueue = [];
+
+    private static RenderTexture2D _shadowMap;
+    private const int ShadowMapResolution = 4096;
+
+    private static Raylib_cs.Model _skyboxModel;
+    private static Texture2D _skyboxTexture;
+    
+    public static bool IsRendering;
+
+    public static unsafe void Init() {
+
         // Shaders
         Shaders.Init();
 
@@ -32,8 +28,6 @@ internal static class Core {
         Raylib.SetShaderValue(Shaders.Pbr, Raylib.GetShaderLocation(Shaders.Pbr, "use_tex_normal"  ), CommandLine.Editor ? Config.Editor.PbrNormal   : Config.Runtime.PbrNormal, ShaderUniformDataType.Int);
         Raylib.SetShaderValue(Shaders.Pbr, Raylib.GetShaderLocation(Shaders.Pbr, "use_tex_mra"     ), CommandLine.Editor ? Config.Editor.PbrMra      : Config.Runtime.PbrMra, ShaderUniformDataType.Int);
         Raylib.SetShaderValue(Shaders.Pbr, Raylib.GetShaderLocation(Shaders.Pbr, "use_tex_emissive"), CommandLine.Editor ? Config.Editor.PbrEmissive : Config.Runtime.PbrEmissive, ShaderUniformDataType.Int);
-        Raylib.SetShaderValue(Shaders.Pbr, Raylib.GetShaderLocation(Shaders.Pbr, "ambient_color"), ambientColor.to_vector4(), ShaderUniformDataType.Vec3);
-        Raylib.SetShaderValue(Shaders.Pbr, Raylib.GetShaderLocation(Shaders.Pbr, "ambient_intensity"), ambientIntensity, ShaderUniformDataType.Float);
 
         // Fonts
         Fonts.Init();
@@ -42,7 +36,20 @@ internal static class Core {
         ActiveLevel = new Level("Main");
         ActiveCamera = CommandLine.Editor ? new Camera3D() : (ActiveLevel.Root.Children["Camera"].Components["Camera"] as Camera)?.Cam;
         
-        ShadowMap = LoadShadowmapRenderTexture(ShadowMapResolution, ShadowMapResolution);
+        _shadowMap = LoadShadowmapRenderTexture(ShadowMapResolution, ShadowMapResolution);
+        
+        // Skybox
+        var cube = Raylib.GenMeshCube(1.0f, 1.0f, 1.0f);
+        _skyboxModel = Raylib.LoadModelFromMesh(cube);
+        _skyboxModel.Materials[0].Shader = Shaders.Skybox;
+        
+        if (PathUtil.BestPath("Images/skybox.png", out var skyboxPath)) {
+            
+            var image = Raylib.LoadImage(skyboxPath);
+            _skyboxTexture = Raylib.LoadTextureCubemap(image, CubemapLayout.AutoDetect);
+            Raylib.UnloadImage(image);
+            _skyboxModel.Materials[0].Maps[(int)MaterialMapIndex.Cubemap].Texture = _skyboxTexture;
+        }
     }
 
     private static RenderTexture2D LoadShadowmapRenderTexture(int width, int height) {
@@ -81,8 +88,6 @@ internal static class Core {
         
         LoadObj(ActiveLevel.Root);
         
-        return;
-        
         void LoadObj(Obj obj) {
 
             foreach (var component in obj.Components.Values) {
@@ -95,110 +100,191 @@ internal static class Core {
                 LoadObj(child.Value);
         }
     }
-    
-    public static unsafe void Loop(bool is2D) {
 
+    public static unsafe void Logic() {
+        
         if (ActiveLevel == null) return;
-
-        if (!is2D) {
-            Lights.Clear();
-            TransparentRenderQueue.Clear();
-        }
+        
+        Lights.Clear();
+        TransparentRenderQueue.Clear();
         
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.Pbr.Locs[(int)ShaderLocationIndex.VectorView], ActiveCamera?.Position ?? Vector3.Zero, ShaderUniformDataType.Vec3);
         
-        LoopObj(ActiveLevel.Root);
+        UpdateObj(ActiveLevel.Root);
         
+        return;
+
+        void UpdateObj(Obj obj) {
+            
+            if (obj.Parent != null) {
+                
+                obj.WorldMatrix = obj.Parent.WorldMatrix * obj.Matrix;
+                obj.WorldRotMatrix = obj.Parent.WorldRotMatrix * obj.RotMatrix;
+                
+            } else {
+                
+                obj.WorldMatrix = obj.Matrix;
+                obj.WorldRotMatrix = obj.RotMatrix;
+            }
+            
+            // Logic and component updates
+            obj.Transform.Loop(false);
+            
+            foreach (var component in obj.Components.Values) {
+                
+                component.Loop(false);
+                
+                switch (component) {
+                    
+                    case Light light: Lights.Add(light); break;
+                    
+                    case Model { IsTransparent: true } model: {
+                        
+                        var worldPos = new Vector3(obj.WorldMatrix.M41, obj.WorldMatrix.M42, obj.WorldMatrix.M43);
+                        var distance = Vector3.Distance(ActiveCamera?.Position ?? Vector3.Zero, worldPos);
+                        TransparentRenderQueue.Add(new TransparentDrawCall { Model = model, Distance = distance });
+                        break;
+                    }
+                }
+            }
+
+            foreach (var child in obj.Children) UpdateObj(child.Value);
+        }
+    }
+
+    public static void ShadowPass() {
         
+        if (ActiveLevel == null) return;
+
+        Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrLightCount, Lights.Count, ShaderUniformDataType.Int);
+            
+        var shadowLight = Lights.FirstOrDefault(l => l is { Enabled: true, Shadows: true });
+
+        if (shadowLight != null) {
+            
+            var shadowLightIndex = Lights.IndexOf(shadowLight);
+
+            var lightCamera = new Raylib_cs.Camera3D {
+                
+                Position = shadowLight.Type == 0 ? shadowLight.Obj.Pos - shadowLight.Obj.Fwd * 500.0f : shadowLight.Obj.Pos,
+                
+                Target = shadowLight.Type switch {
+                    
+                    0 => shadowLight.Obj.Pos,
+                    1 => shadowLight.Obj.Pos + Vector3.UnitY * -1,
+                    _ => shadowLight.Obj.Pos + shadowLight.Obj.Fwd
+                },
+                
+                Up = shadowLight.Type == 1 ? Vector3.UnitX : Vector3.UnitY,
+                FovY = (shadowLight.Type == 0 ? shadowLight.Range * 2.0f : (shadowLight.Type == 2 ? 90.0f : 160.0f)) * RenderSettings.ShadowFovScale,
+                Projection = shadowLight.Type == 0 ? CameraProjection.Orthographic : CameraProjection.Perspective
+            };
+
+            Raylib.BeginTextureMode(_shadowMap);
+            Raylib.ClearBackground(Color.White);
+            Raylib.BeginMode3D(lightCamera);
+            
+            var lightView = Rlgl.GetMatrixModelview();
+            var lightProj = Rlgl.GetMatrixProjection();
+            var lightVp = Raymath.MatrixMultiply(lightView, lightProj);
+
+            // Draw objects for shadow depth
+            Raylib.BeginShaderMode(Shaders.Depth);
+            RenderHierarchy(ActiveLevel.Root, false, true);
+            Raylib.EndShaderMode();
+
+            Raylib.EndMode3D();
+            Raylib.EndTextureMode();
+            
+            Raylib.SetShaderValueMatrix(Shaders.Pbr, Shaders.PbrLightVp, lightVp);
+            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, shadowLightIndex, ShaderUniformDataType.Int);
+            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowStrength, shadowLight.ShadowStrength, ShaderUniformDataType.Float);
+            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMapResolution, ShadowMapResolution, ShaderUniformDataType.Int);
+
+            const int shadowMapSlot = 10;
+            Rlgl.ActiveTextureSlot(shadowMapSlot);
+            Rlgl.EnableTexture(_shadowMap.Depth.Id);
+            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMap, shadowMapSlot, ShaderUniformDataType.Int);
+            Rlgl.ActiveTextureSlot(0);
+            
+        }
+        
+        else Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, -1, ShaderUniformDataType.Int);
+
+        for (var i = 0; i < Lights.Count; i++) Lights[i].Update(i);
+    }
+
+    public static void Render(bool is2D) {
+        
+        if (ActiveLevel == null) return;
+        
+        IsRendering = true;
+
         if (!is2D) {
             
-            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrLightCount, Lights.Count, ShaderUniformDataType.Int);
-                
-            // Shadow Pass
-            var shadowLight = Lights.FirstOrDefault(l => l.Enabled && l.Shadows);
-            var shadowLightIndex = -1;
+            // Skybox
+            Rlgl.DisableBackfaceCulling();
+            Rlgl.DisableDepthMask();
+            Raylib.DrawModel(_skyboxModel, Vector3.Zero, 1.0f, Color.White);
+            Rlgl.EnableBackfaceCulling();
+            Rlgl.EnableDepthMask();
+        }
+
+        RenderHierarchy(ActiveLevel.Root, is2D, false);
+
+        if (!is2D) {
             
-            if (shadowLight != null) {
-                
-                shadowLightIndex = Lights.IndexOf(shadowLight);
-    
-                var lightCamera = new Camera3D {
-                    Position = shadowLight.Type == 0 ? shadowLight.Obj.Pos - shadowLight.Obj.Fwd * 500.0f : shadowLight.Obj.Pos,
-                    Target = shadowLight.Type == 0 ? shadowLight.Obj.Pos : 
-                             (shadowLight.Type == 1 ? shadowLight.Obj.Pos + Vector3.UnitY * -1 : shadowLight.Obj.Pos + shadowLight.Obj.Fwd),
-                    Up = shadowLight.Type == 1 ? Vector3.UnitX : Vector3.UnitY,
-                    FovY = (shadowLight.Type == 0 ? shadowLight.Range * 2.0f : (shadowLight.Type == 2 ? 90.0f : 160.0f)) * ShadowFovScale,
-                    Projection = shadowLight.Type == 0 ? CameraProjection.Orthographic : CameraProjection.Perspective
-                };
-    
-                Raylib.BeginTextureMode(ShadowMap);
-                Raylib.ClearBackground(Color.White);
-                Raylib.BeginMode3D(lightCamera.Raylib);
-                
-                var lightView = Rlgl.GetMatrixModelview();
-                var lightProj = Rlgl.GetMatrixProjection();
-                var lightVP = Raymath.MatrixMultiply(lightView, lightProj);
-    
-                // Draw all shadow casters
-                LoopDraw(ActiveLevel.Root, true);
-    
-                Raylib.EndMode3D();
-                Raylib.EndTextureMode();
-                
-                Raylib.SetShaderValueMatrix(Shaders.Pbr, Shaders.PbrLightVP, lightVP);
-                Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, shadowLightIndex, ShaderUniformDataType.Int);
-                Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowStrength, shadowLight.ShadowStrength, ShaderUniformDataType.Float);
-                Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMapResolution, ShadowMapResolution, ShaderUniformDataType.Int);
-    
-                // Bind shadow map
-                const int shadowMapSlot = 10;
-                Rlgl.ActiveTextureSlot(shadowMapSlot);
-                Rlgl.EnableTexture(ShadowMap.Depth.Id);
-                Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMap, shadowMapSlot, ShaderUniformDataType.Int);
-                
-                // BACK TO SLOT 0
-                Rlgl.ActiveTextureSlot(0);
-            }
-            else {
-                
-                Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, -1, ShaderUniformDataType.Int);
-            }
-    
-            for (var i = 0; i < Lights.Count; i++) Lights[i].Update(i);
-    
             if (TransparentRenderQueue.Count > 0) {
                 
                 TransparentRenderQueue.Sort((a, b) => b.Distance.CompareTo(a.Distance));
                 
                 foreach (var call in TransparentRenderQueue) {
                     
-                    call.Model.DrawTransparent();
+                    Raylib.BeginBlendMode(BlendMode.Alpha);
+                    call.Model.Draw();
+                    Raylib.EndBlendMode();
                 }
             }
         }
         
-        return;
+        IsRendering = false;
+    }
+
+    private static void RenderHierarchy(Obj obj, bool is2D, bool isShadowPass) {
         
-        void LoopObj(Obj obj) {
+        // Ensure components drawing. Transform is updated in Logic
         
-            if (obj.Parent != null) {
+        if (isShadowPass) {
             
-                obj.WorldMatrix = obj.Parent.WorldMatrix * obj.Matrix;
-                obj.WorldRotMatrix = obj.Parent.WorldRotMatrix * obj.RotMatrix;
+            foreach (var component in obj.Components.Values) {
+                
+                if (component is Model { CastShadows: true } m)
+                    m.DrawShadow();
             }
-            else {
-
-                obj.WorldMatrix = obj.Matrix;
-                obj.WorldRotMatrix = obj.RotMatrix;
-            }
-
+            
+        } else {
+            
             obj.Transform.Loop(is2D);
             
-            foreach (var component in obj.Components.Values)
+            foreach (var component in obj.Components.Values) {
+                
                 component.Loop(is2D);
+            }
+        }
         
-            foreach (var child in obj.Children)
-                LoopObj(child.Value);
+        foreach (var child in obj.Children) RenderHierarchy(child.Value, is2D, isShadowPass);
+    }
+
+    public static void Loop(bool is2D) {
+        
+        if (is2D) Render(true);
+        
+        else {
+            
+            Logic();
+            ShadowPass();
+            
+            Render(false);
         }
     }
 
@@ -209,7 +295,10 @@ internal static class Core {
 
         if (ActiveLevel == null) return;
         
-        Raylib.UnloadRenderTexture(ShadowMap);
+        Raylib.UnloadRenderTexture(_shadowMap);
+        Raylib.UnloadModel(_skyboxModel);
+        Raylib.UnloadTexture(_skyboxTexture);
+        
         QuitObj(ActiveLevel.Root);
         
         return;
@@ -219,25 +308,5 @@ internal static class Core {
             foreach (var component in obj.Components.Values) component.Quit();
             foreach (var child in obj.Children) QuitObj(child.Value);
         }
-    }
-
-    private static void LoopDraw(Obj obj, bool isShadowPass) {
-        
-        foreach (var component in obj.Components.Values) {
-            
-            if (component is Model model) {
-                if (isShadowPass) {
-                    if (model.CastShadows) {
-                        // Use depth shader
-                        Raylib.BeginShaderMode(Shaders.Depth);
-                        Raylib.DrawModel(model.RlModel, Vector3.Zero, 1, Color.White);
-                        Raylib.EndShaderMode();
-                    }
-                }
-            }
-        }
-
-        foreach (var child in obj.Children)
-            LoopDraw(child.Value, isShadowPass);
     }
 }

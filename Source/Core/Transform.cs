@@ -190,7 +190,7 @@ internal class Transform(Obj obj) : Component(obj, "transform") {
         
             UpdateTransform();
             
-            if (!CommandLine.Editor || Core.ActiveCamera == null) return;
+            if (!CommandLine.Editor || Core.ActiveCamera == null || !Core.IsRendering) return;
 
             if (!Obj.IsSelected) return;
             
@@ -202,7 +202,7 @@ internal class Transform(Obj obj) : Component(obj, "transform") {
                 if (IsKeyPressed(KeyboardKey.X)) _isWorldSpace = !_isWorldSpace;
             }
             
-            Shaders.Begin(Shaders.Transform);
+            BeginShaderMode(Shaders.Transform);
 
             var ray = GetScreenToWorldRay(Level3D.RelativeMouse3D, Core.ActiveCamera.Raylib);
 
@@ -216,7 +216,7 @@ internal class Transform(Obj obj) : Component(obj, "transform") {
             Axis("y", Vector3.UnitY, u, new Color(0.3f, 0.9f, 0.3f), ray);
             Axis("z", Vector3.UnitZ, f, new Color(0.3f, 0.3f, 0.9f), ray);
             
-            Shaders.End();
+            EndShaderMode();
         }
     }
 

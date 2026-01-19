@@ -18,13 +18,23 @@ internal static class Runtime {
             
             Window.UpdateFps();
             Core.Load();
+            
+            // Logic first (updates matrices and camera)
+            Core.Logic();
+            
             BeginDrawing();
             ClearBackground(Colors.Game.ToRaylib());
+            
+            // Shadow pass (internal RT switch)
+            Core.ShadowPass();
+            
+            // Main Render
             BeginMode3D(Core.ActiveCamera.Raylib);
-            Core.Loop(false);
+            Core.Render(false);
             LuaMouse.Loop();
             EndMode3D();
-            Core.Loop(true);
+            
+            Core.Render(true);
             Window.DrawFps();
             EndDrawing();
             

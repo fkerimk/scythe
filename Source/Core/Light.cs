@@ -61,7 +61,7 @@ internal class Light(Obj obj) : Component(obj, "light") {
         _pos = position;
         _target = _pos + Obj.Fwd * (Type == 0 ? 1 : Range);
         
-        Core.Lights.Add(this);
+        if (!Core.IsRendering) return;
 
         if (IsSelected) {
 

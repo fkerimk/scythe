@@ -59,20 +59,22 @@ internal static unsafe class Editor {
                 Level3D.TexTemp = Level3D.TexSize;
             }
 
-            // Render core on viewport
+            // Core Logic & Shadow Mapping (Internal switches RT, ends in screen buffer)
+            Core.Logic();
+            Core.ShadowPass();
+
+            // Viewport Rendering
             BeginTextureMode(Level3D.Rt);
             Window.Clear(Colors.Game);
+            
             FreeCam.Loop(Level3D);
+            
             BeginMode3D(Core.ActiveCamera.Raylib);
+            Core.Render(false); // Draw objects and skybox
             Grid.Draw(Core.ActiveCamera);
-            Core.Loop(false);
-            
-            // CRITICAL: Shadow mapping inside Core.Loop(false) calls EndTextureMode().
-            // We MUST return to the viewport RT for the rest of the frame.
-            BeginTextureMode(Level3D.Rt);
-            
             EndMode3D();
-            Core.Loop(true);
+            
+            Core.Render(true); // Draw 2D UI for components
             Window.DrawFps();
             EndTextureMode();
 

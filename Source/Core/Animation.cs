@@ -63,7 +63,7 @@ internal unsafe class Animation(Obj obj) : Component(obj, "animation") {
         
         Raylib.UpdateModelAnimation((model as Model)!.RlModel, _rlAnims[Track], _frame);
             
-        _frameRaw += Raylib.GetFrameTime() * 60;
+        _frameRaw += Raylib.GetFrameTime() * 30;
     }
 
     public override void Quit() {

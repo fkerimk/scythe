@@ -10,7 +10,7 @@ internal class Model(Obj obj) : Component(obj, "model") {
     
     [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
     [RecordHistory] [JsonProperty] [Label("Color")] public ScytheColor ScytheColor { get; set; } = Colors.White;
-    [RecordHistory] [JsonProperty] [Label("Transparent")] public bool IsTransparent { get; set; } = false;
+    [RecordHistory] [JsonProperty] [Label("Transparent")] public bool IsTransparent { get; set; }
     [RecordHistory] [JsonProperty] [Label("Alpha Cutoff")] public float AlphaCutoff { get; set; } = 0.5f;
     [RecordHistory] [JsonProperty] [Label("Cast Shadows")] public bool CastShadows { get; set; } = true;
     [RecordHistory] [JsonProperty] [Label("Receive Shadows")] public bool ReceiveShadows { get; set; } = true;
@@ -56,20 +56,14 @@ internal class Model(Obj obj) : Component(obj, "model") {
         return true;
     }
 
-    public override unsafe void Loop(bool is2D) {
-
+    public override void Loop(bool is2D) {
+        
         if (is2D) return;
         
         RlModel.Transform = Obj.WorldMatrix;
         
-        if (IsTransparent) {
-            
-            var worldPos = new Vector3(Obj.WorldMatrix.M41, Obj.WorldMatrix.M42, Obj.WorldMatrix.M43);
-            var distance = Vector3.Distance(Core.ActiveCamera?.Position ?? Vector3.Zero, worldPos);
-            Core.TransparentRenderQueue.Add(new Core.TransparentDrawCall { Model = this, Distance = distance });
-            return;
-        }
-
+        if (!Core.IsRendering | IsTransparent) return;
+        
         Draw();
     }
 
@@ -80,9 +74,14 @@ internal class Model(Obj obj) : Component(obj, "model") {
         Raylib.EndBlendMode();
     }
 
-    private unsafe void Draw() {
+    public void DrawShadow() {
         
-        // Draw test model
+        if (!CastShadows) return;
+        Draw();
+    }
+
+    public unsafe void Draw() {
+        
         for (var i = 0; i < RlModel.MaterialCount; i++) {
             
             var emissiveColor = Raylib.ColorNormalize(RlModel.Materials[i].Maps[(int)MaterialMapIndex.Emission].Color);
