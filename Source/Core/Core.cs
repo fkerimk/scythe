@@ -14,7 +14,7 @@ internal static class Core {
     }
     
     public static RenderTexture2D ShadowMap;
-    public const int ShadowMapResolution = 1024;
+    public const int ShadowMapResolution = 4096;
     
     public static readonly List<TransparentDrawCall> TransparentRenderQueue = [];
 
@@ -64,6 +64,10 @@ internal static class Core {
             Rlgl.FramebufferAttach(target.Id, target.Depth.Id, FramebufferAttachType.Depth, FramebufferAttachTextureType.Texture2D, 0);
 
             if (Rlgl.FramebufferComplete(target.Id)) Raylib.TraceLog(TraceLogLevel.Info, "FBO: Shadowmap created successfully");
+            
+            Raylib.SetTextureFilter(target.Depth, TextureFilter.Bilinear);
+            Raylib.SetTextureWrap(target.Depth, TextureWrap.Clamp);
+
             Rlgl.DisableFramebuffer();
         }
         
@@ -115,9 +119,10 @@ internal static class Core {
 
             var lightCamera = new Camera3D {
                 Position = shadowLight.Type == 0 ? shadowLight.Obj.Pos - shadowLight.Obj.Fwd * 500.0f : shadowLight.Obj.Pos,
-                Target = shadowLight.Type == 0 ? shadowLight.Obj.Pos : shadowLight.Obj.Pos + shadowLight.Obj.Fwd,
-                Up = Vector3.UnitY,
-                FovY = shadowLight.Type == 0 ? 200.0f : (shadowLight.Type == 2 ? 90.0f : 120.0f),
+                Target = shadowLight.Type == 0 ? shadowLight.Obj.Pos : 
+                         (shadowLight.Type == 1 ? shadowLight.Obj.Pos + Vector3.UnitY * -1 : shadowLight.Obj.Pos + shadowLight.Obj.Fwd),
+                Up = shadowLight.Type == 1 ? Vector3.UnitX : Vector3.UnitY,
+                FovY = shadowLight.Type == 0 ? 300.0f : (shadowLight.Type == 2 ? 90.0f : 160.0f),
                 Projection = shadowLight.Type == 0 ? CameraProjection.Orthographic : CameraProjection.Perspective
             };
 
