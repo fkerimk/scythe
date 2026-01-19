@@ -292,7 +292,7 @@ internal class LevelBrowser() : Viewport("Level") {
         // object icon
         SameLine();
         PushFont(Fonts.ImFontAwesomeSmall);
-        SetCursorPos(new(GetCursorPosX() - 10f, GetCursorPosY() + 2.5f));
+        SetCursorPos(new Vector2(GetCursorPosX() - 10f, GetCursorPosY() + 2.5f));
         TextColored(Colors.GuiTypeObject.ToVector4(), Icons.Obj);
         PopFont();
 

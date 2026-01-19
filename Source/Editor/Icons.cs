@@ -6,6 +6,7 @@
     public static string Animation => FaPlayCircle;
     public static string Light     => FaLightbulbO;
     public static string Camera    => FaVideoCamera;
+    public static string Box       => FaCube;
     
     // font awesome icon codes - https://fontawesome.com/v4/cheatsheet/
     public const string FaFile = ""; // fa-file

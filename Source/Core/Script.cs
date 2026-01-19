@@ -3,7 +3,7 @@ using Raylib_cs;
 using MoonSharp.Interpreter;
 using Newtonsoft.Json;
 
-internal class Script(Obj obj) : Component(obj, "script") {
+internal class Script(Obj obj) : Component(obj) {
     
     [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
 

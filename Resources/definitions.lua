@@ -94,6 +94,10 @@ function Obj:makeComponent(name) end
 ---@return string
 function Obj:safeNameForChild(name) end
 
+---@param component any
+---@return boolean
+function Obj:tryGetComponent(component) end
+
 ---@class Level
 ---@field root Obj
 local Level = {}
@@ -124,8 +128,7 @@ function Level:findComponent(t) end
 
 ---@class Camera : Component
 ---@field labelIcon string
----@field labelScytheColor Color
----@field name string
+---@field labelColor Color
 ---@field isSelected boolean
 ---@field up Vector3
 ---@field fwd Vector3
@@ -283,9 +286,8 @@ local LuaColor = {}
 function LuaColor.new(r, g, b, a) end
 
 ---@class Component
----@field name string
 ---@field labelIcon string
----@field labelScytheColor Color
+---@field labelColor Color
 ---@field isSelected boolean
 ---@field up Vector3
 ---@field fwd Vector3
@@ -309,12 +311,11 @@ function Component:quit() end
 
 ---@class Animation : Component
 ---@field labelIcon string
----@field labelScytheColor Color
+---@field labelColor Color
 ---@field path string
 ---@field track number
 ---@field isPlaying boolean
 ---@field looping boolean
----@field name string
 ---@field isSelected boolean
 ---@field up Vector3
 ---@field fwd Vector3
@@ -338,7 +339,7 @@ function Animation:quit() end
 
 ---@class Light : Component
 ---@field labelIcon string
----@field labelScytheColor Color
+---@field labelColor Color
 ---@field enabled boolean
 ---@field type number
 ---@field scytheColor Color
@@ -346,7 +347,6 @@ function Animation:quit() end
 ---@field range number
 ---@field shadows boolean
 ---@field shadowStrength number
----@field name string
 ---@field isSelected boolean
 ---@field up Vector3
 ---@field fwd Vector3
@@ -368,14 +368,13 @@ function Light:loop(is2D) end
 
 ---@class Model : Component
 ---@field labelIcon string
----@field labelScytheColor Color
+---@field labelColor Color
 ---@field path string
 ---@field color Color
 ---@field isTransparent boolean
 ---@field alphaCutoff number
 ---@field castShadows boolean
 ---@field receiveShadows boolean
----@field name string
 ---@field isSelected boolean
 ---@field up Vector3
 ---@field fwd Vector3
@@ -409,9 +408,8 @@ function Model:quit() end
 
 ---@class Script : Component
 ---@field path string
----@field name string
 ---@field labelIcon string
----@field labelScytheColor Color
+---@field labelColor Color
 ---@field isSelected boolean
 ---@field up Vector3
 ---@field fwd Vector3
@@ -450,7 +448,7 @@ function Script:safeLuaCall(action) end
 
 ---@class Transform : Component
 ---@field labelIcon string
----@field labelScytheColor Color
+---@field labelColor Color
 ---@field pos Vector3
 ---@field euler Vector3
 ---@field scale Vector3
@@ -458,7 +456,6 @@ function Script:safeLuaCall(action) end
 ---@field worldPos Vector3
 ---@field worldRot Quaternion
 ---@field worldEuler Vector3
----@field name string
 ---@field isSelected boolean
 ---@field up Vector3
 ---@field fwd Vector3

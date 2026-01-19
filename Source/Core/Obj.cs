@@ -198,6 +198,12 @@ internal class Obj {
         
         return newName;
     }
+
+    public bool TryGetComponent<T>(out T component) where T : Component {
+        
+        component = (Components.Values.FirstOrDefault(c => c is T) as T)!;
+        return true;
+    }
 }
 
 internal static partial class Extensions {

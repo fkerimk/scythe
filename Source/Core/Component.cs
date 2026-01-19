@@ -3,13 +3,12 @@ using Newtonsoft.Json;
 using Raylib_cs;
 
 [JsonObject(MemberSerialization.OptIn)]
-internal class Component(Obj obj, string name) {
+internal class Component(Obj obj) {
     
-    [JsonProperty] public string Name => name;
     public readonly Obj Obj = obj;
 
     public virtual string LabelIcon => Icons.Obj;
-    public virtual Color LabelScytheColor => Colors.GuiTypeObject;
+    public virtual Color LabelColor => Colors.GuiTypeObject;
 
     public virtual bool Load() => true;
     public virtual void Loop(bool is2D) {}

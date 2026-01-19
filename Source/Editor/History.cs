@@ -5,35 +5,35 @@ internal static class History {
     private static readonly List<Record> Records = [];
 
     private static int _currentIndex = -1;
-    private static Record? ActiveRecord;
+    private static Record? _activeRecord;
     
     public static bool CanUndo => _currentIndex >= 0;
     public static bool CanRedo => _currentIndex < Records.Count - 1;
     
     public static void StartRecording(object reference, string? description = null) {
 
-        ActiveRecord ??= new Record(description);
+        _activeRecord ??= new Record(description);
 
-        if (ActiveRecord.Objects.All(o => o.Reference != reference)) {
+        if (_activeRecord.Objects.All(o => o.Reference != reference)) {
             
-            ActiveRecord.Objects.Add(new ObjectRecord(reference));
+            _activeRecord.Objects.Add(new ObjectRecord(reference));
         }
     }
 
     public static void StopRecording() {
         
-        if (ActiveRecord == null) return;
+        if (_activeRecord == null) return;
 
-        foreach (var record in ActiveRecord.Objects)
+        foreach (var record in _activeRecord.Objects)
             record.FinalState = GetState(record.Reference);
         
         if (_currentIndex < Records.Count - 1)
             Records.RemoveRange(_currentIndex + 1, Records.Count - (_currentIndex + 1));
         
-        Records.Add(ActiveRecord);
+        Records.Add(_activeRecord);
 
         _currentIndex = Records.Count - 1;
-        ActiveRecord = null;
+        _activeRecord = null;
     }
     
     private static object[] GetState(object reference) {
@@ -109,6 +109,6 @@ internal static class History {
         public object[] FinalState = [];
     }
 
-    public static void SetUndoAction(Action action) => ActiveRecord?.UndoAction = action;
-    public static void SetRedoAction(Action action) => ActiveRecord?.RedoAction = action;
+    public static void SetUndoAction(Action action) => _activeRecord?.UndoAction = action;
+    public static void SetRedoAction(Action action) => _activeRecord?.RedoAction = action;
 }

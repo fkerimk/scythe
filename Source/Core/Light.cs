@@ -3,11 +3,10 @@ using System.Numerics;
 using Newtonsoft.Json;
 using Raylib_cs;
 
-// ReSharper disable once ClassNeverInstantiated.Global
-internal class Light(Obj obj) : Component(obj, "light") {
+internal class Light(Obj obj) : Component(obj) {
     
     public override string LabelIcon => Icons.Light;
-    public override Color LabelScytheColor => Colors.GuiTypeLight;
+    public override Color LabelColor => Colors.GuiTypeLight;
 
     [Label("Enabled"), JsonProperty, RecordHistory]
     public bool Enabled { get; set; } = true;

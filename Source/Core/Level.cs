@@ -47,7 +47,7 @@ internal class Level {
         File.WriteAllText(_jsonPath, json);
     }
     
-    private void BuildHierarchy(KeyValuePair<string, JToken> dataPair, Obj parent) {
+    private static void BuildHierarchy(KeyValuePair<string, JToken> dataPair, Obj parent) {
         
         if (dataPair.Value is not JObject data) return;
         
@@ -73,11 +73,10 @@ internal class Level {
 
         obj.Components = components;
 
-        if (data["Children"] is JObject children) {
-            
-            foreach (var property in children.Properties())
-                BuildHierarchy(new KeyValuePair<string, JToken>(property.Name, property.Value), obj);
-        }
+        if (data["Children"] is not JObject children) return;
+
+        foreach (var property in children.Properties())
+            BuildHierarchy(new KeyValuePair<string, JToken>(property.Name, property.Value), obj);
     }
     
     public static Obj MakeObject(string name, Obj? parent) {
@@ -119,20 +118,16 @@ internal class Level {
         JsonConvert.PopulateObject(transformJson, clone.Transform);
 
         // Copy Components
-        if (source.Components != null) {
+        foreach (var (key, sourceComponent) in source.Components) {
             
-            foreach (var compPair in source.Components) {
+            var compType = sourceComponent.GetType();
                 
-                var sourceComp = compPair.Value;
-                var compType = sourceComp.GetType();
+            if (Activator.CreateInstance(compType, clone) is not Component cloneComp) continue;
                 
-                if (Activator.CreateInstance(compType, clone) is not Component cloneComp) continue;
+            var compJson = JsonConvert.SerializeObject(sourceComponent);
+            JsonConvert.PopulateObject(compJson, cloneComp);
                 
-                var compJson = JsonConvert.SerializeObject(sourceComp);
-                JsonConvert.PopulateObject(compJson, cloneComp);
-                
-                clone.Components[compPair.Key] = cloneComp;
-            }
+            clone.Components[key] = cloneComp;
         }
 
         // Clone children recursively
@@ -156,15 +151,9 @@ internal class Level {
         return clone;
     }
 
-    [MoonSharpHidden]
-    public Obj? Find(string[] names) => Root.Find(names);
-    
-    [MoonSharpHidden]
-    public Component? FindComponent(string[] names) => Root.FindComponent(names);
+    [MoonSharpHidden] public Obj? Find(string[] names) => Root.Find(names);
+    [MoonSharpHidden] public Component? FindComponent(string[] names) => Root.FindComponent(names);
     
     public Obj? Find(Table t) => Root.Find(t.Values.Select(v => v.String).ToArray());
     public Component? FindComponent(Table t) => Root.FindComponent(t.Values.Select(v => v.String).ToArray());
-    
-    //public T? FindType<T>() where T : Component => (from obj in Root.GetChildrenRecursive() where obj.Components is T select obj.Components).FirstOrDefault() as T;
-    //public Component? FindType(string name) => (from child in Root.GetChildrenRecursive() where child.Components?.Name == name select child.Components).FirstOrDefault();
 }

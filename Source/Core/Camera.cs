@@ -1,10 +1,10 @@
 ﻿using System.Numerics;
 using Raylib_cs;
 
-internal class Camera(Obj obj) : Component(obj, "camera") {
+internal class Camera(Obj obj) : Component(obj) {
 
     public override string LabelIcon => Icons.Camera;
-    public override Color LabelScytheColor => Colors.GuiTypeCamera;
+    public override Color LabelColor => Colors.GuiTypeCamera;
 
     public required Camera3D Cam = new();
 

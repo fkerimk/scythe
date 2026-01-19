@@ -60,7 +60,7 @@ internal class ObjectBrowser : Viewport {
                     
                 if (!Selectable(type.Name)) continue;
 
-                if (LevelBrowser.SelectedObject.Components.ContainsKey(type.Name.ToPascalCase())) {
+                if (LevelBrowser.SelectedObject.Components.ContainsKey(type.Name)) {
 
                     Notifications.Show($"Component {type.Name} already exists!", 1.5f);
                     break;
@@ -68,7 +68,7 @@ internal class ObjectBrowser : Viewport {
 
                 if (Activator.CreateInstance(type, LevelBrowser.SelectedObject) is not Component component) continue;
                 
-                LevelBrowser.SelectedObject.Components[type.Name.ToPascalCase()] = component;
+                LevelBrowser.SelectedObject.Components[type.Name] = component;
 
                 if (component is Animation animation &&  LevelBrowser.SelectedObject.Components.TryGetValue("Model", out var model))
                     animation.Path = (model as Model)!.Path;
@@ -105,7 +105,7 @@ internal class ObjectBrowser : Viewport {
             if (obj is Component c) {
 
                 PushFont(Fonts.ImFontAwesomeSmall);
-                TextColored(c.LabelScytheColor.ToVector4(), c.LabelIcon);
+                TextColored(c.LabelColor.ToVector4(), c.LabelIcon);
                 PopFont();
                 SameLine();
             }
@@ -120,7 +120,8 @@ internal class ObjectBrowser : Viewport {
                 SetCursorPosX(targetX);
             
                 if (SmallButton($"X##{_propIndex}")) {
-                    component.Obj.Components.Remove(component.Name.ToPascalCase());
+                    
+                    component.Obj.Components.Remove(component.GetType().Name);
                 }
             }
 

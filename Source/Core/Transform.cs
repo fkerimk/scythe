@@ -6,20 +6,16 @@ using static Raylib_cs.Raylib;
 
 [MoonSharpUserData]
 [JsonObject(MemberSerialization.OptIn)]
-internal class Transform(Obj obj) : Component(obj, "transform") {
+internal class Transform(Obj obj) : Component(obj) {
     
     public override string LabelIcon => Icons.Transform;
-    public override Color LabelScytheColor => Colors.GuiTypeTransform;
-    
-    private Vector3 _pos = Vector3.Zero;
-    private Vector3 _scale = Vector3.One;
-    private Quaternion _rot = Quaternion.Identity;
+    public override Color LabelColor => Colors.GuiTypeTransform;
 
     #region Local Transform
-    
-    [Label("Pos"), RecordHistory, JsonProperty] 
-    public new Vector3 Pos { get => _pos; set { _pos = value; UpdateTransform(); } }
-    
+
+    [Label("Pos"), RecordHistory, JsonProperty]
+    public new Vector3 Pos { get; set { field = value; UpdateTransform(); } } = Vector3.Zero;
+
     [Label("Euler"), RecordHistory, JsonProperty]
     public Vector3 Euler { 
         
@@ -35,13 +31,13 @@ internal class Transform(Obj obj) : Component(obj, "transform") {
             Rot = q;
         }
     }
-    
+
     [Label("Scale"), RecordHistory, JsonProperty]
-    public Vector3 Scale { get => _scale; set { _scale = value; UpdateTransform(); } }
-    
+    public Vector3 Scale { get; set { field = value; UpdateTransform(); } } = Vector3.One;
+
     [RecordHistory, JsonProperty]
-    public new Quaternion Rot { get => _rot; set { _rot = value; UpdateTransform(); } }
-    
+    public new Quaternion Rot { get; set { field = value; UpdateTransform(); } } = Quaternion.Identity;
+
     #endregion
     
     #region World Transform

@@ -2,10 +2,10 @@
 using Raylib_cs;
 using Newtonsoft.Json;
 
-internal class Model(Obj obj) : Component(obj, "model") {
+internal class Model(Obj obj) : Component(obj) {
 
     public override string LabelIcon => Icons.Model;
-    public override Color LabelScytheColor => Colors.GuiTypeModel;
+    public override Color LabelColor => Colors.GuiTypeModel;
     
     [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
     [RecordHistory] [JsonProperty] [Label("Color")] public Color Color { get; set; } = Color.White;

@@ -1,11 +1,10 @@
 ﻿using Newtonsoft.Json;
 using Raylib_cs;
 
-// ReSharper disable once ClassNeverInstantiated.Global
-internal unsafe class Animation(Obj obj) : Component(obj, "animation") {
+internal unsafe class Animation(Obj obj) : Component(obj) {
     
     public override string LabelIcon => Icons.Animation;
-    public override Color LabelScytheColor => Colors.GuiTypeAnimation;
+    public override Color LabelColor => Colors.GuiTypeAnimation;
 
     [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
     
