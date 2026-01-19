@@ -13,6 +13,9 @@ internal static class Core {
         public float Distance;
     }
     
+    public static RenderTexture2D ShadowMap;
+    public const int ShadowMapResolution = 1024;
+    
     public static readonly List<TransparentDrawCall> TransparentRenderQueue = [];
 
     public static void Init() {
@@ -37,6 +40,34 @@ internal static class Core {
         // Level & camera
         ActiveLevel = new Level("Main");
         ActiveCamera = CommandLine.Editor ? new Camera3D() : (ActiveLevel.Root.Children["Camera"].Components["Camera"] as Camera)?.Cam;
+        
+        ShadowMap = LoadShadowmapRenderTexture(ShadowMapResolution, ShadowMapResolution);
+    }
+
+    private static RenderTexture2D LoadShadowmapRenderTexture(int width, int height) {
+        
+        var target = new RenderTexture2D {
+            Id = Rlgl.LoadFramebuffer()
+        };
+        target.Texture.Width = width;
+        target.Texture.Height = height;
+
+        if (target.Id > 0) {
+            
+            Rlgl.EnableFramebuffer(target.Id);
+            target.Depth.Id = Rlgl.LoadTextureDepth(width, height, false);
+            target.Depth.Width = width;
+            target.Depth.Height = height;
+            target.Depth.Format = PixelFormat.UncompressedGrayscale; // 19? In C# it might be different. 
+            target.Depth.Mipmaps = 1;
+
+            Rlgl.FramebufferAttach(target.Id, target.Depth.Id, FramebufferAttachType.Depth, FramebufferAttachTextureType.Texture2D, 0);
+
+            if (Rlgl.FramebufferComplete(target.Id)) Raylib.TraceLog(TraceLogLevel.Info, "FBO: Shadowmap created successfully");
+            Rlgl.DisableFramebuffer();
+        }
+        
+        return target;
     }
 
     public static void Load() {
@@ -71,8 +102,62 @@ internal static class Core {
         
         LoopObj(ActiveLevel.Root);
         
+        
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrLightCount, Lights.Count, ShaderUniformDataType.Int);
         
+        // Shadow Pass
+        var shadowLight = Lights.Values.FirstOrDefault(l => l.Enabled && l.Shadows);
+        var shadowLightIndex = -1;
+        
+        if (shadowLight != null) {
+            
+            var index = 0;
+            foreach (var light in Lights.Values) {
+                if (light == shadowLight) {
+                    shadowLightIndex = index;
+                    break;
+                }
+                index++;
+            }
+
+            var lightCamera = new Camera3D {
+                Position = shadowLight.Obj.Pos,
+                Target = shadowLight.Obj.Pos + shadowLight.Obj.Fwd,
+                Up = Vector3.UnitY,
+                FovY = shadowLight.Type == 0 ? 20.0f : 60.0f,
+                Projection = shadowLight.Type == 0 ? CameraProjection.Orthographic : CameraProjection.Perspective
+            };
+
+            Raylib.BeginTextureMode(ShadowMap);
+            Raylib.ClearBackground(Color.White);
+            Raylib.BeginMode3D(lightCamera.Raylib);
+            
+            var lightView = Rlgl.GetMatrixModelview();
+            var lightProj = Rlgl.GetMatrixProjection();
+            var lightVP = Raymath.MatrixMultiply(lightView, lightProj);
+
+            // Draw all shadow casters
+            LoopDraw(ActiveLevel.Root, true);
+
+            Raylib.EndMode3D();
+            Raylib.EndTextureMode();
+            
+            Raylib.SetShaderValueMatrix(Shaders.Pbr, Shaders.PbrLightVP, lightVP);
+            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, shadowLightIndex, ShaderUniformDataType.Int);
+            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowStrength, shadowLight.ShadowStrength, ShaderUniformDataType.Float);
+            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMapResolution, ShadowMapResolution, ShaderUniformDataType.Int);
+
+            // Bind shadow map
+            const int shadowMapSlot = 10;
+            Rlgl.ActiveTextureSlot(shadowMapSlot);
+            Rlgl.EnableTexture(ShadowMap.Depth.Id);
+            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMap, shadowMapSlot, ShaderUniformDataType.Int);
+        }
+        else {
+            
+            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, -1, ShaderUniformDataType.Int);
+        }
+
         foreach (var light in Lights.Values) light.Update();
 
         if (!is2D && TransparentRenderQueue.Count > 0) {
@@ -117,6 +202,7 @@ internal static class Core {
 
         if (ActiveLevel == null) return;
         
+        Raylib.UnloadRenderTexture(ShadowMap);
         QuitObj(ActiveLevel.Root);
         
         return;
@@ -126,5 +212,25 @@ internal static class Core {
             foreach (var component in obj.Components.Values) component.Quit();
             foreach (var child in obj.Children) QuitObj(child.Value);
         }
+    }
+
+    private static void LoopDraw(Obj obj, bool isShadowPass) {
+        
+        foreach (var component in obj.Components.Values) {
+            
+            if (component is Model model) {
+                if (isShadowPass) {
+                    if (model.CastShadows) {
+                        // Use depth shader
+                        Raylib.BeginShaderMode(Shaders.Depth);
+                        Raylib.DrawModel(model.RlModel, Vector3.Zero, 1, Color.White);
+                        Raylib.EndShaderMode();
+                    }
+                }
+            }
+        }
+
+        foreach (var child in obj.Children)
+            LoopDraw(child.Value, isShadowPass);
     }
 }

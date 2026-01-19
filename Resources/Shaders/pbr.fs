@@ -20,7 +20,7 @@ in vec3 frag_pos;
 in vec2 frag_tex_pos;
 in vec4 frag_color;
 in vec3 frag_normal;
-in vec4 shadowPos;
+in vec4 frag_pos_light_space;
 in mat3 TBN;
 
 // final output
@@ -40,6 +40,10 @@ uniform sampler2D emissive_map; // r:geight g:emissive
 uniform vec4  emissive_color;
 uniform float emissive_intensity;
 uniform vec3 view_pos;
+uniform sampler2D shadowMap;
+uniform int shadow_light_index;
+uniform float shadow_strength;
+uniform int shadow_map_resolution;
 
 uniform vec2 tiling;
 uniform vec2 offset;
@@ -51,6 +55,29 @@ uniform int use_tex_emissive;
 uniform vec3 ambient_color;
 uniform float ambient_intensity;
 uniform float alpha_cutoff;
+uniform int receive_shadows;
+
+float compute_shadow(vec4 shadowPos, vec3 n, vec3 l) {
+    
+    vec3 projCoords = shadowPos.xyz / shadowPos.w;
+    projCoords = projCoords * 0.5 + 0.5;
+    
+    if (projCoords.z > 1.0) return 1.0;
+    
+    float bias = max(0.005 * (1.0 - dot(n, l)), 0.0005);
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
+    
+    for(int x = -1; x <= 1; ++x) {
+        for(int y = -1; y <= 1; ++y) {
+            float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 
+            shadow += (projCoords.z - bias) > pcfDepth  ? 1.0 : 0.0;        
+        }    
+    }
+    
+    shadow /= 9.0;
+    return 1.0 - (shadow * shadow_strength);
+}
 
 // reflectivity in 0.0 to 1.0
 vec3 schlick_fresnel(float h_dot_v, vec3 refl) {
@@ -179,7 +206,12 @@ vec4 compute_pbr() {
         vec3 kspec = (D * G * F) / max(4.0 * n_dot_v * n_dot_l, 0.001);
         vec3 kdiff = (vec3(1.0) - F) * (1.0 - metallic);
 
-        vec3 radiance = lights[i].color.rgb * lights[i].intensity * attenuation;
+        float shadow = 1.0;
+        if (receive_shadows == 1 && i == shadow_light_index) {
+            shadow = compute_shadow(frag_pos_light_space, n, l);
+        }
+
+        vec3 radiance = lights[i].color.rgb * lights[i].intensity * attenuation * shadow;
         light_accum += (kdiff * albedo.rgb / pi + kspec) * radiance * n_dot_l;
     }
     

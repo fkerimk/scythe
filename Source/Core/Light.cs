@@ -24,6 +24,12 @@ internal class Light(Obj obj) : Component(obj, "light") {
     [Label("Range"), JsonProperty, RecordHistory, DefaultValue(10)]
     public float Range { get; set; } = 10;
     
+    [Label("Shadows"), JsonProperty, RecordHistory]
+    public bool Shadows { get; set; } = true;
+    
+    [Label("Shadow Strength"), JsonProperty, RecordHistory, DefaultValue(1)]
+    public float ShadowStrength { get; set; } = 1;
+    
     private Vector3 _pos = Vector3.Zero;
     private Vector3 _target = Vector3.Zero;
 

@@ -12,6 +12,8 @@ internal class Model(Obj obj) : Component(obj, "model") {
     [RecordHistory] [JsonProperty] [Label("Color")] public ScytheColor ScytheColor { get; set; } = Colors.White;
     [RecordHistory] [JsonProperty] [Label("Transparent")] public bool IsTransparent { get; set; } = false;
     [RecordHistory] [JsonProperty] [Label("Alpha Cutoff")] public float AlphaCutoff { get; set; } = 0.5f;
+    [RecordHistory] [JsonProperty] [Label("Cast Shadows")] public bool CastShadows { get; set; } = true;
+    [RecordHistory] [JsonProperty] [Label("Receive Shadows")] public bool ReceiveShadows { get; set; } = true;
 
     public Raylib_cs.Model RlModel;
 
@@ -91,6 +93,7 @@ internal class Model(Obj obj) : Component(obj, "model") {
 
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrTiling, new Vector2(0.5f, 0.5f), ShaderUniformDataType.Vec2);
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrAlphaCutoff, AlphaCutoff, ShaderUniformDataType.Float);
+        Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrReceiveShadows, ReceiveShadows ? 1 : 0, ShaderUniformDataType.Int);
         
         Raylib.DrawModel(RlModel, Vector3.Zero, 1, ScytheColor.ToRaylib());
     }

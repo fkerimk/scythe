@@ -19,7 +19,10 @@ out vec3 frag_pos;
 out vec2 frag_tex_pos;
 out vec4 frag_color;
 out vec3 frag_normal;
+out vec4 frag_pos_light_space;
 out mat3 TBN;
+
+uniform mat4 lightVP;
 
 const float normal_offset = 0.1;
 
@@ -42,6 +45,7 @@ void main() {
     fragBinormal = cross(frag_normal, fragTangent);
 
     TBN = transpose(mat3(fragTangent, fragBinormal, frag_normal));
+    frag_pos_light_space = lightVP * matModel * vec4(vertex_pos, 1.0);
 
     // final vertex position
     gl_Position = mvp*vec4(vertex_pos, 1.0);

@@ -23,6 +23,8 @@
             "Path": "Wizard_Gnome/Wizard_Gnome",
             "ScytheColor": {},
             "AlphaCutoff": 0.5,
+            "CastShadows": true,
+            "ReceiveShadows": true,
             "Name": "model"
           },
           "Animation": {
@@ -43,6 +45,10 @@
           "Directional Light": {
             "Children": {},
             "Transform": {
+              "Pos": {
+                "Y": 1.0,
+                "Z": -0.8000001
+              },
               "Euler": {
                 "X": 54.735615,
                 "Y": -30.0,
@@ -64,10 +70,11 @@
             "Components": {
               "Light": {
                 "Enabled": true,
-                "Type": 0,
                 "ScytheColor": {},
                 "Intensity": 15.0,
-                "Range": 0.0,
+                "Range": 15.0,
+                "Shadows": true,
+                "ShadowStrength": 1.0,
                 "Name": "light"
               }
             }
@@ -99,6 +106,8 @@
                     "Path": "kenney_platformer-kit/block-grass-overhang-large-tall",
                     "ScytheColor": {},
                     "AlphaCutoff": 0.5,
+                    "CastShadows": true,
+                    "ReceiveShadows": true,
                     "Name": "model"
                   }
                 }

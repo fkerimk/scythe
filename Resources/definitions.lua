@@ -1409,6 +1409,8 @@ function Animation:quit() end
 ---@field scytheColor ScytheColor
 ---@field intensity number
 ---@field range number
+---@field shadows boolean
+---@field shadowStrength number
 ---@field name string
 ---@field isSelected boolean
 ---@field up Vector3
@@ -1435,6 +1437,8 @@ function Light:loop(is2D) end
 ---@field scytheColor ScytheColor
 ---@field isTransparent boolean
 ---@field alphaCutoff number
+---@field castShadows boolean
+---@field receiveShadows boolean
 ---@field name string
 ---@field isSelected boolean
 ---@field up Vector3

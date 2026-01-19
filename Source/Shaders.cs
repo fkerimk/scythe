@@ -7,6 +7,7 @@ internal static class Shaders {
 
     public static Shader Transform;
     public static Shader Pbr;
+    public static Shader Depth;
 
     public static int PbrLightCount;
     public static int PbrMetallicValue;
@@ -15,6 +16,13 @@ internal static class Shaders {
     public static int PbrEmissiveColor;
     public static int PbrTiling;
     public static int PbrAlphaCutoff;
+    
+    public static int PbrLightVP;
+    public static int PbrShadowMap;
+    public static int PbrShadowLightIndex;
+    public static int PbrShadowStrength;
+    public static int PbrShadowMapResolution;
+    public static int PbrReceiveShadows;
 
     public static void Begin(Shader shader) {
         
@@ -46,6 +54,16 @@ internal static class Shaders {
         PbrEmissiveColor = GetShaderLocation(Pbr, "emissive_color");
         PbrTiling = GetShaderLocation(Pbr, "tiling");
         PbrAlphaCutoff = GetShaderLocation(Pbr, "alpha_cutoff");
+        
+        PbrLightVP = GetShaderLocation(Pbr, "lightVP");
+        PbrShadowMap = GetShaderLocation(Pbr, "shadowMap");
+        PbrShadowLightIndex = GetShaderLocation(Pbr, "shadow_light_index");
+        PbrShadowStrength = GetShaderLocation(Pbr, "shadow_strength");
+        PbrShadowMapResolution = GetShaderLocation(Pbr, "shadow_map_resolution");
+        PbrReceiveShadows = GetShaderLocation(Pbr, "receive_shadows");
+        
+        // load depth shader
+        Depth = Load("depth");
     }
 
     private static Shader Load(string shader, bool vert = true, bool frag = true) {
