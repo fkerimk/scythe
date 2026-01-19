@@ -28,6 +28,7 @@ internal static class FreeCam {
             _lockPos = center;
             
             Raylib.DisableCursor();
+            ImGuiNET.ImGui.SetWindowFocus(null);
         }
 
         if (_isLocked && Raylib.IsMouseButtonReleased(MouseButton.Right)) {

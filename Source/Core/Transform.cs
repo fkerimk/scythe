@@ -49,15 +49,14 @@ internal class Transform(Obj obj) : Component(obj, "transform") {
 
         get {
 
-            if (Obj.Parent == null) return Pos;
-            Obj.Parent.DecomposeWorldMatrix(out var trans, out _, out _);
+            Obj.DecomposeWorldMatrix(out var trans, out _, out _);
             return trans;
             
         } set {
 
-            if (Obj.Parent?.Parent == null) Pos = value; else {
+            if (Obj.Parent == null) Pos = value; else {
 
-                var invParent = Raymath.MatrixInvert(Obj.Parent.Parent.WorldMatrix);
+                var invParent = Raymath.MatrixInvert(Obj.Parent.WorldMatrix);
                 Pos = Raymath.Vector3Transform(value, invParent);
             }
         }
@@ -67,15 +66,14 @@ internal class Transform(Obj obj) : Component(obj, "transform") {
 
         get {
 
-            if (Obj.Parent == null) return Rot;
-            Obj.Parent.DecomposeWorldMatrix(out _, out var rot, out _);
+            Obj.DecomposeWorldMatrix(out _, out var rot, out _);
             return rot;
             
         } set {
 
-            if (Obj.Parent?.Parent == null) Rot = value; else {
+            if (Obj.Parent == null) Rot = value; else {
 
-                var parentRot = Quaternion.CreateFromRotationMatrix(Obj.Parent.Parent.WorldRotMatrix);
+                var parentRot = Quaternion.CreateFromRotationMatrix(Obj.Parent.WorldRotMatrix);
                 var q = Quaternion.Inverse(parentRot) * value;
                 if (MathF.Abs(Quaternion.Dot(Rot, q)) > 0.9999f) return;
                 Rot = q;
@@ -167,7 +165,7 @@ internal class Transform(Obj obj) : Component(obj, "transform") {
         
             if (IsCursorHidden()) return;
         
-            if (Obj.Parent == null || Obj is { IsSelected: false, Parent: not { IsSelected: true } }) return;
+            if (!Obj.IsSelected) return;
 
             _canUseShortcuts = true;
         

@@ -140,111 +140,83 @@ internal class ObjectBrowser : Viewport {
                 
             SameLine();
 
-            var recordedHistory = false;
-            
+            bool changed = false;
+            object? newValue = null;
+
             if (prop.PropertyType == typeof(string)) {
 
                 var castValue = (string)value;
                 PushItemWidth(-1);
-                InputTextWithHint(id, "object", ref castValue, 512);
-                PopItemWidth();
-
-                if ((string)value != castValue) {
-                    History.StartRecording(target, prop.Name);
-                    recordedHistory = true;
+                if (InputTextWithHint(id, "object", ref castValue, 512)) {
+                    newValue = castValue;
+                    changed = true;
                 }
-                
-                prop.SetValue(target, castValue);
+                PopItemWidth();
             }
             
-            if (prop.PropertyType == typeof(Vector3)) {
+            else if (prop.PropertyType == typeof(Vector3)) {
 
                 var castValue = (Vector3)value;
                 var convertedValue = castValue;
                 PushItemWidth(-1);
-                InputFloat3(id, ref convertedValue);
-                PopItemWidth();
-
-                if (
-                    MathF.Abs(castValue.X - convertedValue.X) > 0.001f ||
-                    MathF.Abs(castValue.Y - convertedValue.Y) > 0.001f ||
-                    MathF.Abs(castValue.Z - convertedValue.Z) > 0.001f
-                ) {
-                    History.StartRecording(target, prop.Name);
-                    recordedHistory = true;
+                if (InputFloat3(id, ref convertedValue)) {
+                    newValue = convertedValue;
+                    changed = true;
                 }
-                
-                prop.SetValue(target, convertedValue);
+                PopItemWidth();
             }
             
-            if (prop.PropertyType == typeof(ScytheColor)) {
+            else if (prop.PropertyType == typeof(ScytheColor)) {
 
                 var castValue = (ScytheColor)value;
                 var convertedValue = castValue.to_vector4();
                 PushItemWidth(-1);
-                //ImGui.InputFloat4(id, ref convertedValue);
-                ColorPicker4(id, ref convertedValue, ImGuiColorEditFlags.DisplayRGB);
-                PopItemWidth();
-
-                if (
-                    MathF.Abs(castValue.R - convertedValue.X) > 0.001f ||
-                    MathF.Abs(castValue.G - convertedValue.Y) > 0.001f ||
-                    MathF.Abs(castValue.B - convertedValue.Z) > 0.001f ||
-                    MathF.Abs(castValue.A - convertedValue.W) > 0.001f
-                ) {
-                    History.StartRecording(target, prop.Name);
-                    recordedHistory = true;
+                if (ColorPicker4(id, ref convertedValue, ImGuiColorEditFlags.DisplayRGB)) {
+                    newValue = convertedValue.ToColor();
+                    changed = true;
                 }
-                
-                prop.SetValue(target, convertedValue.ToColor());
+                PopItemWidth();
             }
             
-            if (prop.PropertyType == typeof(int)) {
+            else if (prop.PropertyType == typeof(int)) {
 
                 var castValue = (int)value;
                 PushItemWidth(-1);
-                InputInt(id, ref castValue);
-                PopItemWidth();
-
-                if ((int)value != castValue) {
-                    History.StartRecording(target, prop.Name);
-                    recordedHistory = true;
+                if (InputInt(id, ref castValue)) {
+                    newValue = castValue;
+                    changed = true;
                 }
-                
-                prop.SetValue(target, castValue);
+                PopItemWidth();
             }
             
-            if (prop.PropertyType == typeof(bool)) {
+            else if (prop.PropertyType == typeof(bool)) {
 
                 var castValue = (bool)value;
                 PushItemWidth(-1);
-                Checkbox(id, ref castValue);
-                PopItemWidth();
-
-                if ((bool)value != castValue) {
-                    History.StartRecording(target, prop.Name);
-                    recordedHistory = true;
+                if (Checkbox(id, ref castValue)) {
+                    newValue = castValue;
+                    changed = true;
                 }
-                
-                prop.SetValue(target, castValue);
+                PopItemWidth();
             }
             
-            if (prop.PropertyType == typeof(float)) {
+            else if (prop.PropertyType == typeof(float)) {
 
                 var castValue = (float)value;
                 PushItemWidth(-1);
-                InputFloat(id, ref castValue);
-                PopItemWidth();
-
-                if (MathF.Abs((float)value - castValue) > 0.001f) {
-                    History.StartRecording(target, prop.Name);
-                    recordedHistory = true;
+                if (InputFloat(id, ref castValue)) {
+                    newValue = castValue;
+                    changed = true;
                 }
-                
-                prop.SetValue(target, castValue);
+                PopItemWidth();
             }
             
-            if (recordedHistory) History.StopRecording();
+            // Critical: Record BEFORE applying the new value in the activation frame
+            if (IsItemActivated()) History.StartRecording(target, prop.Name);
+            
+            if (changed && newValue != null) prop.SetValue(target, newValue);
+            
+            if (IsItemDeactivatedAfterEdit()) History.StopRecording();
         }
         
         _propIndex++;

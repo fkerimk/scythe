@@ -74,7 +74,7 @@
                 "Intensity": 15.0,
                 "Range": 25.0,
                 "Shadows": true,
-                "ShadowStrength": 1.0,
+                "ShadowStrength": 0.4,
                 "Name": "light"
               }
             }
