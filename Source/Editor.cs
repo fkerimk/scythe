@@ -20,9 +20,9 @@ internal static unsafe class Editor {
         SeparatorTextPadding = new Vector2(0, 0)
     }};
 
-    private static readonly LevelBrowser LevelBrowser = new();
-    private static readonly ObjectBrowser ObjectBrowser = new();
-    private static readonly ProjectBrowser ProjectBrowser = new();
+    public static readonly LevelBrowser LevelBrowser = new();
+    public static readonly ObjectBrowser ObjectBrowser = new();
+    public static readonly ProjectBrowser ProjectBrowser = new();
     
     public static void Show() {
         
@@ -43,6 +43,8 @@ internal static unsafe class Editor {
         // Setup core
         Core.Init();
         FreeCam.SetFromTarget(Core.ActiveCamera);
+        
+        ViewSettings.Load();
         
         while (!WindowShouldClose()) {
 
@@ -102,6 +104,7 @@ internal static unsafe class Editor {
             if (_scheduledQuit) break;
         }
 
+        ViewSettings.Save();
         CloseWindow();
         Core.Quit();
     }

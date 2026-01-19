@@ -9,14 +9,17 @@ internal abstract class Viewport(string title) {
     public Vector2 ContentRegion;
     public Vector2 RelativeMouse;
     
+    public bool IsOpen = true;
     public bool IsHovered;
     
     public void Draw() {
 
+        if (!IsOpen) return;
+
         ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
         if (CustomStyle != null) Style.Push(CustomStyle);
         
-        if (!ImGui.Begin(title, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoNav)) {
+        if (!ImGui.Begin(title, ref IsOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoNav)) {
 
             IsHovered = false;
             
