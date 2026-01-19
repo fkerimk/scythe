@@ -33,14 +33,14 @@ internal class Light(Obj obj) : Component(obj, "light") {
     private Vector3 _pos = Vector3.Zero;
     private Vector3 _target = Vector3.Zero;
 
-    public void Update() {
+    public void Update(int index) {
         
-        var enabledLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].enabled");
-        var typeLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].type");
-        var posLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].position");
-        var targetLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].target");
-        var colorLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].color");
-        var intensityLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{Core.Lights.Count}].intensity");
+        var enabledLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{index}].enabled");
+        var typeLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{index}].type");
+        var posLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{index}].position");
+        var targetLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{index}].target");
+        var colorLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{index}].color");
+        var intensityLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{index}].intensity");
         
         Raylib.SetShaderValue(Shaders.Pbr, enabledLoc, Enabled ? 1 : 0, ShaderUniformDataType.Int);
         Raylib.SetShaderValue(Shaders.Pbr, typeLoc, Type, ShaderUniformDataType.Int);
@@ -61,9 +61,7 @@ internal class Light(Obj obj) : Component(obj, "light") {
         _pos = position;
         _target = _pos + Obj.Fwd * (Type == 0 ? 1 : Range);
         
-        Update();
-        
-        Core.Lights[GetHashCode()] = this;
+        Core.Lights.Add(this);
 
         if (IsSelected) {
 

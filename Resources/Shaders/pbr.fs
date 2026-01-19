@@ -64,7 +64,7 @@ float compute_shadow(vec4 shadowPos, vec3 n, vec3 l) {
     
     if (projCoords.z > 1.0) return 1.0;
     
-    float bias = max(0.005 * (1.0 - dot(n, l)), 0.0005);
+    float bias = max(0.0005 * (1.0 - dot(n, l)), 0.00005);
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
     

@@ -1423,8 +1423,9 @@ function Animation:quit() end
 ---@field obj Obj
 ---@field isLoaded boolean
 local Light = {}
+---@param index number
 ---@return void
-function Light:update() end
+function Light:update(index) end
 
 ---@param is2D boolean
 ---@return void

@@ -6,7 +6,7 @@ internal static class Core {
     public static Level? ActiveLevel;
     public static Camera3D? ActiveCamera;
     
-    public static readonly Dictionary<int, Light> Lights = [];
+    public static readonly List<Light> Lights = [];
     
     public struct TransparentDrawCall {
         public Model Model;
@@ -106,25 +106,18 @@ internal static class Core {
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrLightCount, Lights.Count, ShaderUniformDataType.Int);
         
         // Shadow Pass
-        var shadowLight = Lights.Values.FirstOrDefault(l => l.Enabled && l.Shadows);
+        var shadowLight = Lights.FirstOrDefault(l => l.Enabled && l.Shadows);
         var shadowLightIndex = -1;
         
         if (shadowLight != null) {
             
-            var index = 0;
-            foreach (var light in Lights.Values) {
-                if (light == shadowLight) {
-                    shadowLightIndex = index;
-                    break;
-                }
-                index++;
-            }
+            shadowLightIndex = Lights.IndexOf(shadowLight);
 
             var lightCamera = new Camera3D {
-                Position = shadowLight.Obj.Pos,
-                Target = shadowLight.Obj.Pos + shadowLight.Obj.Fwd,
+                Position = shadowLight.Type == 0 ? shadowLight.Obj.Pos - shadowLight.Obj.Fwd * 500.0f : shadowLight.Obj.Pos,
+                Target = shadowLight.Type == 0 ? shadowLight.Obj.Pos : shadowLight.Obj.Pos + shadowLight.Obj.Fwd,
                 Up = Vector3.UnitY,
-                FovY = shadowLight.Type == 0 ? 20.0f : 60.0f,
+                FovY = shadowLight.Type == 0 ? 200.0f : (shadowLight.Type == 2 ? 90.0f : 120.0f),
                 Projection = shadowLight.Type == 0 ? CameraProjection.Orthographic : CameraProjection.Perspective
             };
 
@@ -158,7 +151,7 @@ internal static class Core {
             Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, -1, ShaderUniformDataType.Int);
         }
 
-        foreach (var light in Lights.Values) light.Update();
+        for (var i = 0; i < Lights.Count; i++) Lights[i].Update(i);
 
         if (!is2D && TransparentRenderQueue.Count > 0) {
             
