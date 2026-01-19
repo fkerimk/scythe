@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using System.Reflection;
 using ImGuiNET;
 
 internal class LevelBrowser() : Viewport("Level") {
@@ -13,11 +12,17 @@ internal class LevelBrowser() : Viewport("Level") {
         _scheduledDeleteObject;
     
     public static Obj? SelectedObject { get; private set; }
+
+    private int _rowCount;
+    private readonly float[] _lastRowY = new float[128];
     
     protected override void OnDraw() {
 
         if (Core.ActiveLevel == null) return;
         
+        _rowCount = 0;
+        Array.Clear(_lastRowY, 0, _lastRowY.Length);
+
         ImGui.BeginChild("scroll", new Vector2(0, 0));
         
         // restore scroll 
@@ -70,13 +75,48 @@ internal class LevelBrowser() : Viewport("Level") {
 
         if (Core.ActiveLevel == null) return true;
 
+        var drawList = ImGui.GetWindowDrawList();
+        var rowPos = ImGui.GetCursorScreenPos();
+        var rowHeight = ImGui.GetFrameHeight();
+        var centerY = rowPos.Y + rowHeight / 2f;
+        
+        // Zebra stripping
+        if (_rowCount % 2 == 0) {
+            
+            drawList.AddRectFilled(
+                
+                new Vector2(ImGui.GetWindowPos().X, rowPos.Y),
+                new Vector2(ImGui.GetWindowPos().X + ImGui.GetWindowWidth(), rowPos.Y + rowHeight),
+                ImGui.GetColorU32(new Vector4(1, 1, 1, 0.012f))
+            );
+        }
+        _rowCount++;
+
+        // Hierarchy lines
+        var lineCol = ImGui.GetColorU32(new Vector4(1, 1, 1, 0.15f));
+        
+        if (indent > 0) {
+            
+            var indentStep = ImGui.GetStyle().IndentSpacing; 
+            var lineX = rowPos.X - indentStep + 10f;
+            
+            // Horizontal line
+            drawList.AddLine(new Vector2(lineX, centerY), new Vector2(lineX + 11f, centerY), lineCol);
+            
+            // Vertical line
+            if (_lastRowY[indent] > 0)
+                drawList.AddLine(new Vector2(lineX, _lastRowY[indent]), new Vector2(lineX, centerY), lineCol);
+        }
+        _lastRowY[indent] = centerY;
+
         if (SelectedObject != null && IsAncestorOf(obj, SelectedObject)) {
             
             ImGui.SetNextItemOpen(true);
         }
         
         // tree node
-        var isOpen = ImGui.GetStateStorage().GetInt(ImGui.GetID(" ##" + obj.GetHashCode()), 1) != 0;
+        var id = "##" + obj.GetHashCode();
+        var isOpen = ImGui.GetStateStorage().GetInt(ImGui.GetID(id), 1) != 0;
         var isSelected = SelectedObject == obj;
         
         var arrowColor = isOpen ?
@@ -89,11 +129,11 @@ internal class LevelBrowser() : Viewport("Level") {
         var flags = ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen;
         if (isSelected) flags |= ImGuiTreeNodeFlags.Selected;
         
-        ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - indent * 7.5f - 7.5f, ImGui.GetCursorPosY()));
+        ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 5f, ImGui.GetCursorPosY()));
         
         ImGui.PushStyleColor(ImGuiCol.Text, arrowColor);
         ImGui.PushStyleColor(ImGuiCol.Header, Colors.GuiTreeSelected.to_vector4());
-        var tree = ImGui.TreeNodeEx(" ##" + obj.GetHashCode(), flags);
+        var tree = ImGui.TreeNodeEx(id, flags);
         ImGui.PopStyleColor();
         ImGui.PopStyleColor();
         
@@ -114,7 +154,7 @@ internal class LevelBrowser() : Viewport("Level") {
 
             if (ImGui.BeginMenu("Insert")) {
                 
-                var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(Component)) && !t.IsAbstract);
+                //var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(Component)) && !t.IsAbstract);
 
                 if (ImGui.MenuItem("Object"))
                     Core.ActiveLevel.RecordedBuildObject("Object", obj);
@@ -249,21 +289,23 @@ internal class LevelBrowser() : Viewport("Level") {
         }
         
         // object icon
-        //ImGui.SameLine();
-        //ImGui.PushFont(Fonts.ImFontAwesomeSmall);
-        //ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 15, ImGui.GetCursorPosY() + 2.5f));
-        ////ImGui.TextColored(Obj.Color.to_vector4(), Obj.Icon);
-        //ImGui.PopFont();
+        ImGui.SameLine();
+        ImGui.PushFont(Fonts.ImFontAwesomeSmall);
+        ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 10f, ImGui.GetCursorPosY() + 2.5f));
+        ImGui.TextColored(Colors.GuiTypeObject.to_vector4(), Icons.Obj);
+        ImGui.PopFont();
 
         // object name
         ImGui.SameLine();
         ImGui.PushFont(Fonts.ImMontserratRegular);
-        ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 2.5f, ImGui.GetCursorPosY() - 1.5f));
+        ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 2.0f, ImGui.GetCursorPosY() - 1.5f));
         ImGui.TextColored(new(1, 1, 1, 1), obj.Name);
         ImGui.PopFont();
 
         // draw child nodes
         if (!tree) return true;
+        
+        _lastRowY[indent + 1] = centerY;
         
         if (obj.Children.Any(child => !DrawObject(child.Value, indent + 1))) {
             
