@@ -47,8 +47,8 @@ internal class Obj {
     public Vector3 Up    => Vector3.Normalize(new Vector3(WorldRotMatrix.M12, WorldRotMatrix.M22, WorldRotMatrix.M32));
     public Vector3 Fwd   => Vector3.Normalize(new Vector3(WorldRotMatrix.M13, WorldRotMatrix.M23, WorldRotMatrix.M33));
     public Vector3 Right => Vector3.Normalize(new Vector3(WorldRotMatrix.M11, WorldRotMatrix.M21, WorldRotMatrix.M31));
-    public Vector3 FwdFlat { get { var fwd = Fwd; fwd.Y = 0; Vector3.Normalize(fwd); return fwd;  } }
-    public Vector3 RightFlat { get { var right = Right; right.Y = 0; Vector3.Normalize(right); return right;  } }
+    public Vector3 FwdFlat { get { var fwd = Fwd; fwd.Y = 0; fwd = Vector3.Normalize(fwd); return fwd;  } }
+    public Vector3 RightFlat { get { var right = Right; right.Y = 0; right = Vector3.Normalize(right); return right;  } }
     public Vector3 Pos { get => Transform.Pos; set => Transform.Pos = value; }
     public Quaternion Rot { get => Transform.Rot; set => Transform.Rot = value; }
     
