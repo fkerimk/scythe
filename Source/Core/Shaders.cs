@@ -66,7 +66,7 @@ internal static class Shaders {
         // Skybox shader
         Skybox = Load("skybox");
         SetShaderValue(Skybox, GetShaderLocation(Skybox, "environmentMap"), (int)MaterialMapIndex.Cubemap, ShaderUniformDataType.Int);
-        SetShaderValue(Skybox, GetShaderLocation(Skybox, "doGamma"), 1, ShaderUniformDataType.Int);
+        SetShaderValue(Skybox, GetShaderLocation(Skybox, "doGamma"), 0, ShaderUniformDataType.Int);
         SetShaderValue(Skybox, GetShaderLocation(Skybox, "vflipped"), 0, ShaderUniformDataType.Int);
     }
     
