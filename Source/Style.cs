@@ -12,8 +12,8 @@ internal static class Style {
 
         if (PushedColors.Count == _pushes) PushedColors.Add(0);
         if (PushedVars.Count == _pushes) PushedVars.Add(0);
-        
-        //Console.WriteLine( ImGui.GetStyle().TouchExtraPadding); 
+
+        GetStyle().WindowMenuButtonPosition = ImGuiDir.None;
         
         Set(ImGuiCol.Text, Colors.GuiText);
         Set(ImGuiCol.TextDisabled, Colors.GuiTextDisabled);

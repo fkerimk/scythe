@@ -13,14 +13,15 @@ internal abstract class Viewport(string title) {
     
     public void Draw() {
 
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
         if (CustomStyle != null) Style.Push(CustomStyle);
         
-        if (!ImGui.Begin(title, ImGuiWindowFlags.NoCollapse)) {
+        if (!ImGui.Begin(title, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoNav)) {
 
             IsHovered = false;
             
             ImGui.End(); 
-            
+            ImGui.PopStyleVar();
             if (CustomStyle != null) Style.Pop();
             return;
         }
@@ -33,7 +34,7 @@ internal abstract class Viewport(string title) {
         OnDraw();
         
         ImGui.End();
-        
+        ImGui.PopStyleVar();
         if (CustomStyle != null) Style.Pop();
     }
 

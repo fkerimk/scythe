@@ -83,140 +83,160 @@ internal class ObjectBrowser : Viewport {
         }
     }
 
-    public void DrawProperties(object obj, bool seperator, string? title) {
+    private void DrawProperties(object obj, bool separator, string? title) {
         
-        if (seperator) {
+        if (separator && !string.IsNullOrEmpty(title)) {
             
             Spacing();
-            Separator();
-            Spacing();
-        }
+            
+            var headerPos = GetCursorScreenPos();
+            var headerSize = new Vector2(GetContentRegionAvail().X, GetFrameHeight());
+            
+            // Background
+            GetWindowDrawList().AddRectFilled(headerPos, headerPos + headerSize, GetColorU32(ImGuiCol.Header, 0.45f), 2.0f);
+            
+            PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(4, 3));
+            PushStyleColor(ImGuiCol.Header, new Vector4(0, 0, 0, 0));
+            
+            var treeOpen = TreeNodeEx($"##{title}_header", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.SpanFullWidth);
+            
+            PopStyleColor();
+            PopStyleVar();
 
-        if (!string.IsNullOrEmpty(title)) {
+            // Content in header
+            SameLine();
+            SetCursorPosX(GetCursorPosX() - 7.5f); // Tighter arrow space
+            
+            if (obj is Component c) {
 
-            if (obj is Component iconComponent) {
-                
-                SameLine();
                 PushFont(Fonts.ImFontAwesomeSmall);
-                SetCursorPos(new Vector2(GetCursorPosX() - 7.5f, GetCursorPosY() + 2.5f));
-                TextColored(iconComponent.LabelScytheColor.to_vector4(), iconComponent.LabelIcon);
+                TextColored(c.LabelScytheColor.to_vector4(), c.LabelIcon);
                 PopFont();
                 SameLine();
             }
-
+            
             Text(title);
 
             if (obj is Component component and not Transform) {
                 
                 var buttonSize = CalcTextSize("X").X + GetStyle().FramePadding.X * 2.0f;
-                SameLine(GetContentRegionAvail().X - buttonSize);
+                var targetX = GetCursorPosX() + GetContentRegionAvail().X - buttonSize - 5;
+                SameLine();
+                SetCursorPosX(targetX);
             
                 if (SmallButton($"X##{_propIndex}")) {
-
                     component.Obj.Components.Remove(component.Name.ToPascalCase());
                 }
             }
+
+            if (!treeOpen) return;
             
             Spacing();
         }
         
-        foreach (var prop in obj.GetType().GetProperties())
+        PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8, 8));
+        
+        Columns(2, "##props", false);
+        SetColumnWidth(0, GetWindowWidth() * 0.3f); // Slightly narrower labels
+
+        foreach (var prop in obj.GetType().GetProperties()) {
+            
+            var labelAttr = prop.GetCustomAttribute<LabelAttribute>();
+            if (labelAttr == null) continue;
+
+            AlignTextToFramePadding();
+            Text(labelAttr.Value);
+            NextColumn();
+            
             DrawProperty(obj, prop);
+            NextColumn();
+        }
+            
+        Columns(1);
+        PopStyleVar();
+        
+        if (separator && !string.IsNullOrEmpty(title)) {
+            
+            TreePop();
+            Spacing();
+        }
     }
-    
+
     private void DrawProperty(object target, PropertyInfo prop) {
 
         var id = $"##prop{_propIndex}";
-        
-        var labelAttr = prop.GetCustomAttribute<LabelAttribute>();
-
-        if (labelAttr == null) return;
-        
-        Text(labelAttr.Value);
-
         var value = prop.GetValue(target);
             
         if (value != null) {
                 
-            SameLine();
-
-            bool changed = false;
+            var changed = false;
             object? newValue = null;
+            
+            PushItemWidth(-1);
 
             if (prop.PropertyType == typeof(string)) {
 
                 var castValue = (string)value;
-                PushItemWidth(-1);
                 if (InputTextWithHint(id, "object", ref castValue, 512)) {
                     newValue = castValue;
                     changed = true;
                 }
-                PopItemWidth();
             }
             
             else if (prop.PropertyType == typeof(Vector3)) {
 
                 var castValue = (Vector3)value;
                 var convertedValue = castValue;
-                PushItemWidth(-1);
                 if (InputFloat3(id, ref convertedValue)) {
                     newValue = convertedValue;
                     changed = true;
                 }
-                PopItemWidth();
             }
             
             else if (prop.PropertyType == typeof(ScytheColor)) {
 
                 var castValue = (ScytheColor)value;
                 var convertedValue = castValue.to_vector4();
-                PushItemWidth(-1);
-                if (ColorPicker4(id, ref convertedValue, ImGuiColorEditFlags.DisplayRGB)) {
+                if (ColorEdit4(id, ref convertedValue, ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.AlphaBar)) {
                     newValue = convertedValue.ToColor();
                     changed = true;
                 }
-                PopItemWidth();
             }
             
             else if (prop.PropertyType == typeof(int)) {
 
                 var castValue = (int)value;
-                PushItemWidth(-1);
                 if (InputInt(id, ref castValue)) {
                     newValue = castValue;
                     changed = true;
                 }
-                PopItemWidth();
             }
             
             else if (prop.PropertyType == typeof(bool)) {
 
                 var castValue = (bool)value;
-                PushItemWidth(-1);
                 if (Checkbox(id, ref castValue)) {
                     newValue = castValue;
                     changed = true;
                 }
-                PopItemWidth();
             }
             
             else if (prop.PropertyType == typeof(float)) {
 
                 var castValue = (float)value;
-                PushItemWidth(-1);
                 if (InputFloat(id, ref castValue)) {
                     newValue = castValue;
                     changed = true;
                 }
-                PopItemWidth();
             }
             
-            // Critical: Record BEFORE applying the new value in the activation frame
             if (IsItemActivated()) History.StartRecording(target, prop.Name);
             
             if (changed && newValue != null) prop.SetValue(target, newValue);
             
             if (IsItemDeactivatedAfterEdit()) History.StopRecording();
+
+            PopItemWidth();
         }
         
         _propIndex++;

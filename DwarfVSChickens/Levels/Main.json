@@ -72,7 +72,7 @@
                 "Type": 0,
                 "ScytheColor": {},
                 "Intensity": 15.0,
-                "Range": 25.0,
+                "Range": 20.0,
                 "Shadows": true,
                 "ShadowStrength": 0.4,
                 "Name": "light"
