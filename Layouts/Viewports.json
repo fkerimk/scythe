@@ -1,6 +1,6 @@
 {
-  "Level 3D": true,
-  "Level Browser": true,
-  "Object Browser": false,
-  "Project Browser": true
+  "Level3D": true,
+  "LevelBrowser": true,
+  "ObjectBrowser": true,
+  "ProjectBrowser": true
 }

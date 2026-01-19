@@ -3,6 +3,8 @@ using ImGuiNET;
 
 internal abstract class Viewport(string title) {
 
+    public string Title { get; } = title;
+
     public CustomStyle? CustomStyle;
     
     public Vector2 WindowPos;
@@ -19,7 +21,7 @@ internal abstract class Viewport(string title) {
         ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
         if (CustomStyle != null) Style.Push(CustomStyle);
         
-        if (!ImGui.Begin(title, ref IsOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoNav)) {
+        if (!ImGui.Begin(Title, ref IsOpen, ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoNav)) {
 
             IsHovered = false;
             
