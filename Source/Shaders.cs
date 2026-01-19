@@ -14,6 +14,7 @@ internal static class Shaders {
     public static int PbrEmissiveIntensity;
     public static int PbrEmissiveColor;
     public static int PbrTiling;
+    public static int PbrAlphaCutoff;
 
     public static void Begin(Shader shader) {
         
@@ -44,6 +45,7 @@ internal static class Shaders {
         PbrRoughnessValue = GetShaderLocation(Pbr, "roughness_value");
         PbrEmissiveColor = GetShaderLocation(Pbr, "emissive_color");
         PbrTiling = GetShaderLocation(Pbr, "tiling");
+        PbrAlphaCutoff = GetShaderLocation(Pbr, "alpha_cutoff");
     }
 
     private static Shader Load(string shader, bool vert = true, bool frag = true) {

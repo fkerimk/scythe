@@ -12,6 +12,8 @@ internal class Model(Obj obj) : Component(obj, "model") {
     
     [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
     [RecordHistory] [JsonProperty] [Label("Color")] public ScytheColor ScytheColor { get; set; } = Colors.White;
+    [RecordHistory] [JsonProperty] [Label("Transparent")] public bool IsTransparent { get; set; } = false;
+    [RecordHistory] [JsonProperty] [Label("Alpha Cutoff")] public float AlphaCutoff { get; set; } = 0.5f;
 
     public Raylib_cs.Model RlModel;
 
@@ -70,7 +72,18 @@ internal class Model(Obj obj) : Component(obj, "model") {
         }
 
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrTiling, new Vector2(0.5f, 0.5f), ShaderUniformDataType.Vec2);
-        Raylib.DrawModel(RlModel, Vector3.Zero, 1, ScytheColor.ToRaylib());
+        Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrAlphaCutoff, AlphaCutoff, ShaderUniformDataType.Float);
+
+        if (IsTransparent) {
+            
+            Raylib.BeginBlendMode(BlendMode.Alpha);
+            Raylib.DrawModel(RlModel, Vector3.Zero, 1, ScytheColor.ToRaylib());
+            Raylib.EndBlendMode();
+        }
+        else {
+            
+            Raylib.DrawModel(RlModel, Vector3.Zero, 1, ScytheColor.ToRaylib());
+        }
     }
 
     public override void Quit() {

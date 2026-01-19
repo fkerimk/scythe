@@ -1438,6 +1438,8 @@ function Light:loop(is2D) end
 ---@field labelScytheColor ScytheColor
 ---@field path string
 ---@field scytheColor ScytheColor
+---@field isTransparent boolean
+---@field alphaCutoff number
 ---@field name string
 ---@field isSelected boolean
 ---@field up Vector3

@@ -50,6 +50,7 @@ uniform int use_tex_mra;
 uniform int use_tex_emissive;
 uniform vec3 ambient_color;
 uniform float ambient_intensity;
+uniform float alpha_cutoff;
 
 // reflectivity in 0.0 to 1.0
 vec3 schlick_fresnel(float h_dot_v, vec3 refl) {
@@ -79,10 +80,10 @@ float geom_smith(float n_dot_v, float n_dot_l, float roughness) {
     return ggx1 * ggx2;
 }
 
-vec3 compute_pbr() {
+vec4 compute_pbr() {
 
-    vec3 albedo = texture(albedo_map, vec2(frag_tex_pos.x * tiling.x + offset.x, frag_tex_pos.y * tiling.y + offset.y)).rgb;
-    albedo = vec3(albedo_color.x * albedo.x, albedo_color.y * albedo.y, albedo_color.z * albedo.z);
+    vec4 albedo = texture(albedo_map, vec2(frag_tex_pos.x * tiling.x + offset.x, frag_tex_pos.y * tiling.y + offset.y));
+    albedo *= albedo_color;
     
     float metallic = clamp(metallic_value, 0.0, 1.0);
     float roughness = clamp(roughness_value, 0.04, 1.0);
@@ -184,12 +185,16 @@ vec3 compute_pbr() {
     
     vec3 ambientLight = ambient_color * ambient_intensity;
     
-    return albedo * (light_accum + ambientLight) * ao + emissive;
+    return vec4(albedo.rgb * (light_accum + ambientLight) * ao + emissive, albedo.a);
 }
 
 void main() {
 
-    vec3 color = compute_pbr();
+    vec4 finalPbr = compute_pbr();
+    
+    if (finalPbr.a < alpha_cutoff) discard;
+    
+    vec3 color = finalPbr.rgb;
 
     // hdr tonemapping
     color = color / (color + vec3(1.0));
@@ -197,5 +202,5 @@ void main() {
     // gamma correction
     color = pow(color, vec3(1.0 / 2.2));
 
-    final_color = vec4(color, 1.0);
+    final_color = vec4(color, finalPbr.a);
 }
