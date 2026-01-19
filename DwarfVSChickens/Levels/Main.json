@@ -70,9 +70,10 @@
             "Components": {
               "Light": {
                 "Enabled": true,
+                "Type": 0,
                 "ScytheColor": {},
                 "Intensity": 15.0,
-                "Range": 15.0,
+                "Range": 2.0,
                 "Shadows": true,
                 "ShadowStrength": 1.0,
                 "Name": "light"

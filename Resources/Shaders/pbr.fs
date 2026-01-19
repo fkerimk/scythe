@@ -64,12 +64,12 @@ float compute_shadow(vec4 shadowPos, vec3 n, vec3 l) {
     
     if (projCoords.z > 1.0) return 1.0;
     
-    // Better slope bias to prevent acne
-    float bias = max(0.001 * (1.0 - dot(n, l)), 0.0001);
+    // Tighter bias for better definition
+    float bias = max(0.0005 * (1.0 - dot(n, l)), 0.00005);
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
     
-    // Higher quality 5x5 PCF
+    // Higher quality 5x5 PCF with offset weights
     for(int x = -2; x <= 2; ++x) {
         for(int y = -2; y <= 2; ++y) {
             float pcfDepth = texture(shadowMap, projCoords.xy + vec2(x, y) * texelSize).r; 

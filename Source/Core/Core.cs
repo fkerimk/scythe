@@ -122,9 +122,12 @@ internal static class Core {
                 Target = shadowLight.Type == 0 ? shadowLight.Obj.Pos : 
                          (shadowLight.Type == 1 ? shadowLight.Obj.Pos + Vector3.UnitY * -1 : shadowLight.Obj.Pos + shadowLight.Obj.Fwd),
                 Up = shadowLight.Type == 1 ? Vector3.UnitX : Vector3.UnitY,
-                FovY = shadowLight.Type == 0 ? 300.0f : (shadowLight.Type == 2 ? 90.0f : 160.0f),
+                FovY = shadowLight.Type == 0 ? shadowLight.Range * 2.0f : (shadowLight.Type == 2 ? 90.0f : 160.0f),
                 Projection = shadowLight.Type == 0 ? CameraProjection.Orthographic : CameraProjection.Perspective
             };
+            
+            // Note: For Orthographic, FovY is the total size. 
+            // We use Range * 2 to define the box size around the light target.
 
             Raylib.BeginTextureMode(ShadowMap);
             Raylib.ClearBackground(Color.White);
