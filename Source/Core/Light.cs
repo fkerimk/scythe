@@ -7,7 +7,7 @@ using Raylib_cs;
 internal class Light(Obj obj) : Component(obj, "light") {
     
     public override string LabelIcon => Icons.Light;
-    public override ScytheColor LabelScytheColor => Colors.GuiTypeLight;
+    public override Color LabelScytheColor => Colors.GuiTypeLight;
 
     [Label("Enabled"), JsonProperty, RecordHistory]
     public bool Enabled { get; set; } = true;
@@ -16,7 +16,7 @@ internal class Light(Obj obj) : Component(obj, "light") {
     public int Type { get; set => field = (int)Raymath.Clamp(value, 0, 2); } = 1;
     
     [Label("Color"), JsonProperty, RecordHistory]
-    public ScytheColor ScytheColor { get; set; } = Colors.White;
+    public Color ScytheColor { get; set; } = Color.White;
     
     [Label("Intensity"), JsonProperty, RecordHistory, DefaultValue(2)]
     public float Intensity { get; set; } = 2;
@@ -46,7 +46,7 @@ internal class Light(Obj obj) : Component(obj, "light") {
         Raylib.SetShaderValue(Shaders.Pbr, typeLoc, Type, ShaderUniformDataType.Int);
         Raylib.SetShaderValue(Shaders.Pbr, posLoc, _pos, ShaderUniformDataType.Vec3);
         Raylib.SetShaderValue(Shaders.Pbr, targetLoc, _target, ShaderUniformDataType.Vec3);
-        Raylib.SetShaderValue(Shaders.Pbr, colorLoc, ScytheColor.to_vector4(), ShaderUniformDataType.Vec4);
+        Raylib.SetShaderValue(Shaders.Pbr, colorLoc, ScytheColor.ToVector4(), ShaderUniformDataType.Vec4);
         Raylib.SetShaderValue(Shaders.Pbr, intensityLoc, Intensity, ShaderUniformDataType.Float);
     }
 
@@ -65,7 +65,7 @@ internal class Light(Obj obj) : Component(obj, "light") {
 
         if (IsSelected) {
 
-            var gizmoColor = Raylib.ColorAlpha(ScytheColor.ToRaylib(), 0.3f);
+            var gizmoColor = Raylib.ColorAlpha(ScytheColor, 0.3f);
             
             switch (Type) {
                 
@@ -110,6 +110,6 @@ internal class Light(Obj obj) : Component(obj, "light") {
         
         if ((!Config.Runtime.DrawLights || CommandLine.Editor) && (!Config.Editor.DrawLights || !CommandLine.Editor)) return;
 
-        Raylib.DrawSphereWires(_pos, 0.1f, 8, 8, Enabled ? Raylib.ColorAlpha(ScytheColor.ToRaylib(), 0.8f) : Raylib.ColorAlpha(ScytheColor.ToRaylib(), 0.2f));
+        Raylib.DrawSphereWires(_pos, 0.1f, 8, 8, Enabled ? Raylib.ColorAlpha(ScytheColor, 0.8f) : Raylib.ColorAlpha(ScytheColor, 0.2f));
     }
 }

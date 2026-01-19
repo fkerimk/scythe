@@ -5,7 +5,7 @@ using Raylib_cs;
 internal unsafe class Animation(Obj obj) : Component(obj, "animation") {
     
     public override string LabelIcon => Icons.Animation;
-    public override ScytheColor LabelScytheColor => Colors.GuiTypeAnimation;
+    public override Color LabelScytheColor => Colors.GuiTypeAnimation;
 
     [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
     

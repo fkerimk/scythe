@@ -18,12 +18,12 @@ internal static class Window {
         SetTargetFPS(targetFps);
     }
 
-    public static void Clear(ScytheColor scytheColor) => ClearBackground(scytheColor.ToRaylib());
+    public static void Clear(Color color) => ClearBackground(color);
 
     public static void DrawFps() {
         
         if (CommandLine.Editor ? Config.Editor.DrawFps : Config.Runtime.DrawFps)
-            DrawText($"{GetFPS()}", 10, 10, 20, Colors.Primary.ToRaylib());
+            DrawText($"{GetFPS()}", 10, 10, 20, Colors.Primary);
     }
 
     private static void CenterWindow() => SetWindowPosition((Screen.Width - Width) / 2, (Screen.Height - Height) / 2);

@@ -9,7 +9,8 @@ internal static class Shaders {
         Transform,
         Pbr,
         Depth,
-        Skybox;
+        Skybox,
+        Grid;
 
     #region PBR information
 
@@ -26,7 +27,9 @@ internal static class Shaders {
         PbrShadowLightIndex,
         PbrShadowStrength,
         PbrShadowMapResolution,
-        PbrReceiveShadows;
+        PbrReceiveShadows,
+        GridCameraPos,
+        GridFadeRadius;
 
     #endregion 
     
@@ -68,6 +71,11 @@ internal static class Shaders {
         SetShaderValue(Skybox, GetShaderLocation(Skybox, "environmentMap"), (int)MaterialMapIndex.Cubemap, ShaderUniformDataType.Int);
         SetShaderValue(Skybox, GetShaderLocation(Skybox, "doGamma"), 0, ShaderUniformDataType.Int);
         SetShaderValue(Skybox, GetShaderLocation(Skybox, "vflipped"), 0, ShaderUniformDataType.Int);
+        
+        // Grid shader
+        Grid = Load("grid");
+        GridCameraPos = GetShaderLocation(Grid, "cameraPos");
+        GridFadeRadius = GetShaderLocation(Grid, "fadeRadius");
     }
     
 
@@ -88,5 +96,6 @@ internal static class Shaders {
         UnloadShader(Pbr);
         UnloadShader(Depth);
         UnloadShader(Skybox);
+        UnloadShader(Grid);
     }
 }

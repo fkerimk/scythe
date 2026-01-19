@@ -33,9 +33,9 @@ internal static class Notifications {
 
             var pos = new Vector2(X, Y + i * (Notification.Height + Spacing));
 
-            var brColor = Colors.Back.ToRaylib();
-            var bgColor = Colors.Black.ToRaylib();
-            var fgColor = Colors.Primary.ToRaylib();
+            var brColor = Colors.Back;
+            var bgColor = Color.Black;
+            var fgColor = Colors.Primary;
 
             notification.Timer += Raylib.GetFrameTime();
 

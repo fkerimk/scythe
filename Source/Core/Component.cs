@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using Newtonsoft.Json;
+using Raylib_cs;
 
 [JsonObject(MemberSerialization.OptIn)]
 internal class Component(Obj obj, string name) {
@@ -8,7 +9,7 @@ internal class Component(Obj obj, string name) {
     public readonly Obj Obj = obj;
 
     public virtual string LabelIcon => Icons.Obj;
-    public virtual ScytheColor LabelScytheColor => Colors.GuiTypeObject;
+    public virtual Color LabelScytheColor => Colors.GuiTypeObject;
 
     public virtual bool Load() => true;
     public virtual void Loop(bool is2D) {}

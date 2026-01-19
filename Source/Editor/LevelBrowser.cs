@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using ImGuiNET;
+using static ImGuiNET.ImGui;
 
 internal class LevelBrowser() : Viewport("Level") {
 
@@ -23,12 +24,12 @@ internal class LevelBrowser() : Viewport("Level") {
         _rowCount = 0;
         Array.Clear(_lastRowY, 0, _lastRowY.Length);
 
-        ImGui.BeginChild("scroll", new Vector2(0, 0));
+        BeginChild("scroll", new Vector2(0, 0));
         
         // restore scroll 
         if (_savedScroll != null) {
             
-            ImGui.SetScrollY(_savedScroll.Value);
+            SetScrollY(_savedScroll.Value);
             _savedScroll = null;
         }
 
@@ -55,7 +56,7 @@ internal class LevelBrowser() : Viewport("Level") {
         // draw objects
         DrawObject(Core.ActiveLevel.Root);
         
-        ImGui.EndChild();
+        EndChild();
     }
 
     private static bool IsAncestorOf(Obj ancestor, Obj target) {
@@ -75,9 +76,9 @@ internal class LevelBrowser() : Viewport("Level") {
 
         if (Core.ActiveLevel == null) return true;
 
-        var drawList = ImGui.GetWindowDrawList();
-        var rowPos = ImGui.GetCursorScreenPos();
-        var rowHeight = ImGui.GetFrameHeight();
+        var drawList = GetWindowDrawList();
+        var rowPos = GetCursorScreenPos();
+        var rowHeight = GetFrameHeight();
         var centerY = rowPos.Y + rowHeight / 2f;
         
         // Zebra stripping
@@ -85,19 +86,19 @@ internal class LevelBrowser() : Viewport("Level") {
             
             drawList.AddRectFilled(
                 
-                new Vector2(ImGui.GetWindowPos().X, rowPos.Y),
-                new Vector2(ImGui.GetWindowPos().X + ImGui.GetWindowWidth(), rowPos.Y + rowHeight),
-                ImGui.GetColorU32(new Vector4(1, 1, 1, 0.012f))
+                new Vector2(GetWindowPos().X, rowPos.Y),
+                new Vector2(GetWindowPos().X + GetWindowWidth(), rowPos.Y + rowHeight),
+                GetColorU32(new Vector4(1, 1, 1, 0.012f))
             );
         }
         _rowCount++;
 
         // Hierarchy lines
-        var lineCol = ImGui.GetColorU32(new Vector4(1, 1, 1, 0.15f));
+        var lineCol = GetColorU32(new Vector4(1, 1, 1, 0.15f));
         
         if (indent > 0) {
             
-            var indentStep = ImGui.GetStyle().IndentSpacing; 
+            var indentStep = GetStyle().IndentSpacing; 
             var lineX = rowPos.X - indentStep + 10f;
             
             // Horizontal line
@@ -111,83 +112,83 @@ internal class LevelBrowser() : Viewport("Level") {
 
         if (SelectedObject != null && IsAncestorOf(obj, SelectedObject)) {
             
-            ImGui.SetNextItemOpen(true);
+            SetNextItemOpen(true);
         }
         
         // tree node
         var id = "##" + obj.GetHashCode();
-        var isOpen = ImGui.GetStateStorage().GetInt(ImGui.GetID(id), 1) != 0;
+        var isOpen = GetStateStorage().GetInt(GetID(id), 1) != 0;
         var isSelected = SelectedObject == obj;
         
         var arrowColor = isOpen ?
-            Colors.GuiTreeEnabled.to_vector4() :
-            Colors.GuiTreeDisabled.to_vector4();
+            Colors.GuiTreeEnabled :
+            Colors.GuiTreeDisabled;
 
         if (obj.Children.Count == 0)
-            arrowColor = Colors.Clear.to_vector4();
+            arrowColor = Colors.Clear;
         
         var flags = ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanFullWidth | ImGuiTreeNodeFlags.DefaultOpen;
         if (isSelected) flags |= ImGuiTreeNodeFlags.Selected;
         
-        ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 5f, ImGui.GetCursorPosY()));
+        SetCursorPos(new Vector2(GetCursorPosX() - 5f, GetCursorPosY()));
         
-        ImGui.PushStyleColor(ImGuiCol.Text, arrowColor);
-        ImGui.PushStyleColor(ImGuiCol.Header, Colors.GuiTreeSelected.to_vector4());
-        var tree = ImGui.TreeNodeEx(id, flags);
-        ImGui.PopStyleColor();
-        ImGui.PopStyleColor();
+        PushStyleColor(ImGuiCol.Text, arrowColor.ToVector4());
+        PushStyleColor(ImGuiCol.Header, Colors.GuiTreeSelected.ToVector4());
+        var tree = TreeNodeEx(id, flags);
+        PopStyleColor();
+        PopStyleColor();
         
         // Right click - context
-        if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Right))
-            ImGui.OpenPopupOnItemClick("context##" + obj.GetHashCode());
+        if (IsItemHovered() && IsMouseReleased(ImGuiMouseButton.Right))
+            OpenPopupOnItemClick("context##" + obj.GetHashCode());
         
         // Left click - select
-        else if (ImGui.IsItemHovered() && ImGui.IsMouseReleased(ImGuiMouseButton.Left)) SelectObject(obj);
+        else if (IsItemHovered() && IsMouseReleased(ImGuiMouseButton.Left)) SelectObject(obj);
         
         // Object context
   
-        if (ImGui.BeginPopup("context##" + obj.GetHashCode())) {
+        if (BeginPopup("context##" + obj.GetHashCode())) {
     
-            ImGui.Text(obj.Name);
+            Text(obj.Name);
             
-            ImGui.Separator();
+            Separator();
 
-            if (ImGui.BeginMenu("Insert")) {
+            if (BeginMenu("Insert")) {
                 
                 //var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(Component)) && !t.IsAbstract);
 
-                if (ImGui.MenuItem("Object"))
+                if (MenuItem("Object"))
                     Core.ActiveLevel.RecordedBuildObject("Object", obj);
 
-                ImGui.Separator();
+                Separator();
                 
-                if (ImGui.BeginMenu("Lighting")) {
+                if (BeginMenu("Lighting")) {
                     
-                    if (ImGui.MenuItem("Directional Light")) {
+                    if (MenuItem("Directional Light")) {
 
                         var light = Core.ActiveLevel.RecordedBuildObject("Directional Light", obj);
                         (light.MakeComponent("Light") as Light)?.Type = 0;
                         SelectObject(light);
                     }
                 
-                    if (ImGui.MenuItem("Point Light")) {
+                    if (MenuItem("Point Light")) {
                             
                         var light = Core.ActiveLevel.RecordedBuildObject("Point Light", obj);
                         (light.MakeComponent("Light") as Light)?.Type = 1;
                         SelectObject(light);
                     }
                 
-                    if (ImGui.MenuItem("Spot Light")) {
+                    if (MenuItem("Spot Light")) {
                             
                         var light = Core.ActiveLevel.RecordedBuildObject("Point Light", obj);
                         (light.MakeComponent("Light") as Light)?.Type = 2;
                         SelectObject(light);
                     }
                     
-                    ImGui.EndMenu();
+                    EndMenu();
                 }
 
-                if (ImGui.BeginMenu("Models")) {
+                if (BeginMenu("Models")) {
 
                     PathUtil.BestPath("Models", out var checkPath, true);
                     
@@ -201,14 +202,14 @@ internal class LevelBrowser() : Viewport("Level") {
                         var path = modelPath[pre.Length..^4].Replace('\\', '/');
                         var name = Path.GetFileName(path);
 
-                        if (!ImGui.MenuItem(path)) continue;
+                        if (!MenuItem(path)) continue;
 
                         var model = Level.MakeObject(name, obj);
                         (model.MakeComponent("Model") as Model)?.Path = path;
                         SelectObject(model);
                     }
 
-                    ImGui.EndMenu();
+                    EndMenu();
                 }
 
                 /*
@@ -256,51 +257,51 @@ internal class LevelBrowser() : Viewport("Level") {
                 }
                 */
 
-                ImGui.EndMenu();
+                EndMenu();
             }
             
-            if (ImGui.MenuItem("Delete")) _scheduledDeleteObject = obj;
+            if (MenuItem("Delete")) _scheduledDeleteObject = obj;
     
-            ImGui.EndPopup();
+            EndPopup();
         }
 
         // start drag
-        if (ImGui.BeginDragDropSource()) {
+        if (BeginDragDropSource()) {
             
             _dragObject = obj;
             
-            ImGui.SetDragDropPayload("object", IntPtr.Zero, 0);
-            ImGui.Text($"Moving {_dragObject.Name}");
-            ImGui.EndDragDropSource();
+            SetDragDropPayload("object", IntPtr.Zero, 0);
+            Text($"Moving {_dragObject.Name}");
+            EndDragDropSource();
         }
 
         // cache drop
-        if (ImGui.BeginDragDropTarget()) {
+        if (BeginDragDropTarget()) {
             
-            ImGui.AcceptDragDropPayload("object");
+            AcceptDragDropPayload("object");
             
-            if (_dragObject != null && ImGui.IsMouseReleased(ImGuiMouseButton.Left)) {
+            if (_dragObject != null && IsMouseReleased(ImGuiMouseButton.Left)) {
                 
                 _dragTarget = obj;
-                _savedScroll = ImGui.GetScrollY();
+                _savedScroll = GetScrollY();
             }
             
-            ImGui.EndDragDropTarget();
+            EndDragDropTarget();
         }
         
         // object icon
-        ImGui.SameLine();
-        ImGui.PushFont(Fonts.ImFontAwesomeSmall);
-        ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 10f, ImGui.GetCursorPosY() + 2.5f));
-        ImGui.TextColored(Colors.GuiTypeObject.to_vector4(), Icons.Obj);
-        ImGui.PopFont();
+        SameLine();
+        PushFont(Fonts.ImFontAwesomeSmall);
+        SetCursorPos(new(GetCursorPosX() - 10f, GetCursorPosY() + 2.5f));
+        TextColored(Colors.GuiTypeObject.ToVector4(), Icons.Obj);
+        PopFont();
 
         // object name
-        ImGui.SameLine();
-        ImGui.PushFont(Fonts.ImMontserratRegular);
-        ImGui.SetCursorPos(new(ImGui.GetCursorPosX() - 2.0f, ImGui.GetCursorPosY() - 1.5f));
-        ImGui.TextColored(new(1, 1, 1, 1), obj.Name);
-        ImGui.PopFont();
+        SameLine();
+        PushFont(Fonts.ImMontserratRegular);
+        SetCursorPos(new(GetCursorPosX() - 2.0f, GetCursorPosY() - 1.5f));
+        TextColored(new(1, 1, 1, 1), obj.Name);
+        PopFont();
 
         // draw child nodes
         if (!tree) return true;
@@ -309,11 +310,11 @@ internal class LevelBrowser() : Viewport("Level") {
         
         if (obj.Children.Any(child => !DrawObject(child.Value, indent + 1))) {
             
-            ImGui.TreePop();
+            TreePop();
             return false;
         }
             
-        ImGui.TreePop();
+        TreePop();
 
         return true;
     }

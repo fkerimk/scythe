@@ -27,7 +27,7 @@ internal class RenderSettings {
         get; set {
 
             field = value;
-            SetShaderValue(Shaders.Pbr, GetShaderLocation(Shaders.Pbr, "ambient_color"), new Vector4(value.R / 255f, value.G / 255f, value.B / 255f, value.A / 255f), ShaderUniformDataType.Vec3);
+            SetShaderValue(Shaders.Pbr, GetShaderLocation(Shaders.Pbr, "ambient_color"), value.ToVector4(), ShaderUniformDataType.Vec3);
         }
     }
 

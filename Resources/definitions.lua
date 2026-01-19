@@ -41,7 +41,7 @@ color = nil
 
 ---@class Obj
 ---@field icon string
----@field color ScytheColor
+---@field color Color
 ---@field name string
 ---@field components Dictionary
 ---@field up Vector3
@@ -124,7 +124,7 @@ function Level:findComponent(t) end
 
 ---@class Camera : Component
 ---@field labelIcon string
----@field labelScytheColor ScytheColor
+---@field labelScytheColor Color
 ---@field name string
 ---@field isSelected boolean
 ---@field up Vector3
@@ -285,7 +285,7 @@ function LuaColor.new(r, g, b, a) end
 ---@class Component
 ---@field name string
 ---@field labelIcon string
----@field labelScytheColor ScytheColor
+---@field labelScytheColor Color
 ---@field isSelected boolean
 ---@field up Vector3
 ---@field fwd Vector3
@@ -309,7 +309,7 @@ function Component:quit() end
 
 ---@class Animation : Component
 ---@field labelIcon string
----@field labelScytheColor ScytheColor
+---@field labelScytheColor Color
 ---@field path string
 ---@field track number
 ---@field isPlaying boolean
@@ -338,10 +338,10 @@ function Animation:quit() end
 
 ---@class Light : Component
 ---@field labelIcon string
----@field labelScytheColor ScytheColor
+---@field labelScytheColor Color
 ---@field enabled boolean
 ---@field type number
----@field scytheColor ScytheColor
+---@field scytheColor Color
 ---@field intensity number
 ---@field range number
 ---@field shadows boolean
@@ -368,9 +368,9 @@ function Light:loop(is2D) end
 
 ---@class Model : Component
 ---@field labelIcon string
----@field labelScytheColor ScytheColor
+---@field labelScytheColor Color
 ---@field path string
----@field scytheColor ScytheColor
+---@field color Color
 ---@field isTransparent boolean
 ---@field alphaCutoff number
 ---@field castShadows boolean
@@ -411,7 +411,7 @@ function Model:quit() end
 ---@field path string
 ---@field name string
 ---@field labelIcon string
----@field labelScytheColor ScytheColor
+---@field labelScytheColor Color
 ---@field isSelected boolean
 ---@field up Vector3
 ---@field fwd Vector3
@@ -450,7 +450,7 @@ function Script:safeLuaCall(action) end
 
 ---@class Transform : Component
 ---@field labelIcon string
----@field labelScytheColor ScytheColor
+---@field labelScytheColor Color
 ---@field pos Vector3
 ---@field euler Vector3
 ---@field scale Vector3
@@ -1631,12 +1631,6 @@ function Color.lerp(origin, target, t) end
 ---@return string
 function Color:toString() end
 
----@class ScytheColor
----@field r number
----@field g number
----@field b number
----@field a number
-local ScytheColor = {}
 ---@class Matrix4x4
 ---@field identity Matrix4x4
 ---@field isIdentity boolean

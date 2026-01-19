@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using System.Reflection;
 using ImGuiNET;
+using Raylib_cs;
 using static ImGuiNET.ImGui;
 
 internal class ObjectBrowser : Viewport {
@@ -28,7 +29,7 @@ internal class ObjectBrowser : Viewport {
 
         if (LevelBrowser.SelectedObject.Parent != null) {
 
-            PushStyleColor(ImGuiCol.Text, Colors.GuiTextDisabled.to_vector4());
+            PushStyleColor(ImGuiCol.Text, Colors.GuiTextDisabled.ToVector4());
             Text(LevelBrowser.SelectedObject.Parent.Name);
             PopStyleColor();
             SameLine();
@@ -64,19 +65,13 @@ internal class ObjectBrowser : Viewport {
                     Notifications.Show($"Component {type.Name} already exists!", 1.5f);
                     break;
                 }
-                
-                var component = Activator.CreateInstance(type, LevelBrowser.SelectedObject) as Component;
 
-                if (component == null) continue;
+                if (Activator.CreateInstance(type, LevelBrowser.SelectedObject) is not Component component) continue;
                 
                 LevelBrowser.SelectedObject.Components[type.Name.ToPascalCase()] = component;
 
-                // var builtObject = Core.ActiveLevel.RecordedBuildObject(type.Name, _obj.Parent, _obj.Components);
-
-                //if (builtObject is { Components: Animation animation, Parent.Components: Model model })
-                //    animation.Path = model.Path;
-
-                // SelectObject(builtObject);
+                if (component is Animation animation &&  LevelBrowser.SelectedObject.Components.TryGetValue("Model", out var model))
+                    animation.Path = (model as Model)!.Path;
             }
             
             EndPopup();
@@ -110,7 +105,7 @@ internal class ObjectBrowser : Viewport {
             if (obj is Component c) {
 
                 PushFont(Fonts.ImFontAwesomeSmall);
-                TextColored(c.LabelScytheColor.to_vector4(), c.LabelIcon);
+                TextColored(c.LabelScytheColor.ToVector4(), c.LabelIcon);
                 PopFont();
                 SameLine();
             }
@@ -193,10 +188,10 @@ internal class ObjectBrowser : Viewport {
                 }
             }
             
-            else if (prop.PropertyType == typeof(ScytheColor)) {
+            else if (prop.PropertyType == typeof(Color)) {
 
-                var castValue = (ScytheColor)value;
-                var convertedValue = castValue.to_vector4();
+                var castValue = (Color)value;
+                var convertedValue = castValue.ToVector4();
                 if (ColorEdit4(id, ref convertedValue, ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.AlphaBar)) {
                     newValue = convertedValue.ToColor();
                     changed = true;

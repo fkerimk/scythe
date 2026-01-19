@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using ImGuiNET;
+using Raylib_cs;
 using static ImGuiNET.ImGui;
 
 internal static class Style {
@@ -82,9 +83,9 @@ internal static class Style {
         _pushes++;
     }
     
-    private static void Set(ImGuiCol id, ScytheColor scytheColor) {
+    private static void Set(ImGuiCol id, Color color) {
         
-        PushStyleColor(id, scytheColor.to_vector4());
+        PushStyleColor(id, color.ToVector4());
         PushedColors[_pushes]++;
     }
     

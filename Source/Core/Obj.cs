@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 internal class Obj {
 
     public string Icon => Icons.Obj;
-    public ScytheColor Color => Colors.GuiTypeObject;
+    public Color Color => Colors.GuiTypeObject;
 
     [Label("Name"), RecordHistory] public string Name {
         

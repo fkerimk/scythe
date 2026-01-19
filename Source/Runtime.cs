@@ -26,7 +26,7 @@ internal static class Runtime {
             Core.Logic();
             
             BeginDrawing();
-            ClearBackground(Colors.Game.ToRaylib());
+            ClearBackground(Colors.Game);
             
             // Shadow pass (internal RT switch)
             Core.ShadowPass();

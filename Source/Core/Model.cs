@@ -2,14 +2,13 @@
 using Raylib_cs;
 using Newtonsoft.Json;
 
-// ReSharper disable once ClassNeverInstantiated.Global
 internal class Model(Obj obj) : Component(obj, "model") {
 
     public override string LabelIcon => Icons.Model;
-    public override ScytheColor LabelScytheColor => Colors.GuiTypeModel;
+    public override Color LabelScytheColor => Colors.GuiTypeModel;
     
     [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
-    [RecordHistory] [JsonProperty] [Label("Color")] public ScytheColor ScytheColor { get; set; } = Colors.White;
+    [RecordHistory] [JsonProperty] [Label("Color")] public Color Color { get; set; } = Color.White;
     [RecordHistory] [JsonProperty] [Label("Transparent")] public bool IsTransparent { get; set; }
     [RecordHistory] [JsonProperty] [Label("Alpha Cutoff")] public float AlphaCutoff { get; set; } = 0.5f;
     [RecordHistory] [JsonProperty] [Label("Cast Shadows")] public bool CastShadows { get; set; } = true;
@@ -94,7 +93,7 @@ internal class Model(Obj obj) : Component(obj, "model") {
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrAlphaCutoff, AlphaCutoff, ShaderUniformDataType.Float);
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrReceiveShadows, ReceiveShadows ? 1 : 0, ShaderUniformDataType.Int);
         
-        Raylib.DrawModel(RlModel, Vector3.Zero, 1, ScytheColor.ToRaylib());
+        Raylib.DrawModel(RlModel, Vector3.Zero, 1, Color);
     }
 
     public override void Quit() {

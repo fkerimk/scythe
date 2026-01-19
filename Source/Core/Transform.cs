@@ -9,7 +9,7 @@ using static Raylib_cs.Raylib;
 internal class Transform(Obj obj) : Component(obj, "transform") {
     
     public override string LabelIcon => Icons.Transform;
-    public override ScytheColor LabelScytheColor => Colors.GuiTypeTransform;
+    public override Color LabelScytheColor => Colors.GuiTypeTransform;
     
     private Vector3 _pos = Vector3.Zero;
     private Vector3 _scale = Vector3.One;
