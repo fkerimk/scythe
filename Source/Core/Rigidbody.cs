@@ -10,7 +10,7 @@ internal class Rigidbody(Obj obj) : Component(obj) {
     public override string LabelIcon => Icons.Physics;
 
     [RecordHistory] [JsonProperty] [Label("Static")] public bool IsStatic { get; set; }
-    [RecordHistory] [JsonProperty] [Label("Affected By Gravity")] public bool Gravity { get; set; } = true;
+    [RecordHistory] [JsonProperty] [Label("Gravity")] public bool Gravity { get; set; } = true;
 
     [Header("Material")]
     [RecordHistory] [JsonProperty] [Label("Friction")] public float Friction { get; set; } = 0.5f;
