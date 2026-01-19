@@ -19,7 +19,10 @@ internal static class Runtime {
             Window.UpdateFps();
             Core.Load();
             
-            // Logic first (updates matrices and camera)
+            // Input first
+            LuaMouse.Loop();
+            
+            // Logic (updates matrices, scripts, and camera)
             Core.Logic();
             
             BeginDrawing();
@@ -31,7 +34,6 @@ internal static class Runtime {
             // Main Render
             BeginMode3D(Core.ActiveCamera.Raylib);
             Core.Render(false);
-            LuaMouse.Loop();
             EndMode3D();
             
             Core.Render(true);

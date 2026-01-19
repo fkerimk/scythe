@@ -43,7 +43,7 @@ internal static class Core {
         _skyboxModel = Raylib.LoadModelFromMesh(cube);
         _skyboxModel.Materials[0].Shader = Shaders.Skybox;
         
-        if (PathUtil.BestPath("Images/skybox.png", out var skyboxPath)) {
+        if (PathUtil.BestPath("Models/Skybox.png", out var skyboxPath)) {
             
             var image = Raylib.LoadImage(skyboxPath);
             _skyboxTexture = Raylib.LoadTextureCubemap(image, CubemapLayout.AutoDetect);
@@ -238,12 +238,17 @@ internal static class Core {
                 
                 TransparentRenderQueue.Sort((a, b) => b.Distance.CompareTo(a.Distance));
                 
+                Rlgl.DisableDepthMask();
+                Raylib.BeginBlendMode(BlendMode.Alpha);
+                
                 foreach (var call in TransparentRenderQueue) {
                     
-                    Raylib.BeginBlendMode(BlendMode.Alpha);
+                    Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrAlphaCutoff, 0.0f, ShaderUniformDataType.Float);
                     call.Model.Draw();
-                    Raylib.EndBlendMode();
                 }
+                
+                Raylib.EndBlendMode();
+                Rlgl.EnableDepthMask();
             }
         }
         

@@ -16,7 +16,7 @@ internal static partial class Extensions {
     public static ScytheColor ToColor(this Vector4 color) => new(color.X, color.Y, color.Z, color.W);
     
     extension(ScytheColor value) {
-        public Raylib_cs.Color ToRaylib() => new(value.R, value.G, value.B, value.A);
+        public Raylib_cs.Color ToRaylib() => new((byte)(value.R * 255), (byte)(value.G * 255), (byte)(value.B * 255), (byte)(value.A * 255));
 
         public Vector4 to_vector4() => new(value.R, value.G, value.B, value.A);
 
