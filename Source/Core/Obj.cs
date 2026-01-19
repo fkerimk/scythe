@@ -200,9 +200,8 @@ internal class Obj {
     }
 
     public bool TryGetComponent<T>(out T component) where T : Component {
-        
         component = (Components.Values.FirstOrDefault(c => c is T) as T)!;
-        return true;
+        return component != null;
     }
 }
 

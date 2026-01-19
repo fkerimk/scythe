@@ -7,6 +7,7 @@
     public static string Light     => FaLightbulbO;
     public static string Camera    => FaVideoCamera;
     public static string Box       => FaCube;
+    public static string Physics   => FaCrosshairs;
     
     // font awesome icon codes - https://fontawesome.com/v4/cheatsheet/
     public const string FaFile = ""; // fa-file
@@ -19,4 +20,5 @@
     private const string FaArrows = ""; // fa-arrows
     private const string FaLightbulbO = ""; // fa-lightbulb-o
     private const string FaVideoCamera = ""; // fa-video-camera
+    private const string FaCrosshairs = ""; // fa-crosshairs
 }

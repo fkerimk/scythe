@@ -1,15 +1,7 @@
 ﻿using System.Numerics;
-using System.Transactions;
 using static Raylib_cs.Raylib;
 
 internal class LuaMouse {
-
-    //private static KeyboardKey GetKey(string keyName) => !Enum.TryParse(keyName, out KeyboardKey key) ? throw new Exception($"Key {keyName} is not a recognized key name") : key;
-    //
-    //public static bool Down(string keyName) => Raylib.IsKeyDown(GetKey(keyName));
-    //public static bool Pressed(string keyName) => Raylib.IsKeyPressed(GetKey(keyName));
-    //public static bool Released(string keyName) => Raylib.IsKeyReleased(GetKey(keyName));
-    //public static bool Up(string keyName) => Raylib.IsKeyUp(GetKey(keyName));
 
     public static bool IsLocked = false;
     
@@ -18,21 +10,29 @@ internal class LuaMouse {
 
     public static void Loop() {
 
-        if (IsCursorOnScreen() && IsWindowFocused()) {
-            
-            Delta = GetMouseDelta();
-            
-            if (IsCursorHidden() && !IsLocked) ShowCursor();
-            if (!IsCursorHidden() && IsLocked) HideCursor();
-
-            if (IsLocked) MoveToCenter();
-
-        } else {
-            
+        if (!IsWindowFocused()) {
+            if (IsCursorHidden()) {
+                EnableCursor();
+                ShowCursor();
+            }
             Delta = Vector2.Zero;
+            return;
+        }
+
+        Delta = GetMouseDelta();
+
+        if (IsLocked) {
             
-            ShowCursor();
-            EnableCursor();
+            if (!IsCursorHidden()) 
+                DisableCursor();
+        } 
+        
+        else {
+            
+            if (IsCursorHidden()) {
+                EnableCursor();
+                ShowCursor();
+            }
         }
     }
     
@@ -47,7 +47,7 @@ internal class LuaMouse {
 
         if (!IsWindowFocused()) return;
         
-        var pos = GetScreenCenter();
+        var pos = new Vector2(GetScreenWidth() / 2f, GetScreenHeight() / 2f);
         SetMousePosition((int)pos.X, (int)pos.Y);
     }
 }

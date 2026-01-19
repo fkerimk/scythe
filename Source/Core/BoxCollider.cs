@@ -5,7 +5,7 @@ using Jitter2.Collision.Shapes;
 
 internal class BoxCollider(Obj obj) : Component(obj) {
 
-    public override Color LabelColor => Colors.GuiTypeObject;
+    public override Color LabelColor => Colors.GuiTypePhysics;
     public override string LabelIcon => Icons.Box;
 
     [RecordHistory] [JsonProperty] [Label("Size")] public Vector3 Size { get; set; } = Vector3.One;
@@ -17,6 +17,8 @@ internal class BoxCollider(Obj obj) : Component(obj) {
         
         Obj.DecomposeWorldMatrix(out _, out _, out var scale);
         
+        // Jitter2'de şekil boyutu yereldir, Rigidbody'ye eklenirken ölçeklendirilebilir 
+        // veya burada direkt dünya ölçeğiyle oluşturulabilir.
         Shape = new BoxShape(Size.X * scale.X, Size.Y * scale.Y, Size.Z * scale.Z);
         return true;
     }
@@ -27,11 +29,16 @@ internal class BoxCollider(Obj obj) : Component(obj) {
 
         if (!IsSelected || !CommandLine.Editor) return;
         
-        var gizmoMatrix = Matrix4x4.CreateScale(Size) * Matrix4x4.CreateTranslation(Center) * Obj.WorldMatrix;
-            
+        // Sadece objenin dünya matrisini (pos, rot, scale) baz alıyoruz
+        // Center ve Size'ı DrawCubeWires içinde local olarak kullanıyoruz
         Rlgl.PushMatrix();
-        Rlgl.MultMatrixf(gizmoMatrix);
-        Raylib.DrawCubeWires(Vector3.Zero, 1.0f, 1.0f, 1.0f, Raylib.ColorAlpha(Color.Green, 0.5f));
+        Rlgl.MultMatrixf(Obj.WorldMatrix);
+        
+        // DrawCubeWires parametreleri: Center (Local), Width, Height, Length, Color
+        // Raylib DrawCubeWires merkezi baz alır, bu yüzden Center doğrudan çalışır.
+        // Size değerini geçiyoruz, Obj.WorldMatrix'teki scale ile zaten çarpılacaktır.
+        Raylib.DrawCubeWires(Center, Size.X, Size.Y, Size.Z, Raylib.ColorAlpha(Color.Green, 0.5f));
+        
         Rlgl.PopMatrix();
     }
 }

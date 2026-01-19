@@ -101,6 +101,7 @@ internal class ObjectBrowser : Viewport {
             // Content in header
             SameLine();
             SetCursorPosX(GetCursorPosX() - 7.5f); // Tighter arrow space
+            SetCursorPosY(GetCursorPosY() + 3f);
             
             if (obj is Component c) {
 
@@ -137,6 +138,17 @@ internal class ObjectBrowser : Viewport {
 
         foreach (var prop in obj.GetType().GetProperties()) {
             
+            var headAttr = prop.GetCustomAttribute<HeaderAttribute>();
+            if (headAttr != null) {
+                Columns(1);
+                Spacing();
+                TextColored(Colors.Primary.ToVector4(), headAttr.Title);
+                Separator();
+                Spacing();
+                Columns(2, "##props", false);
+                SetColumnWidth(0, GetWindowWidth() * 0.3f);
+            }
+
             var labelAttr = prop.GetCustomAttribute<LabelAttribute>();
             if (labelAttr == null) continue;
 
