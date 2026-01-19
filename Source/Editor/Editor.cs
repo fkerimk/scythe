@@ -66,6 +66,11 @@ internal static unsafe class Editor {
             BeginMode3D(Core.ActiveCamera.Raylib);
             Grid.Draw(Core.ActiveCamera);
             Core.Loop(false);
+            
+            // CRITICAL: Shadow mapping inside Core.Loop(false) calls EndTextureMode().
+            // We MUST return to the viewport RT for the rest of the frame.
+            BeginTextureMode(Level3D.Rt);
+            
             EndMode3D();
             Core.Loop(true);
             Window.DrawFps();

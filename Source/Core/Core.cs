@@ -100,75 +100,80 @@ internal static class Core {
 
         if (ActiveLevel == null) return;
 
-        Lights.Clear();
-        TransparentRenderQueue.Clear();
+        if (!is2D) {
+            Lights.Clear();
+            TransparentRenderQueue.Clear();
+        }
         
         Raylib.SetShaderValue(Shaders.Pbr, Shaders.Pbr.Locs[(int)ShaderLocationIndex.VectorView], ActiveCamera?.Position ?? Vector3.Zero, ShaderUniformDataType.Vec3);
         
         LoopObj(ActiveLevel.Root);
         
         
-        Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrLightCount, Lights.Count, ShaderUniformDataType.Int);
-        
-        // Shadow Pass
-        var shadowLight = Lights.FirstOrDefault(l => l.Enabled && l.Shadows);
-        var shadowLightIndex = -1;
-        
-        if (shadowLight != null) {
+        if (!is2D) {
             
-            shadowLightIndex = Lights.IndexOf(shadowLight);
-
-            var lightCamera = new Camera3D {
-                Position = shadowLight.Type == 0 ? shadowLight.Obj.Pos - shadowLight.Obj.Fwd * 500.0f : shadowLight.Obj.Pos,
-                Target = shadowLight.Type == 0 ? shadowLight.Obj.Pos : 
-                         (shadowLight.Type == 1 ? shadowLight.Obj.Pos + Vector3.UnitY * -1 : shadowLight.Obj.Pos + shadowLight.Obj.Fwd),
-                Up = shadowLight.Type == 1 ? Vector3.UnitX : Vector3.UnitY,
-                FovY = (shadowLight.Type == 0 ? shadowLight.Range * 2.0f : (shadowLight.Type == 2 ? 90.0f : 160.0f)) * ShadowFovScale,
-                Projection = shadowLight.Type == 0 ? CameraProjection.Orthographic : CameraProjection.Perspective
-            };
-            
-            // Note: For Orthographic, FovY is the total size. 
-            // We use Range * 2 to define the box size around the light target.
-
-            Raylib.BeginTextureMode(ShadowMap);
-            Raylib.ClearBackground(Color.White);
-            Raylib.BeginMode3D(lightCamera.Raylib);
-            
-            var lightView = Rlgl.GetMatrixModelview();
-            var lightProj = Rlgl.GetMatrixProjection();
-            var lightVP = Raymath.MatrixMultiply(lightView, lightProj);
-
-            // Draw all shadow casters
-            LoopDraw(ActiveLevel.Root, true);
-
-            Raylib.EndMode3D();
-            Raylib.EndTextureMode();
-            
-            Raylib.SetShaderValueMatrix(Shaders.Pbr, Shaders.PbrLightVP, lightVP);
-            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, shadowLightIndex, ShaderUniformDataType.Int);
-            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowStrength, shadowLight.ShadowStrength, ShaderUniformDataType.Float);
-            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMapResolution, ShadowMapResolution, ShaderUniformDataType.Int);
-
-            // Bind shadow map
-            const int shadowMapSlot = 10;
-            Rlgl.ActiveTextureSlot(shadowMapSlot);
-            Rlgl.EnableTexture(ShadowMap.Depth.Id);
-            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMap, shadowMapSlot, ShaderUniformDataType.Int);
-        }
-        else {
-            
-            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, -1, ShaderUniformDataType.Int);
-        }
-
-        for (var i = 0; i < Lights.Count; i++) Lights[i].Update(i);
-
-        if (!is2D && TransparentRenderQueue.Count > 0) {
-            
-            TransparentRenderQueue.Sort((a, b) => b.Distance.CompareTo(a.Distance));
-            
-            foreach (var call in TransparentRenderQueue) {
+            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrLightCount, Lights.Count, ShaderUniformDataType.Int);
                 
-                call.Model.DrawTransparent();
+            // Shadow Pass
+            var shadowLight = Lights.FirstOrDefault(l => l.Enabled && l.Shadows);
+            var shadowLightIndex = -1;
+            
+            if (shadowLight != null) {
+                
+                shadowLightIndex = Lights.IndexOf(shadowLight);
+    
+                var lightCamera = new Camera3D {
+                    Position = shadowLight.Type == 0 ? shadowLight.Obj.Pos - shadowLight.Obj.Fwd * 500.0f : shadowLight.Obj.Pos,
+                    Target = shadowLight.Type == 0 ? shadowLight.Obj.Pos : 
+                             (shadowLight.Type == 1 ? shadowLight.Obj.Pos + Vector3.UnitY * -1 : shadowLight.Obj.Pos + shadowLight.Obj.Fwd),
+                    Up = shadowLight.Type == 1 ? Vector3.UnitX : Vector3.UnitY,
+                    FovY = (shadowLight.Type == 0 ? shadowLight.Range * 2.0f : (shadowLight.Type == 2 ? 90.0f : 160.0f)) * ShadowFovScale,
+                    Projection = shadowLight.Type == 0 ? CameraProjection.Orthographic : CameraProjection.Perspective
+                };
+    
+                Raylib.BeginTextureMode(ShadowMap);
+                Raylib.ClearBackground(Color.White);
+                Raylib.BeginMode3D(lightCamera.Raylib);
+                
+                var lightView = Rlgl.GetMatrixModelview();
+                var lightProj = Rlgl.GetMatrixProjection();
+                var lightVP = Raymath.MatrixMultiply(lightView, lightProj);
+    
+                // Draw all shadow casters
+                LoopDraw(ActiveLevel.Root, true);
+    
+                Raylib.EndMode3D();
+                Raylib.EndTextureMode();
+                
+                Raylib.SetShaderValueMatrix(Shaders.Pbr, Shaders.PbrLightVP, lightVP);
+                Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, shadowLightIndex, ShaderUniformDataType.Int);
+                Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowStrength, shadowLight.ShadowStrength, ShaderUniformDataType.Float);
+                Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMapResolution, ShadowMapResolution, ShaderUniformDataType.Int);
+    
+                // Bind shadow map
+                const int shadowMapSlot = 10;
+                Rlgl.ActiveTextureSlot(shadowMapSlot);
+                Rlgl.EnableTexture(ShadowMap.Depth.Id);
+                Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMap, shadowMapSlot, ShaderUniformDataType.Int);
+                
+                // BACK TO SLOT 0
+                Rlgl.ActiveTextureSlot(0);
+            }
+            else {
+                
+                Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, -1, ShaderUniformDataType.Int);
+            }
+    
+            for (var i = 0; i < Lights.Count; i++) Lights[i].Update(i);
+    
+            if (TransparentRenderQueue.Count > 0) {
+                
+                TransparentRenderQueue.Sort((a, b) => b.Distance.CompareTo(a.Distance));
+                
+                foreach (var call in TransparentRenderQueue) {
+                    
+                    call.Model.DrawTransparent();
+                }
             }
         }
         
