@@ -15,6 +15,7 @@ internal static class Core {
     
     public static RenderTexture2D ShadowMap;
     public const int ShadowMapResolution = 4096;
+    public static float ShadowFovScale = 1.0f;
     
     public static readonly List<TransparentDrawCall> TransparentRenderQueue = [];
 
@@ -122,7 +123,7 @@ internal static class Core {
                 Target = shadowLight.Type == 0 ? shadowLight.Obj.Pos : 
                          (shadowLight.Type == 1 ? shadowLight.Obj.Pos + Vector3.UnitY * -1 : shadowLight.Obj.Pos + shadowLight.Obj.Fwd),
                 Up = shadowLight.Type == 1 ? Vector3.UnitX : Vector3.UnitY,
-                FovY = shadowLight.Type == 0 ? shadowLight.Range * 2.0f : (shadowLight.Type == 2 ? 90.0f : 160.0f),
+                FovY = (shadowLight.Type == 0 ? shadowLight.Range * 2.0f : (shadowLight.Type == 2 ? 90.0f : 160.0f)) * ShadowFovScale,
                 Projection = shadowLight.Type == 0 ? CameraProjection.Orthographic : CameraProjection.Perspective
             };
             
