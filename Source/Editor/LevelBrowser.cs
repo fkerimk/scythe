@@ -46,7 +46,10 @@ internal class LevelBrowser() : Viewport("Level") {
         if (_scheduledDeleteObject != null) {
 
             if (_scheduledDeleteObject != Core.ActiveLevel.Root) {
-                
+
+                if (SelectedObject != null && (SelectedObject == _scheduledDeleteObject || IsAncestorOf(_scheduledDeleteObject, SelectedObject)))
+                    SelectObject(null);
+
                 _scheduledDeleteObject.RecordedDelete();
             }
             

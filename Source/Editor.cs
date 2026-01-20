@@ -90,6 +90,7 @@ internal static unsafe class Editor {
             ImGuiIoPtr.MouseDoubleClickTime = 0.2f;
             MenuBar.Draw();
             Level3D.Draw();
+            Picking.Update();
             LevelBrowser.Draw();
             ObjectBrowser.Draw();
             ProjectBrowser.Draw();

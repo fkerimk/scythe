@@ -36,19 +36,21 @@ internal class Rigidbody(Obj obj) : Component(obj) {
         
         Obj.DecomposeWorldMatrix(out var pos, out var rot, out var scale);
 
-        if (Obj.TryGetComponent<BoxCollider>(out var box)) {
+        if (Obj.Components.TryGetValue("BoxCollider", out var box)) {
             
-            if (!box.IsLoaded) {
-                box.Load();
-                box.IsLoaded = true;
+            var boxCollider = (BoxCollider)box;
+            
+            if (!boxCollider.IsLoaded) {
+                boxCollider.Load();
+                boxCollider.IsLoaded = true;
             }
             
-            if (box.Shape != null) {
-                if (box.Center != Vector3.Zero) {
-                    var scaledCenter = box.Center * scale;
-                    Body.AddShape(new TransformedShape(box.Shape, Conversion.ToJitter(scaledCenter)), false);
+            if (boxCollider.Shape != null) {
+                if (boxCollider.Center != Vector3.Zero) {
+                    var scaledCenter = boxCollider.Center * scale;
+                    Body.AddShape(new TransformedShape(boxCollider.Shape, Conversion.ToJitter(scaledCenter)), false);
                 } else {
-                    Body.AddShape(box.Shape, false);
+                    Body.AddShape(boxCollider.Shape, false);
                 }
             }
         }
@@ -110,5 +112,9 @@ internal class Rigidbody(Obj obj) : Component(obj) {
             _lastSyncedPos = Obj.Transform.Pos;
             _lastSyncedRot = Obj.Transform.Rot;
         }
+    }
+
+    public override void Quit() {
+        if (Body != null) Physics.World.Remove(Body);
     }
 }

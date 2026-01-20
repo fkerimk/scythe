@@ -122,6 +122,7 @@ internal class ObjectBrowser : Viewport {
             
                 if (SmallButton($"X##{_propIndex}")) {
                     
+                    component.Quit();
                     component.Obj.Components.Remove(component.GetType().Name);
                 }
             }

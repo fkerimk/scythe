@@ -6,8 +6,8 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 internal class Obj {
 
-    public string Icon => Icons.Obj;
-    public Color Color => Colors.GuiTypeObject;
+    public static string Icon => Icons.Obj;
+    public static Color Color => Colors.GuiTypeObject;
 
     [Label("Name"), RecordHistory] public string Name {
         
@@ -70,8 +70,26 @@ internal class Obj {
 
         if (Parent == null) return;
         
+        Dispose();
         Parent.Children.Remove(Name);
         Parent.OrderChildren();
+    }
+
+    public void Dispose() {
+        
+        IsSelected = false;
+        
+        Transform.Quit();
+        Transform.IsLoaded = false;
+
+        foreach (var component in Components.Values) {
+            
+            component.Quit();
+            component.IsLoaded = false;
+        }
+
+        foreach (var child in Children.Values)
+            child.Dispose();
     }
 
     public void RecordedDelete() {
@@ -197,11 +215,6 @@ internal class Obj {
         }
         
         return newName;
-    }
-
-    public bool TryGetComponent<T>(out T component) where T : Component {
-        component = (Components.Values.FirstOrDefault(c => c is T) as T)!;
-        return component != null;
     }
 }
 

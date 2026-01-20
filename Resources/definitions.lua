@@ -64,6 +64,9 @@ local Obj = {}
 function Obj:delete() end
 
 ---@return void
+function Obj:dispose() end
+
+---@return void
 function Obj:recordedDelete() end
 
 ---@param pos Vector3
@@ -93,10 +96,6 @@ function Obj:makeComponent(name) end
 ---@param name string
 ---@return string
 function Obj:safeNameForChild(name) end
-
----@param component any
----@return boolean
-function Obj:tryGetComponent(component) end
 
 ---@class Level
 ---@field root Obj
