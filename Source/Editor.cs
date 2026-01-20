@@ -5,6 +5,7 @@ using Raylib_cs;
 using rlImGui_cs;
 using static ImGuiNET.ImGui;
 using static Raylib_cs.Raylib;
+using static Raylib_cs.Rlgl;
 using static rlImGui_cs.rlImGui;
 
 internal static unsafe class Editor {
@@ -58,12 +59,30 @@ internal static unsafe class Editor {
 
                 UnloadRenderTexture(Level3D.Rt);
                 Level3D.Rt = LoadRenderTexture((int)Level3D.TexSize.X, (int)Level3D.TexSize.Y);
+                
+                UnloadRenderTexture(Level3D.OutlineRt);
+                Level3D.OutlineRt = LoadRenderTexture((int)Level3D.TexSize.X, (int)Level3D.TexSize.Y);
+                
                 Level3D.TexTemp = Level3D.TexSize;
             }
 
             // Core Logic & Shadow Mapping (Internal switches RT, ends in screen buffer)
             Core.Logic();
             Core.ShadowPass();
+
+            // Outline Mask Pass
+            if (LevelBrowser.SelectedObject != null) {
+            
+                BeginTextureMode(Level3D.OutlineRt);
+                ClearBackground(Color.Blank);
+                ClearScreenBuffers(); // Explicitly clear depth and color buffers
+                
+                BeginMode3D(Core.ActiveCamera.Raylib);
+                RenderOutline(LevelBrowser.SelectedObject);
+                EndMode3D();
+                
+                EndTextureMode();
+            }
 
             // Viewport Rendering
             BeginTextureMode(Level3D.Rt);
@@ -75,6 +94,18 @@ internal static unsafe class Editor {
             Core.Render(false); // Draw objects and skybox
             Grid.Draw(Core.ActiveCamera);
             EndMode3D();
+            
+            // Render Outline Post
+            if (LevelBrowser.SelectedObject != null) {
+                 
+                BeginShaderMode(Shaders.OutlinePost);
+                SetShaderValue(Shaders.OutlinePost, Shaders.OutlineTextureSize, new Vector2(Level3D.TexSize.X, Level3D.TexSize.Y), ShaderUniformDataType.Vec2);
+                SetShaderValue(Shaders.OutlinePost, Shaders.OutlineWidth, 5.0f, ShaderUniformDataType.Float);
+                SetShaderValue(Shaders.OutlinePost, Shaders.OutlineColor, ColorNormalize(Colors.Primary), ShaderUniformDataType.Vec4);
+                
+                DrawTextureRec(Level3D.OutlineRt.Texture, new Rectangle(0, 0, Level3D.TexSize.X, -Level3D.TexSize.Y), Vector2.Zero, Color.White);
+            EndShaderMode();
+            }
             
             Core.Render(true); // Draw 2D UI for components
             Window.DrawFps();
@@ -111,5 +142,31 @@ internal static unsafe class Editor {
     }
 
     public static void Quit() => _scheduledQuit = true;
+
+    private static unsafe void RenderOutline(Obj obj) {
+
+        foreach (var component in obj.Components.Values) {
+            
+            if (component is Model model) {
+                
+               // Override shaders
+               var originalShaders = new Shader[model.RlModel.MaterialCount];
+               for (var i = 0; i < model.RlModel.MaterialCount; i++) {
+                   originalShaders[i] = model.RlModel.Materials[i].Shader;
+                   model.RlModel.Materials[i].Shader = Shaders.OutlineMask;
+               } 
+               
+               // Draw
+               model.Draw();
+               
+               // Restore
+               for (var i = 0; i < model.RlModel.MaterialCount; i++) {
+                   model.RlModel.Materials[i].Shader = originalShaders[i];
+               }
+            }
+        }
+        
+        foreach (var child in obj.Children.Values) RenderOutline(child);
+    }
 }
 

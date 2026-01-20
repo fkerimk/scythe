@@ -10,7 +10,9 @@ internal static class Shaders {
         Pbr,
         Depth,
         Skybox,
-        Grid;
+        Grid,
+        OutlineMask,
+        OutlinePost;
 
     #region PBR information
 
@@ -29,7 +31,10 @@ internal static class Shaders {
         PbrShadowMapResolution,
         PbrReceiveShadows,
         GridCameraPos,
-        GridFadeRadius;
+        GridFadeRadius,
+        OutlineTextureSize,
+        OutlineColor,
+        OutlineWidth;
 
     #endregion 
     
@@ -76,6 +81,17 @@ internal static class Shaders {
         Grid = Load("grid");
         GridCameraPos = GetShaderLocation(Grid, "cameraPos");
         GridFadeRadius = GetShaderLocation(Grid, "fadeRadius");
+        
+        // Outline shaders
+        OutlineMask = Load("outline_mask");
+
+        OutlinePost = Load("outline_post", vert: false); // uses same vertex shader? No, custom.
+        // Actually outline_post.vs exists.
+        
+        OutlinePost = Load("outline_post");
+        OutlineTextureSize = GetShaderLocation(OutlinePost, "textureSize");
+        OutlineColor = GetShaderLocation(OutlinePost, "outlineColor");
+        OutlineWidth = GetShaderLocation(OutlinePost, "outlineSize");
     }
     
 
@@ -97,5 +113,7 @@ internal static class Shaders {
         UnloadShader(Depth);
         UnloadShader(Skybox);
         UnloadShader(Grid);
+        UnloadShader(OutlineMask);
+        UnloadShader(OutlinePost);
     }
 }
