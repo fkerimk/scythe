@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Numerics;
 using Raylib_cs;
 using Newtonsoft.Json;
@@ -9,25 +10,52 @@ internal class Rigidbody(Obj obj) : Component(obj) {
     public override Color LabelColor => Colors.GuiTypePhysics;
     public override string LabelIcon => Icons.FaCrosshairs;
 
-    [RecordHistory] [JsonProperty] [Label("Static")] public bool IsStatic { get; set; }
-    [RecordHistory] [JsonProperty] [Label("Gravity")] public bool Gravity { get; set; } = true;
+    [Label("Static"), RecordHistory, JsonProperty, DefaultValue(false)] public bool IsStatic { get; set; }
+    [Label("Gravity"), RecordHistory, JsonProperty, DefaultValue(true)] public bool Gravity { get; set; } = true;
 
     [Header("Material")]
-    [RecordHistory] [JsonProperty] [Label("Friction")] public float Friction { get; set; } = 0.5f;
-    [RecordHistory] [JsonProperty] [Label("Bounciness")] public float Bounciness { get; set; }
+    [Label("Friction"), RecordHistory, JsonProperty, DefaultValue(0.5f)]
+    public float Friction { get; set { field = value; Body?.Friction = value; } } = 0.5f;
+
+    [Label("Bounciness"), RecordHistory, JsonProperty, DefaultValue(0)]
+    public float Bounciness { get; set { field = value; Body?.Restitution = value; } }
 
     [Header("Constraints")]
-    [RecordHistory] [JsonProperty] [Label("Freeze Pos X")] public bool FreezePosX { get; set; }
-    [RecordHistory] [JsonProperty] [Label("Freeze Pos Y")] public bool FreezePosY { get; set; }
-    [RecordHistory] [JsonProperty] [Label("Freeze Pos Z")] public bool FreezePosZ { get; set; }
-    [RecordHistory] [JsonProperty] [Label("Freeze Rot X")] public bool FreezeRotX { get; set; }
-    [RecordHistory] [JsonProperty] [Label("Freeze Rot Y")] public bool FreezeRotY { get; set; }
-    [RecordHistory] [JsonProperty] [Label("Freeze Rot Z")] public bool FreezeRotZ { get; set; }
+    [Label("Freeze Pos X"), RecordHistory, JsonProperty] public bool FreezePosX { get; set; }
+    [Label("Freeze Pos Y"), RecordHistory, JsonProperty] public bool FreezePosY { get; set; }
+    [Label("Freeze Pos Z"), RecordHistory, JsonProperty] public bool FreezePosZ { get; set; }
+    [Label("Freeze Rot X"), RecordHistory, JsonProperty] public bool FreezeRotX { get; set; }
+    [Label("Freeze Rot Y"), RecordHistory, JsonProperty] public bool FreezeRotY { get; set; }
+    [Label("Freeze Rot Z"), RecordHistory, JsonProperty] public bool FreezeRotZ { get; set; }
 
     [JsonIgnore] public RigidBody? Body;
 
     private Vector3 _lastSyncedPos;
     private Quaternion _lastSyncedRot;
+    
+    public Vector3 Velocity {
+        get => Body == null ? Vector3.Zero : Conversion.FromJitter(Body.Velocity);
+        set {
+            if (Body == null) return;
+            Body.Velocity = Conversion.ToJitter(value);
+            Body.SetActivationState(true);
+        }
+    }
+
+    public Vector3 AngularVelocity {
+        get => Body == null ? Vector3.Zero : Conversion.FromJitter(Body.AngularVelocity);
+        set {
+            if (Body == null) return;
+            Body.AngularVelocity = Conversion.ToJitter(value);
+            Body.SetActivationState(true);
+        }
+    }
+
+    public void AddForce(Vector3 force) {
+        if (Body == null) return;
+        Body.AddForce(Conversion.ToJitter(force));
+        Body.SetActivationState(true);
+    }
 
     public override bool Load() {
         
@@ -40,22 +68,28 @@ internal class Rigidbody(Obj obj) : Component(obj) {
         if (Obj.Components.TryGetValue("BoxCollider", out var box)) {
             
             var boxCollider = (BoxCollider)box;
-            
-            if (!boxCollider.IsLoaded) {
-                
-                boxCollider.Load();
-                boxCollider.IsLoaded = true;
-            }
+            if (!boxCollider.IsLoaded) { boxCollider.Load(); boxCollider.IsLoaded = true; }
             
             if (boxCollider.Shape != null) {
-                
                 if (boxCollider.Center != Vector3.Zero) {
-                    
                     var scaledCenter = boxCollider.Center * scale;
                     Body.AddShape(new TransformedShape(boxCollider.Shape, Conversion.ToJitter(scaledCenter)), false);
                 }
-                
                 else Body.AddShape(boxCollider.Shape, false);
+            }
+        }
+
+        if (Obj.Components.TryGetValue("SphereCollider", out var sphere)) {
+            
+            var sphereCollider = (SphereCollider)sphere;
+            if (!sphereCollider.IsLoaded) { sphereCollider.Load(); sphereCollider.IsLoaded = true; }
+            
+            if (sphereCollider.Shape != null) {
+                if (sphereCollider.Center != Vector3.Zero) {
+                    var scaledCenter = sphereCollider.Center * scale;
+                    Body.AddShape(new TransformedShape(sphereCollider.Shape, Conversion.ToJitter(scaledCenter)), false);
+                }
+                else Body.AddShape(sphereCollider.Shape, false);
             }
         }
 
@@ -79,12 +113,15 @@ internal class Rigidbody(Obj obj) : Component(obj) {
         if (CommandLine.Editor || Body == null) return;
 
         // Check for manual transform changes (Script or Teleport)
-        if (Obj.Transform.Pos != _lastSyncedPos || Obj.Transform.Rot != _lastSyncedRot) {
+        if (Obj.Transform.Pos != _lastSyncedPos) {
             
             Body.Position = Conversion.ToJitter(Obj.Transform.Pos);
-            Body.Orientation = Conversion.ToJitter(Obj.Transform.Rot);
-            
             _lastSyncedPos = Obj.Transform.Pos;
+        }
+        
+        if (Obj.Transform.Rot != _lastSyncedRot) {
+            
+            Body.Orientation = Conversion.ToJitter(Obj.Transform.Rot);
             _lastSyncedRot = Obj.Transform.Rot;
         }
         

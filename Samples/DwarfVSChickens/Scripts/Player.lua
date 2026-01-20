@@ -9,13 +9,14 @@ local camDistance = 5;
 local smoothCamDistance = 5;
 
 local anim = self:findComponent({"Animation"}) --[[@as Animation]]
+local rb = self:findComponent({"Rigidbody"}) --[[@as Rigidbody]]
 
 mouse.isLocked = true;
 
 function loop(dt)
 
-    movement(dt)
     camera(dt)
+    movement(dt)
 
     if kb.pressed("Escape") then game.quit() end
 end
@@ -28,9 +29,6 @@ function movement(dt)
         (kb.down("W") and 1 or 0) - (kb.down("S") and 1 or 0)
     )
 
-    posTarget = posTarget - moveInput.x * dt * moveSpeed * cam.rightFlat
-                          + moveInput.y * dt * moveSpeed * cam.fwdFlat
-
     if moveInput ~= f2.zero then
 
         rotTarget = quat.fromDir(cam.fwdFlat) *
@@ -38,7 +36,12 @@ function movement(dt)
                     quat.fromEuler(-90, 0, 90)
     end
 
-    self.pos = f3.lerp(self.pos, posTarget, dt * 15)
+    local vel = - moveInput.x * moveSpeed * cam.rightFlat
+                + moveInput.y * moveSpeed * cam.fwdFlat
+                + f3.up * rb.velocity.y
+
+    rb.velocity = vel
+
     self.rot = quat.lerp(self.rot, rotTarget, dt * 15)
 
     anim.track = moveInput == f2.zero and 6 or 7

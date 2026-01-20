@@ -35,6 +35,9 @@ internal class Script(Obj obj) : Component(obj) {
         UserData.RegisterType<Model>();
         UserData.RegisterType<Script>();
         UserData.RegisterType<Transform>();
+        UserData.RegisterType<Rigidbody>();
+        UserData.RegisterType<BoxCollider>();
+        UserData.RegisterType<SphereCollider>();
         
         // Libraries & class data types
         UserData.RegisterType<LuaMt>(); LuaMt = new LuaMt();

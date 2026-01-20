@@ -1,5 +1,4 @@
 ﻿using System.Numerics;
-using System.Runtime.InteropServices;
 using System.Collections.Concurrent;
 using ImGuiNET;
 using Raylib_cs;
@@ -74,14 +73,16 @@ internal class ProjectBrowser : Viewport {
         // Top Bar: Navigation -> Path -> Spacer -> Search (Right)
         PushFont(Fonts.ImFontAwesomeNormal);
         
-        var isRoot = Path.GetFullPath(_currentPath).TrimEnd(Path.DirectorySeparatorChar)
-            .Equals(Path.GetFullPath(Config.Mod.Path).TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase);
+        var isRoot = Path.GetFullPath(_currentPath).TrimEnd(Path.DirectorySeparatorChar).Equals(Path.GetFullPath(Config.Mod.Path).TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase);
 
         BeginDisabled(isRoot);
+        
         if (Button(Icons.FaLevelUp)) {
+            
              var parent = Directory.GetParent(_currentPath);
              if (parent != null) _currentPath = parent.FullName;
         }
+        
         EndDisabled();
         
         PopFont();
@@ -177,10 +178,7 @@ internal class ProjectBrowser : Viewport {
                 if (_cachedSearchResults.Count > 500) break; // Limit
             }
             
-        } catch {
-            
-            // ignored
-        }
+        } catch { /**/ }
     }
     
     private void DrawDirectoryTree(string rootPath) {
@@ -231,7 +229,6 @@ internal class ProjectBrowser : Viewport {
                 _isBoxSelecting = false;
                 _ignoreMouseRelease = true; 
                 _preBoxSelection.Clear();
-                
             }
             
             else _selectedPaths = [.._preBoxSelection];
@@ -350,8 +347,6 @@ internal class ProjectBrowser : Viewport {
             if (IsKeyPressed(ImGuiKey.F2) && _selectedPaths.Count == 1) StartRename(_selectedPaths.First());
         }
     }
-        
-
 
     private bool DrawGridItem(string path, bool isDirectory, Rect selectBox, out bool doubleClicked) {
         
@@ -802,26 +797,9 @@ internal class ProjectBrowser : Viewport {
         
         try {
             
-            if (OperatingSystem.IsWindows()) {
-
-                var psCommand = $"Add-Type -AssemblyName Microsoft.VisualBasic; [Microsoft.VisualBasic.FileIO.FileSystem]::DeleteFile('{path}', 'OnlyErrorDialogs', 'SendToRecycleBin')";
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo {
-                    FileName = "powershell",
-                    Arguments = $"-NoProfile -Command \"{psCommand}\"",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                });
-            } 
-            else {
-
-                try { System.Diagnostics.Process.Start("gio", $"trash \"{path}\""); }
-                
-                catch {
-
-                    if (Directory.Exists(path)) Directory.Delete(path, true);
-                    else File.Delete(path);
-                }
-            }
+            // Generic fallback: Permanent Delete
+            if (Directory.Exists(path)) Directory.Delete(path, true);
+            else File.Delete(path);
         }
         
         catch (Exception e) { Console.WriteLine($"Error deleting {path}: {e.Message}"); }
@@ -1000,108 +978,9 @@ internal class ProjectBrowser : Viewport {
             return IntPtr.Zero;
         }
 
-        // Try Load Synchronous (System Icons)
-        var t = LoadThumbnail(path);
-        
-        if (t.Id != 0) {
-            
-            _thumbnailCache[path] = t;
-            return (IntPtr)t.Id;
-        }
-
         _failedThumbnails.Add(path);
+        
         return IntPtr.Zero;
-    }
-    
-    private static Texture2D LoadThumbnail(string path) {
-        
-        // Windows System Thumbnail (Shell Icon)
-        if (OperatingSystem.IsWindows())
-            return TryLoadWindowsThumbnail(path);
-        
-        return new Texture2D { Id = 0 };
-    }
-
-    private static unsafe Texture2D TryLoadWindowsThumbnail(string path) {
-        
-        try {
-            
-            var shellInfo = new Win32.Shfileinfo();
-            
-            const uint flags = 0x000000100 | 0x000000000; // ICON | LARGE-ICON
-            
-            Win32.SHGetFileInfo(path, 0, ref shellInfo, (uint)Marshal.SizeOf(shellInfo), flags);
-            var hIcon = shellInfo.hIcon;
-            
-            if (hIcon != IntPtr.Zero) {
-                
-                const int size = 32; // Standard Large Icon
-                
-                // GDI Context to draw Icon to Bitmap
-                var hDc = Win32.GetDC(IntPtr.Zero);
-                var hMemDc = Win32.CreateCompatibleDC(hDc);
-                
-                var bi = new Win32.Bitmapinfo();
-                bi.biHeader.biSize = (uint)Marshal.SizeOf<Win32.Bitmapinfoheader>();
-                bi.biHeader.biWidth = size;
-                bi.biHeader.biHeight = -size; // Top-down
-                bi.biHeader.biPlanes = 1;
-                bi.biHeader.biBitCount = 32;
-                bi.biHeader.biCompression = 0; // BI_RGB
-
-                var hBitmap = Win32.CreateDIBSection(hMemDc, ref bi, 0, out var pBits, IntPtr.Zero, 0);
-                
-                Win32.SelectObject(hMemDc, hBitmap);
-                
-                Win32.DrawIconEx(hMemDc, 0, 0, hIcon, size, size, 0, IntPtr.Zero, 0x0003); // DI_MASK | DI_IMAGE
-                
-                // We have bits at pBits (BGRA). Size = 32*32*4
-                const int bufferSize = size * size * 4;
-                
-                // Swizzle BGRA -> RGBA
-                var src = (byte*)pBits;
-                var buffer = new byte[bufferSize];
-                
-                // Copy and Swizzle
-                for(var i=0; i<size*size; i++) {
-                    
-                    var padding = i * 4;
-                    var b = src[padding];
-                    var g = src[padding+1];
-                    var r = src[padding+2];
-                    var a = src[padding+3];
-                    
-                    buffer[padding] = r;
-                    buffer[padding+1] = g;
-                    buffer[padding+2] = b;
-                    buffer[padding+3] = a;
-                }
-                
-                Win32.DeleteObject(hBitmap);
-                Win32.DeleteDC(hMemDc);
-                Win32.ReleaseDC(IntPtr.Zero, hDc);
-                Win32.DestroyIcon(hIcon);
-
-                // Create Raylib Texture
-                fixed (byte* pData = buffer) {
-                    
-                    var img = new Image {
-                     
-                        Data = pData,
-                        Width = size,
-                        Height = size,
-                        Mipmaps = 1,
-                        Format = PixelFormat.UncompressedR8G8B8A8
-                    };
-                    
-                    return Raylib.LoadTextureFromImage(img); 
-                }
-            }
-        }
-        
-        catch { /**/ }
-        
-        return new Texture2D { Id = 0 };
     }
 
     // Helper struct for Rect

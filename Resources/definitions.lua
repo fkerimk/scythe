@@ -517,6 +517,92 @@ function Transform:rotateZ(deg) end
 ---@return void
 function Transform:addEuler(x, y, z) end
 
+---@class Rigidbody : Component
+---@field labelColor Color
+---@field labelIcon string
+---@field isStatic boolean
+---@field gravity boolean
+---@field friction number
+---@field bounciness number
+---@field freezePosX boolean
+---@field freezePosY boolean
+---@field freezePosZ boolean
+---@field freezeRotX boolean
+---@field freezeRotY boolean
+---@field freezeRotZ boolean
+---@field velocity Vector3
+---@field angularVelocity Vector3
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
+---@field body RigidBody
+---@field obj Obj
+---@field isLoaded boolean
+local Rigidbody = {}
+---@param force Vector3
+---@return void
+function Rigidbody:addForce(force) end
+
+---@return boolean
+function Rigidbody:load() end
+
+---@return void
+function Rigidbody:logic() end
+
+---@return void
+function Rigidbody:unload() end
+
+---@class BoxCollider : Component
+---@field labelColor Color
+---@field labelIcon string
+---@field size Vector3
+---@field center Vector3
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
+---@field shape BoxShape
+---@field obj Obj
+---@field isLoaded boolean
+local BoxCollider = {}
+---@return boolean
+function BoxCollider:load() end
+
+---@return void
+function BoxCollider:render3D() end
+
+---@class SphereCollider : Component
+---@field labelColor Color
+---@field labelIcon string
+---@field radius number
+---@field center Vector3
+---@field isSelected boolean
+---@field up Vector3
+---@field fwd Vector3
+---@field right Vector3
+---@field fwdFlat Vector3
+---@field rightFlat Vector3
+---@field pos Vector3
+---@field rot Quaternion
+---@field shape SphereShape
+---@field obj Obj
+---@field isLoaded boolean
+local SphereCollider = {}
+---@return boolean
+function SphereCollider:load() end
+
+---@return void
+function SphereCollider:render3D() end
+
 ---@class Vector2
 ---@field allBitsSet Vector2
 ---@field e Vector2
@@ -1974,6 +2060,151 @@ function Matrix4x4:withRow(index, value) end
 ---@field up Vector3
 ---@field raylib Camera3D
 local Camera3D = {}
+---@class RigidBody
+---@field data RigidBodyData
+---@field handle JHandle
+---@field island Island
+---@field connections ReadOnlyList
+---@field contacts ReadOnlyHashSet
+---@field constraints ReadOnlyHashSet
+---@field shapes ReadOnlyList
+---@field friction number
+---@field restitution number
+---@field world World
+---@field deactivationTime TimeSpan
+---@field deactivationThreshold ValueTuple
+---@field damping ValueTuple
+---@field inverseInertia JMatrix
+---@field position JVector
+---@field orientation JQuaternion
+---@field velocity JVector
+---@field angularVelocity JVector
+---@field affectedByGravity boolean
+---@field tag Object
+---@field enableSpeculativeContacts boolean
+---@field motionType MotionType
+---@field isStatic boolean
+---@field isActive boolean
+---@field enableGyroscopicForces boolean
+---@field force JVector
+---@field torque JVector
+---@field mass number
+---@field rigidBodyId number
+local RigidBody = {}
+---@param active boolean
+---@return void
+function RigidBody:setActivationState(active) end
+
+---@param shapes IEnumerable
+---@param setMassInertia boolean
+---@return void
+function RigidBody:addShape(shapes, setMassInertia) end
+
+---@param force JVector
+---@param wakeup boolean
+---@return void
+function RigidBody:addForce(force, wakeup) end
+
+---@param dt number
+---@return JVector
+function RigidBody:predictPosition(dt) end
+
+---@param dt number
+---@return JQuaternion
+function RigidBody:predictOrientation(dt) end
+
+---@param dt number
+---@param position JVector
+---@param orientation JQuaternion
+---@return void
+function RigidBody:predictPose(dt, position, orientation) end
+
+---@param shape RigidBodyShape
+---@param setMassInertia boolean
+---@return void
+function RigidBody:removeShape(shape, setMassInertia) end
+
+---@param setMassInertia boolean
+---@return void
+function RigidBody:clearShapes(setMassInertia) end
+
+---@return void
+function RigidBody:setMassInertia() end
+
+---@param drawer IDebugDrawer
+---@return void
+function RigidBody:debugDraw(drawer) end
+
+---@class BoxShape : RigidBodyShape
+---@field size JVector
+---@field rigidBody RigidBody
+---@field velocity JVector
+---@field worldBoundingBox JBoundingBox
+---@field shapeId number
+local BoxShape = {}
+---@param direction JVector
+---@param result JVector
+---@return void
+function BoxShape:supportMap(direction, result) end
+
+---@param origin JVector
+---@param direction JVector
+---@param normal JVector
+---@param lambda number
+---@return boolean
+function BoxShape:localRayCast(origin, direction, normal, lambda) end
+
+---@param point JVector
+---@return void
+function BoxShape:getCenter(point) end
+
+---@param orientation JQuaternion
+---@param position JVector
+---@param box JBoundingBox
+---@return void
+function BoxShape:calculateBoundingBox(orientation, position, box) end
+
+---@param inertia JMatrix
+---@param com JVector
+---@param mass number
+---@return void
+function BoxShape:calculateMassInertia(inertia, com, mass) end
+
+---@class SphereShape : RigidBodyShape
+---@field radius number
+---@field rigidBody RigidBody
+---@field velocity JVector
+---@field worldBoundingBox JBoundingBox
+---@field shapeId number
+local SphereShape = {}
+---@param direction JVector
+---@param result JVector
+---@return void
+function SphereShape:supportMap(direction, result) end
+
+---@param point JVector
+---@return void
+function SphereShape:getCenter(point) end
+
+---@param orientation JQuaternion
+---@param position JVector
+---@param box JBoundingBox
+---@return void
+function SphereShape:calculateBoundingBox(orientation, position, box) end
+
+---@param origin JVector
+---@param direction JVector
+---@param normal JVector
+---@param lambda number
+---@return boolean
+function SphereShape:localRayCast(origin, direction, normal, lambda) end
+
+---@param inertia JMatrix
+---@param com JVector
+---@param mass number
+---@return void
+function SphereShape:calculateMassInertia(inertia, com, mass) end
+
 ---@class Matrix3x2
 ---@field identity Matrix3x2
 ---@field isIdentity boolean
@@ -2610,3 +2841,919 @@ function Plane:toString() end
 ---@field perspective CameraProjection
 ---@field orthographic CameraProjection
 local CameraProjection = {}
+---@class RigidBodyData
+---@field isActive boolean
+---@field enableGyroscopicForces boolean
+---@field isStaticOrInactive boolean
+---@field motionType MotionType
+---@field position JVector
+---@field velocity JVector
+---@field angularVelocity JVector
+---@field deltaVelocity JVector
+---@field deltaAngularVelocity JVector
+---@field orientation JQuaternion
+---@field inverseInertiaWorld JMatrix
+---@field inverseMass number
+---@field flags number
+local RigidBodyData = {}
+---@class JHandle
+---@field data RigidBodyData
+---@field isZero boolean
+---@field zero JHandle
+local JHandle = {}
+---@param handle JHandle
+---@return JHandle
+function JHandle.asHandle(handle) end
+
+---@param other JHandle
+---@return boolean
+function JHandle:equals(other) end
+
+---@return number
+function JHandle:getHashCode() end
+
+---@class Island
+---@field bodies ReadOnlyHashSet
+local Island = {}
+---@class ReadOnlyList
+---@field item RigidBody
+---@field count number
+local ReadOnlyList = {}
+---@return Enumerator
+function ReadOnlyList:getEnumerator() end
+
+---@class ReadOnlyHashSet
+---@field count number
+local ReadOnlyHashSet = {}
+---@return Enumerator
+function ReadOnlyHashSet:getEnumerator() end
+
+---@param item Arbiter
+---@return boolean
+function ReadOnlyHashSet:contains(item) end
+
+---@param array Arbiter
+---@return void
+function ReadOnlyHashSet:copyTo(array) end
+
+---@class World
+---@field rawData SpanData
+---@field threadModel ThreadModelType
+---@field islands ReadOnlyPartitionedSet
+---@field rigidBodies ReadOnlyPartitionedSet
+---@field dynamicTree DynamicTree
+---@field nullBody RigidBody
+---@field allowDeactivation boolean
+---@field solverIterations ValueTuple
+---@field substepCount number
+---@field gravity JVector
+---@field narrowPhaseFilter INarrowPhaseFilter
+---@field broadPhaseFilter IBroadPhaseFilter
+---@field enableAuxiliaryContactPoints boolean
+---@field speculativeRelaxationFactor number
+---@field speculativeVelocityThreshold number
+---@field debugTimings Double
+local World = {}
+---@return number
+function World.requestId() end
+
+---@param proxyA IDynamicTreeProxy
+---@param proxyB IDynamicTreeProxy
+---@return boolean
+function World.defaultDynamicTreeFilter(proxyA, proxyB) end
+
+---@return void
+function World:clear() end
+
+---@param body RigidBody
+---@return void
+function World:remove(body) end
+
+---@param body1 RigidBody
+---@param body2 RigidBody
+---@return any
+function World:createConstraint(body1, body2) end
+
+---@return RigidBody
+function World:createRigidBody() end
+
+---@return void
+function World:dispose() end
+
+---@param arbiter Arbiter
+---@param point1 JVector
+---@param point2 JVector
+---@param normal JVector
+---@param removeFlags SolveMode
+---@return void
+function World:registerContact(arbiter, point1, point2, normal, removeFlags) end
+
+---@param id0 number
+---@param id1 number
+---@param arbiter Arbiter
+---@return boolean
+function World:getArbiter(id0, id1, arbiter) end
+
+---@param id0 number
+---@param id1 number
+---@param body1 RigidBody
+---@param body2 RigidBody
+---@param arbiter Arbiter
+---@return void
+function World:getOrCreateArbiter(id0, id1, body1, body2, arbiter) end
+
+---@param dt number
+---@param multiThread boolean
+---@return void
+function World:step(dt, multiThread) end
+
+---@param b1 RigidBodyData
+---@param b2 RigidBodyData
+---@return boolean
+function World.tryLockTwoBody(b1, b2) end
+
+---@param b1 RigidBodyData
+---@param b2 RigidBodyData
+---@return void
+function World.lockTwoBody(b1, b2) end
+
+---@param b1 RigidBodyData
+---@param b2 RigidBodyData
+---@return void
+function World.unlockTwoBody(b1, b2) end
+
+---@class JMatrix
+---@field m11 number
+---@field m21 number
+---@field m31 number
+---@field m12 number
+---@field m22 number
+---@field m32 number
+---@field m13 number
+---@field m23 number
+---@field m33 number
+---@field identity JMatrix
+---@field zero JMatrix
+local JMatrix = {}
+---@param col1 JVector
+---@param col2 JVector
+---@param col3 JVector
+---@return JMatrix
+function JMatrix.fromColumns(col1, col2, col3) end
+
+---@param index number
+---@return JVector
+function JMatrix:unsafeGet(index) end
+
+---@param index number
+---@return JVector
+function JMatrix:getColumn(index) end
+
+---@param matrix1 JMatrix
+---@param matrix2 JMatrix
+---@return JMatrix
+function JMatrix.multiply(matrix1, matrix2) end
+
+---@param matrix1 JMatrix
+---@param matrix2 JMatrix
+---@return JMatrix
+function JMatrix.multiplyTransposed(matrix1, matrix2) end
+
+---@param matrix1 JMatrix
+---@param matrix2 JMatrix
+---@return JMatrix
+function JMatrix.transposedMultiply(matrix1, matrix2) end
+
+---@param axis JVector
+---@param angle number
+---@return JMatrix
+function JMatrix.createRotationMatrix(axis, angle) end
+
+---@param matrix1 JMatrix
+---@param matrix2 JMatrix
+---@return JMatrix
+function JMatrix.add(matrix1, matrix2) end
+
+---@param radians number
+---@return JMatrix
+function JMatrix.createRotationX(radians) end
+
+---@param radians number
+---@return JMatrix
+function JMatrix.createRotationY(radians) end
+
+---@param radians number
+---@return JMatrix
+function JMatrix.createRotationZ(radians) end
+
+---@param scale JVector
+---@return JMatrix
+function JMatrix.createScale(scale) end
+
+---@param matrix1 JMatrix
+---@param matrix2 JMatrix
+---@param result JMatrix
+---@return void
+function JMatrix.subtract(matrix1, matrix2, result) end
+
+---@return number
+function JMatrix:determinant() end
+
+---@param matrix JMatrix
+---@param result JMatrix
+---@return boolean
+function JMatrix.inverse(matrix, result) end
+
+---@param quaternion JQuaternion
+---@return JMatrix
+function JMatrix.createFromQuaternion(quaternion) end
+
+---@param matrix JMatrix
+---@param result JMatrix
+---@return void
+function JMatrix.absolute(matrix, result) end
+
+---@param matrix JMatrix
+---@return JMatrix
+function JMatrix.transpose(matrix) end
+
+---@param vec JVector
+---@return JMatrix
+function JMatrix.createCrossProduct(vec) end
+
+---@return number
+function JMatrix:trace() end
+
+---@param other JMatrix
+---@return boolean
+function JMatrix:equals(other) end
+
+---@return string
+function JMatrix:toString() end
+
+---@return number
+function JMatrix:getHashCode() end
+
+---@class JVector
+---@field item number
+---@field x number
+---@field y number
+---@field z number
+---@field zero JVector
+---@field unitX JVector
+---@field unitY JVector
+---@field unitZ JVector
+---@field one JVector
+---@field minValue JVector
+---@field maxValue JVector
+local JVector = {}
+---@return any
+function JVector:unsafeAs() end
+
+---@param value any
+---@return JVector
+function JVector.unsafeFrom(value) end
+
+---@param x number
+---@param y number
+---@param z number
+---@return void
+function JVector:set(x, y, z) end
+
+---@param index number
+---@return number
+function JVector:unsafeGet(index) end
+
+---@return string
+function JVector:toString() end
+
+---@param obj Object
+---@return boolean
+function JVector:equals(obj) end
+
+---@param value1 JVector
+---@param value2 JVector
+---@return JVector
+function JVector.min(value1, value2) end
+
+---@param value1 JVector
+---@param value2 JVector
+---@return JVector
+function JVector.max(value1, value2) end
+
+---@param value1 JVector
+---@return JVector
+function JVector.abs(value1) end
+
+---@param value1 JVector
+---@return number
+function JVector.maxAbs(value1) end
+
+---@param vector JVector
+---@param matrix JMatrix
+---@return JVector
+function JVector.transform(vector, matrix) end
+
+---@param vector JVector
+---@param matrix JMatrix
+---@return JVector
+function JVector.transposedTransform(vector, matrix) end
+
+---@param vector JVector
+---@param quat JQuaternion
+---@return JVector
+function JVector.conjugatedTransform(vector, quat) end
+
+---@param u JVector
+---@param v JVector
+---@return JMatrix
+function JVector.outer(u, v) end
+
+---@param vector1 JVector
+---@param vector2 JVector
+---@return number
+function JVector.dot(vector1, vector2) end
+
+---@param value1 JVector
+---@param value2 JVector
+---@return JVector
+function JVector.add(value1, value2) end
+
+---@param value1 JVector
+---@param value2 JVector
+---@return JVector
+function JVector.subtract(value1, value2) end
+
+---@param vector1 JVector
+---@param vector2 JVector
+---@return JVector
+function JVector.cross(vector1, vector2) end
+
+---@return number
+function JVector:getHashCode() end
+
+---@return void
+function JVector:negate() end
+
+---@param vector JVector
+---@return void
+function JVector.negateInPlace(vector) end
+
+---@param value JVector
+---@return JVector
+function JVector.normalize(value) end
+
+---@param value JVector
+---@param epsilonSquared number
+---@return JVector
+function JVector.normalizeSafe(value, epsilonSquared) end
+
+---@param toNormalize JVector
+---@return void
+function JVector.normalizeInPlace(toNormalize) end
+
+---@return number
+function JVector:lengthSquared() end
+
+---@return number
+function JVector:length() end
+
+---@param vector1 JVector
+---@param vector2 JVector
+---@return void
+function JVector.swap(vector1, vector2) end
+
+---@param value1 JVector
+---@param scaleFactor number
+---@return JVector
+function JVector.multiply(value1, scaleFactor) end
+
+---@class JQuaternion
+---@field vector JVector
+---@field scalar number
+---@field identity JQuaternion
+---@field x number
+---@field y number
+---@field z number
+---@field w number
+local JQuaternion = {}
+---@return any
+function JQuaternion:unsafeAs() end
+
+---@param value any
+---@return JQuaternion
+function JQuaternion.unsafeFrom(value) end
+
+---@param quaternion1 JQuaternion
+---@param quaternion2 JQuaternion
+---@return JQuaternion
+function JQuaternion.add(quaternion1, quaternion2) end
+
+---@param from JVector
+---@param to JVector
+---@return JQuaternion
+function JQuaternion.createFromToRotation(from, to) end
+
+---@param value JQuaternion
+---@return JQuaternion
+function JQuaternion.conjugate(value) end
+
+---@return string
+function JQuaternion:toString() end
+
+---@param quaternion1 JQuaternion
+---@param quaternion2 JQuaternion
+---@return JQuaternion
+function JQuaternion.subtract(quaternion1, quaternion2) end
+
+---@param quaternion1 JQuaternion
+---@param quaternion2 JQuaternion
+---@return JQuaternion
+function JQuaternion.multiply(quaternion1, quaternion2) end
+
+---@return JVector
+function JQuaternion:getBasisX() end
+
+---@return JVector
+function JQuaternion:getBasisY() end
+
+---@return JVector
+function JQuaternion:getBasisZ() end
+
+---@param radians number
+---@return JQuaternion
+function JQuaternion.createRotationX(radians) end
+
+---@param radians number
+---@return JQuaternion
+function JQuaternion.createRotationY(radians) end
+
+---@param radians number
+---@return JQuaternion
+function JQuaternion.createRotationZ(radians) end
+
+---@param axis JVector
+---@param angle number
+---@return JQuaternion
+function JQuaternion.createFromAxisAngle(axis, angle) end
+
+---@param quaternion JQuaternion
+---@param axis JVector
+---@param angle number
+---@return void
+function JQuaternion.toAxisAngle(quaternion, axis, angle) end
+
+---@param quaternion1 JQuaternion
+---@param quaternion2 JQuaternion
+---@param result JQuaternion
+---@return void
+function JQuaternion.conjugateMultiply(quaternion1, quaternion2, result) end
+
+---@param quaternion1 JQuaternion
+---@param quaternion2 JQuaternion
+---@param result JQuaternion
+---@return void
+function JQuaternion.multiplyConjugate(quaternion1, quaternion2, result) end
+
+---@return number
+function JQuaternion:length() end
+
+---@return number
+function JQuaternion:lengthSquared() end
+
+---@return void
+function JQuaternion:normalize() end
+
+---@param quaternion JQuaternion
+---@return void
+function JQuaternion.normalizeInPlace(quaternion) end
+
+---@param matrix JMatrix
+---@return JQuaternion
+function JQuaternion.createFromMatrix(matrix) end
+
+---@param quaternion1 JQuaternion
+---@param quaternion2 JQuaternion
+---@return number
+function JQuaternion.dot(quaternion1, quaternion2) end
+
+---@param value JQuaternion
+---@return JQuaternion
+function JQuaternion.inverse(value) end
+
+---@param quaternion1 JQuaternion
+---@param quaternion2 JQuaternion
+---@param amount number
+---@return JQuaternion
+function JQuaternion.lerp(quaternion1, quaternion2, amount) end
+
+---@param quaternion1 JQuaternion
+---@param quaternion2 JQuaternion
+---@param amount number
+---@return JQuaternion
+function JQuaternion.slerp(quaternion1, quaternion2, amount) end
+
+---@param other JQuaternion
+---@return boolean
+function JQuaternion:equals(other) end
+
+---@return number
+function JQuaternion:getHashCode() end
+
+---@class MotionType
+---@field value__ number
+---@field dynamic MotionType
+---@field kinematic MotionType
+---@field static MotionType
+local MotionType = {}
+---@class RigidBodyShape : Shape
+---@field rigidBody RigidBody
+---@field velocity JVector
+---@field worldBoundingBox JBoundingBox
+---@field shapeId number
+local RigidBodyShape = {}
+---@param dt number
+---@return void
+function RigidBodyShape:updateWorldBoundingBox(dt) end
+
+---@param orientation JQuaternion
+---@param position JVector
+---@param box JBoundingBox
+---@return void
+function RigidBodyShape:calculateBoundingBox(orientation, position, box) end
+
+---@param inertia JMatrix
+---@param com JVector
+---@param mass number
+---@return void
+function RigidBodyShape:calculateMassInertia(inertia, com, mass) end
+
+---@param origin JVector
+---@param direction JVector
+---@param normal JVector
+---@param lambda number
+---@return boolean
+function RigidBodyShape:localRayCast(origin, direction, normal, lambda) end
+
+---@param origin JVector
+---@param direction JVector
+---@param normal JVector
+---@param lambda number
+---@return boolean
+function RigidBodyShape:rayCast(origin, direction, normal, lambda) end
+
+---@class IDebugDrawer
+local IDebugDrawer = {}
+---@param pA JVector
+---@param pB JVector
+---@return void
+function IDebugDrawer:drawSegment(pA, pB) end
+
+---@param pA JVector
+---@param pB JVector
+---@param pC JVector
+---@return void
+function IDebugDrawer:drawTriangle(pA, pB, pC) end
+
+---@param p JVector
+---@return void
+function IDebugDrawer:drawPoint(p) end
+
+---@class JBoundingBox
+---@field center JVector
+---@field min JVector
+---@field max JVector
+---@field largeBox JBoundingBox
+---@field smallBox JBoundingBox
+---@field epsilon number
+local JBoundingBox = {}
+---@return string
+function JBoundingBox:toString() end
+
+---@param orientation JMatrix
+---@return void
+function JBoundingBox:transform(orientation) end
+
+---@param box JBoundingBox
+---@param orientation JMatrix
+---@return JBoundingBox
+function JBoundingBox.createTransformed(box, orientation) end
+
+---@param origin JVector
+---@param direction JVector
+---@return boolean
+function JBoundingBox:segmentIntersect(origin, direction) end
+
+---@param origin JVector
+---@param direction JVector
+---@return boolean
+function JBoundingBox:rayIntersect(origin, direction) end
+
+---@param point JVector
+---@return boolean
+function JBoundingBox:contains(point) end
+
+---@param destination Span
+---@return void
+function JBoundingBox:getCorners(destination) end
+
+---@param point JVector
+---@return void
+function JBoundingBox:addPoint(point) end
+
+---@param box JBoundingBox
+---@param point JVector
+---@return void
+function JBoundingBox.addPointInPlace(box, point) end
+
+---@param points IEnumerable
+---@return JBoundingBox
+function JBoundingBox.createFromPoints(points) end
+
+---@param left JBoundingBox
+---@param right JBoundingBox
+---@return boolean
+function JBoundingBox.notDisjoint(left, right) end
+
+---@param left JBoundingBox
+---@param right JBoundingBox
+---@return boolean
+function JBoundingBox.disjoint(left, right) end
+
+---@param outer JBoundingBox
+---@param inner JBoundingBox
+---@return boolean
+function JBoundingBox.encompasses(outer, inner) end
+
+---@param original JBoundingBox
+---@param additional JBoundingBox
+---@return JBoundingBox
+function JBoundingBox.createMerged(original, additional) end
+
+---@return number
+function JBoundingBox:getVolume() end
+
+---@return number
+function JBoundingBox:getSurfaceArea() end
+
+---@param other JBoundingBox
+---@return boolean
+function JBoundingBox:equals(other) end
+
+---@return number
+function JBoundingBox:getHashCode() end
+
+---@class Arbiter
+---@field body1 RigidBody
+---@field body2 RigidBody
+---@field handle JHandle
+local Arbiter = {}
+---@class SpanData
+---@field totalBytesAllocated number
+---@field activeRigidBodies Span
+---@field inactiveRigidBodies Span
+---@field rigidBodies Span
+---@field activeContacts Span
+---@field inactiveContacts Span
+---@field contacts Span
+---@field activeConstraints Span
+---@field inactiveConstraints Span
+---@field constraints Span
+---@field activeSmallConstraints Span
+---@field inactiveSmallConstraints Span
+---@field smallConstraints Span
+local SpanData = {}
+---@class ThreadModelType
+---@field value__ number
+---@field regular ThreadModelType
+---@field persistent ThreadModelType
+local ThreadModelType = {}
+---@class ReadOnlyPartitionedSet
+---@field activeCount number
+---@field count number
+---@field elements ReadOnlySpan
+---@field active ReadOnlySpan
+---@field inactive ReadOnlySpan
+---@field item Island
+local ReadOnlyPartitionedSet = {}
+---@param element Island
+---@return boolean
+function ReadOnlyPartitionedSet:contains(element) end
+
+---@param element Island
+---@return boolean
+function ReadOnlyPartitionedSet:isActive(element) end
+
+---@return Enumerator
+function ReadOnlyPartitionedSet:getEnumerator() end
+
+---@class DynamicTree
+---@field proxies ReadOnlyPartitionedSet
+---@field root number
+---@field filter Func
+---@field updatedProxyCount number
+---@field hashSetInfo ValueTuple
+---@field nodes Node
+---@field debugTimings Double
+---@field nullNode number
+---@field initialSize number
+---@field pruningFraction number
+---@field expandFactor number
+---@field expandEps number
+local DynamicTree = {}
+---@param action Action
+---@param multiThread boolean
+---@return void
+function DynamicTree:enumerateOverlaps(action, multiThread) end
+
+---@param multiThread boolean
+---@param dt number
+---@return void
+function DynamicTree:update(multiThread, dt) end
+
+---@param proxy any
+---@param active boolean
+---@return void
+function DynamicTree:addProxy(proxy, active) end
+
+---@param proxy any
+---@return boolean
+function DynamicTree:isActive(proxy) end
+
+---@param proxy any
+---@return void
+function DynamicTree:activateProxy(proxy) end
+
+---@param proxy any
+---@return void
+function DynamicTree:deactivateProxy(proxy) end
+
+---@param proxy IDynamicTreeProxy
+---@return void
+function DynamicTree:removeProxy(proxy) end
+
+---@return number
+function DynamicTree:calculateCost() end
+
+---@param action Action
+---@return void
+function DynamicTree:enumerateTreeBoxes(action) end
+
+---@param hits any
+---@param rayOrigin JVector
+---@param rayDirection JVector
+---@return void
+function DynamicTree:query(hits, rayOrigin, rayDirection) end
+
+---@param sweeps number
+---@param chance number
+---@param incremental boolean
+---@return void
+function DynamicTree:optimize(sweeps, chance, incremental) end
+
+---@param origin JVector
+---@param direction JVector
+---@param pre RayCastFilterPre
+---@param post RayCastFilterPost
+---@param proxy IDynamicTreeProxy
+---@param normal JVector
+---@param lambda number
+---@return boolean
+function DynamicTree:rayCast(origin, direction, pre, post, proxy, normal, lambda) end
+
+---@class INarrowPhaseFilter
+local INarrowPhaseFilter = {}
+---@param shapeA RigidBodyShape
+---@param shapeB RigidBodyShape
+---@param pointA JVector
+---@param pointB JVector
+---@param normal JVector
+---@param penetration number
+---@return boolean
+function INarrowPhaseFilter:filter(shapeA, shapeB, pointA, pointB, normal, penetration) end
+
+---@class IBroadPhaseFilter
+local IBroadPhaseFilter = {}
+---@param proxyA IDynamicTreeProxy
+---@param proxyB IDynamicTreeProxy
+---@return boolean
+function IBroadPhaseFilter:filter(proxyA, proxyB) end
+
+---@class IDynamicTreeProxy
+---@field nodePtr number
+---@field velocity JVector
+---@field worldBoundingBox JBoundingBox
+local IDynamicTreeProxy = {}
+---@class SolveMode
+---@field value__ number
+---@field none SolveMode
+---@field linearBody1 SolveMode
+---@field angularBody1 SolveMode
+---@field linearBody2 SolveMode
+---@field angularBody2 SolveMode
+---@field fullBody1 SolveMode
+---@field fullBody2 SolveMode
+---@field linear SolveMode
+---@field angular SolveMode
+---@field full SolveMode
+local SolveMode = {}
+---@class Shape
+---@field worldBoundingBox JBoundingBox
+---@field velocity JVector
+---@field shapeId number
+local Shape = {}
+---@param dt number
+---@return void
+function Shape:updateWorldBoundingBox(dt) end
+
+---@param origin JVector
+---@param direction JVector
+---@param normal JVector
+---@param lambda number
+---@return boolean
+function Shape:rayCast(origin, direction, normal, lambda) end
+
+---@param direction JVector
+---@param result JVector
+---@return void
+function Shape:supportMap(direction, result) end
+
+---@param point JVector
+---@return void
+function Shape:getCenter(point) end
+
+---@class Enumerator
+---@field current Island
+local Enumerator = {}
+---@return void
+function Enumerator:dispose() end
+
+---@return boolean
+function Enumerator:moveNext() end
+
+---@return void
+function Enumerator:reset() end
+
+---@class Node
+---@field length number
+---@field longLength number
+---@field rank number
+---@field syncRoot Object
+---@field isReadOnly boolean
+---@field isFixedSize boolean
+---@field isSynchronized boolean
+local Node = {}
+---@param arg0 number
+---@return Node
+function Node:get(arg0) end
+
+---@param arg0 number
+---@param arg1 Node
+---@return void
+function Node:set(arg0, arg1) end
+
+---@param arg0 number
+---@return Node
+function Node:address(arg0) end
+
+---@class RayCastFilterPre
+---@field target Object
+---@field method MethodInfo
+local RayCastFilterPre = {}
+---@param result IDynamicTreeProxy
+---@return boolean
+function RayCastFilterPre:invoke(result) end
+
+---@param result IDynamicTreeProxy
+---@param callback AsyncCallback
+---@param object Object
+---@return IAsyncResult
+function RayCastFilterPre:beginInvoke(result, callback, object) end
+
+---@param result IAsyncResult
+---@return boolean
+function RayCastFilterPre:endInvoke(result) end
+
+---@class RayCastFilterPost
+---@field target Object
+---@field method MethodInfo
+local RayCastFilterPost = {}
+---@param result RayCastResult
+---@return boolean
+function RayCastFilterPost:invoke(result) end
+
+---@param result RayCastResult
+---@param callback AsyncCallback
+---@param object Object
+---@return IAsyncResult
+function RayCastFilterPost:beginInvoke(result, callback, object) end
+
+---@param result IAsyncResult
+---@return boolean
+function RayCastFilterPost:endInvoke(result) end
+
+---@class RayCastResult
+---@field entity IDynamicTreeProxy
+---@field lambda number
+---@field normal JVector
+local RayCastResult = {}
