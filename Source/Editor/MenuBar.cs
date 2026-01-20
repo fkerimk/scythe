@@ -22,6 +22,11 @@ internal static class MenuBar {
             Separator();
             if (MenuItem("Undo", "Ctrl+Z", false, History.CanUndo)) History.Undo();
             if (MenuItem("Redo", "Ctrl+Y", false, History.CanRedo)) History.Redo();
+            Separator();
+            if (MenuItem("Rename", "F2")) {
+                if (Editor.LevelBrowser.IsFocused) Editor.LevelBrowser.RenameSelected();
+                else if (Editor.ProjectBrowser.IsFocused) Editor.ProjectBrowser.RenameSelected();
+            }
                 
             EndMenu();
         }

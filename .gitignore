@@ -52,4 +52,5 @@ nunit-*.xml
 Folder.DotSettings
 Folder.DotSettings.user
 
+DevTest
 Raylib Examples/

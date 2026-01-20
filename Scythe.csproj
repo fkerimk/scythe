@@ -19,11 +19,12 @@
         <TrimMode>link</TrimMode>
 
         <ApplicationIcon>Resources/Images/Icon.ico</ApplicationIcon>
+        
+        <NoWarn>SYSLIB1054</NoWarn>
 
     </PropertyGroup>
 
     <ItemGroup>
-        
         
         <PackageReference Include="Raylib-cs" Version="7.0.2" />
         <PackageReference Include="rlImgui-cs" Version="3.2.0" />

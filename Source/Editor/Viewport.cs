@@ -13,6 +13,7 @@ internal abstract class Viewport(string title) {
     
     public bool IsOpen = true;
     public bool IsHovered;
+    public bool IsFocused;
     
     public void Draw() {
 
@@ -35,6 +36,7 @@ internal abstract class Viewport(string title) {
         ContentRegion = ImGui.GetContentRegionAvail();
         RelativeMouse = ImGui.GetMousePos() - WindowPos - ImGui.GetCursorStartPos();
         IsHovered = ImGui.IsWindowHovered();
+        IsFocused = ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows);
         
         OnDraw();
         

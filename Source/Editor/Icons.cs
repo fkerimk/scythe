@@ -13,4 +13,5 @@
     public const string FaVideoCamera = ""; // fa-video-camera
     public const string FaCrosshairs = ""; // fa-crosshairs
     public const string FaCode = ""; // fa-code 
+    public const string FaSearch = ""; //fa-search
 }

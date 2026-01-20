@@ -41,7 +41,12 @@ internal class ObjectBrowser : Viewport {
         DrawProperties(LevelBrowser.SelectedObject, false, null);
         DrawProperties(LevelBrowser.SelectedObject.Transform, true, "Transform");
 
-        foreach (var component in LevelBrowser.SelectedObject.Components.Values)
+
+
+        var components = LevelBrowser.SelectedObject.Components.Values
+            .OrderBy(c => c.GetType().Name, new NaturalStringComparer());
+
+        foreach (var component in components)
             DrawProperties(component, true, component.GetType().Name);
 
         Spacing();
@@ -68,7 +73,37 @@ internal class ObjectBrowser : Viewport {
 
                 if (Activator.CreateInstance(type, LevelBrowser.SelectedObject) is not Component component) continue;
                 
-                LevelBrowser.SelectedObject.Components[type.Name] = component;
+                // History
+                var targetObj = LevelBrowser.SelectedObject;
+                var compName = type.Name;
+                
+                History.StartRecording(targetObj, $"Add Component {compName}");
+                
+                targetObj.Components[compName] = component; // Do
+                
+                History.SetUndoAction(() => {
+                    if (targetObj.Components.TryGetValue(compName, out var c)) {
+                        c.Quit();
+                        c.IsLoaded = false;
+                        targetObj.Components.Remove(compName);
+                    }
+                });
+                
+                History.SetRedoAction(() => {
+                     // Create fresh instance for Redo as well
+                     if (Activator.CreateInstance(type, targetObj) is Component newComponent) {
+                         // Transfer State from original 'component' (which serves as the blueprint/snapshot)
+                         // Even if 'component' is Valid/Invalid, its properties (strings, ints) should remain in memory.
+                         foreach (var p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
+                             if (p.CanWrite && p.CanRead && p.Name != "IsLoaded") {
+                                 try { p.SetValue(newComponent, p.GetValue(component)); } catch {}
+                             }
+                         }
+                         targetObj.Components[compName] = newComponent;
+                     }
+                });
+                
+                History.StopRecording();
 
                 if (component is Animation animation &&  LevelBrowser.SelectedObject.Components.TryGetValue("Model", out var model))
                     animation.Path = (model as Model)!.Path;
@@ -79,6 +114,8 @@ internal class ObjectBrowser : Viewport {
     }
 
     private void DrawProperties(object obj, bool separator, string? title) {
+        
+        PushID(obj.GetHashCode());
         
         if (separator && !string.IsNullOrEmpty(title)) {
             
@@ -93,7 +130,7 @@ internal class ObjectBrowser : Viewport {
             PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(4, 3));
             PushStyleColor(ImGuiCol.Header, new Vector4(0, 0, 0, 0));
             
-            var treeOpen = TreeNodeEx($"##{title}_header", ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.SpanFullWidth);
+            var treeOpen = TreeNodeEx($"##{title}_header", ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.SpanFullWidth);
             
             PopStyleColor();
             PopStyleVar();
@@ -122,53 +159,101 @@ internal class ObjectBrowser : Viewport {
             
                 if (SmallButton($"X##{_propIndex}")) {
                     
+                    var targetObj = component.Obj;
+                    var compName = component.GetType().Name;
+                    
+                    History.StartRecording(targetObj, $"Remove Component {compName}");
+                    
                     component.Quit();
-                    component.Obj.Components.Remove(component.GetType().Name);
+                    targetObj.Components.Remove(compName); // Do
+                    
+                    History.SetUndoAction(() => {
+                        // Create fresh instance to avoid using disposed resources
+                        if (Activator.CreateInstance(component.GetType(), targetObj) is Component newComponent) {
+                            
+                            // Transfer State (Simple Reflection Copy)
+                            foreach (var p in component.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
+                                if (p.CanWrite && p.CanRead && p.Name != "IsLoaded") {
+                                    try { p.SetValue(newComponent, p.GetValue(component)); } catch {}
+                                }
+                            }
+                            
+                            targetObj.Components[compName] = newComponent;
+                        }
+                    });
+                    
+                    History.SetRedoAction(() => {
+                        if (targetObj.Components.TryGetValue(compName, out var c)) {
+                            c.Quit();
+                            c.IsLoaded = false;
+                            targetObj.Components.Remove(compName);
+                        }
+                    });
+                    
+                    History.StopRecording();
                 }
             }
 
-            if (!treeOpen) return;
-            
-            Spacing();
-        }
-        
-        PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8, 8));
-        
-        Columns(2, "##props", false);
-        SetColumnWidth(0, GetWindowWidth() * 0.3f); // Slightly narrower labels
-
-        foreach (var prop in obj.GetType().GetProperties()) {
-            
-            var headAttr = prop.GetCustomAttribute<HeaderAttribute>();
-            if (headAttr != null) {
-                Columns(1);
+            if (treeOpen) {
                 Spacing();
-                TextColored(Colors.Primary.ToVector4(), headAttr.Title);
-                Separator();
-                Spacing();
+            
+                PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8, 8));
+                
                 Columns(2, "##props", false);
-                SetColumnWidth(0, GetWindowWidth() * 0.3f);
+                SetColumnWidth(0, GetWindowWidth() * 0.3f); 
+
+                foreach (var prop in obj.GetType().GetProperties()) {
+                    
+                    var headAttr = prop.GetCustomAttribute<HeaderAttribute>();
+                    if (headAttr != null) {
+                        Columns(1);
+                        Spacing();
+                        TextColored(Colors.Primary.ToVector4(), headAttr.Title);
+                        Separator();
+                        Spacing();
+                        Columns(2, "##props", false);
+                        SetColumnWidth(0, GetWindowWidth() * 0.3f);
+                    }
+
+                    var labelAttr = prop.GetCustomAttribute<LabelAttribute>();
+                    if (labelAttr == null) continue;
+
+                    AlignTextToFramePadding();
+                    Text(labelAttr.Value);
+                    NextColumn();
+                    
+                    DrawProperty(obj, prop);
+                    NextColumn();
+                }
+                    
+                Columns(1);
+                PopStyleVar();
+
+                TreePop();
+                Spacing();
             }
+        } 
+        else {
+             // Non-separated properties (e.g. main object)
+             PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8, 8));
+             Columns(2, "##props", false);
+             SetColumnWidth(0, GetWindowWidth() * 0.3f); 
 
-            var labelAttr = prop.GetCustomAttribute<LabelAttribute>();
-            if (labelAttr == null) continue;
+             foreach (var prop in obj.GetType().GetProperties()) {
+                var labelAttr = prop.GetCustomAttribute<LabelAttribute>();
+                if (labelAttr == null) continue;
 
-            AlignTextToFramePadding();
-            Text(labelAttr.Value);
-            NextColumn();
-            
-            DrawProperty(obj, prop);
-            NextColumn();
+                AlignTextToFramePadding();
+                Text(labelAttr.Value);
+                NextColumn();
+                DrawProperty(obj, prop);
+                NextColumn();
+             }
+             Columns(1);
+             PopStyleVar();
         }
-            
-        Columns(1);
-        PopStyleVar();
         
-        if (separator && !string.IsNullOrEmpty(title)) {
-            
-            TreePop();
-            Spacing();
-        }
+        PopID();
     }
 
     private void DrawProperty(object target, PropertyInfo prop) {
@@ -249,5 +334,8 @@ internal class ObjectBrowser : Viewport {
         }
         
         _propIndex++;
+    }
+    private class NaturalStringComparer : IComparer<string> {
+        public int Compare(string? x, string? y) => SortUtil.NaturalCompare(x, y);
     }
 }

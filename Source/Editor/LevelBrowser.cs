@@ -17,6 +17,12 @@ internal class LevelBrowser() : Viewport("Level") {
     private int _rowCount;
     private readonly float[] _lastRowY = new float[128];
     
+    // Rename
+    private Obj? _renamingObj;
+    private string _renameBuf = "";
+    private bool _reqRenameFocus;
+    private Action? _scheduledRenameAction;
+
     protected override void OnDraw() {
 
         if (Core.ActiveLevel == null) return;
@@ -56,7 +62,17 @@ internal class LevelBrowser() : Viewport("Level") {
             _scheduledDeleteObject = null;
         }
         
-        // draw objects
+        // F2 Rename
+        if (IsFocused && IsKeyPressed(ImGuiKey.F2)) RenameSelected();
+        
+        // Execute scheduled rename
+        if (_scheduledRenameAction != null) {
+            
+            _scheduledRenameAction.Invoke();
+            _scheduledRenameAction = null;
+        }
+        
+        // Draw objects
         DrawObject(Core.ActiveLevel.Root);
         
         EndChild();
@@ -263,6 +279,7 @@ internal class LevelBrowser() : Viewport("Level") {
                 EndMenu();
             }
             
+            if (MenuItem("Rename")) StartRename(obj);
             if (MenuItem("Delete")) _scheduledDeleteObject = obj;
     
             EndPopup();
@@ -299,14 +316,37 @@ internal class LevelBrowser() : Viewport("Level") {
         TextColored(Colors.GuiTypeObject.ToVector4(), Icons.FaDotCircleO);
         PopFont();
 
-        // object name
+        // Object name
         SameLine();
         PushFont(Fonts.ImMontserratRegular);
-        SetCursorPos(new(GetCursorPosX() - 2.0f, GetCursorPosY() - 1.5f));
-        TextColored(new(1, 1, 1, 1), obj.Name);
+        
+        if (_renamingObj == obj) {
+            
+             SetCursorPos(new Vector2(GetCursorPosX() - 2.0f, GetCursorPosY() - 4.5f)); // Lift to align box with text baseline
+             
+             if (_reqRenameFocus) {
+                 
+                 SetKeyboardFocusHere();
+                 _reqRenameFocus = false;
+             }
+             
+             if (InputText("##rename", ref _renameBuf, 128, ImGuiInputTextFlags.EnterReturnsTrue | ImGuiInputTextFlags.AutoSelectAll)) {
+                 
+                 ConfirmRename();
+             }
+             
+             if (IsItemActive() && IsKeyPressed(ImGuiKey.Escape)) CancelRename();
+             if (IsItemDeactivated()) CancelRename();
+             
+        } else {
+            
+             SetCursorPos(new Vector2(GetCursorPosX() - 2.0f, GetCursorPosY() - 1.5f));
+             TextColored(new Vector4(1, 1, 1, 1), obj.Name);
+        }
+        
         PopFont();
 
-        // draw child nodes
+        // Draw child nodes
         if (!tree) return true;
         
         _lastRowY[indent + 1] = centerY;
@@ -337,4 +377,50 @@ internal class LevelBrowser() : Viewport("Level") {
     }
 
     public static bool CanDeleteSelectedObject => SelectedObject != Core.ActiveLevel?.Root;
+
+    // Rename
+    public void RenameSelected() {
+        
+        if (SelectedObject != null && SelectedObject != Core.ActiveLevel?.Root)
+            StartRename(SelectedObject);
+    }
+
+    private void StartRename(Obj obj) {
+        
+        _renamingObj = obj;
+        _renameBuf = obj.Name;
+        _reqRenameFocus = true;
+    }
+    
+    private void ConfirmRename() {
+        
+        if (_renamingObj == null) return;
+        
+        if (string.IsNullOrWhiteSpace(_renameBuf) || _renameBuf == _renamingObj.Name) {
+            
+            CancelRename();
+            return;
+        }
+        
+        // Name duplicate check
+        if (_renamingObj.Parent != null && _renamingObj.Parent.Children.ContainsKey(_renameBuf)) {
+            
+            CancelRename();
+            return;
+        }
+        
+        // Defer rename
+        var targetObj = _renamingObj;
+        var newName = _renameBuf;
+        
+        _scheduledRenameAction = () => {
+            History.StartRecording(targetObj, $"Rename {targetObj.Name}");
+            targetObj.Name = newName;
+            History.StopRecording();
+        };
+        
+        _renamingObj = null;
+    }
+    
+    private void CancelRename() => _renamingObj = null;
 }
