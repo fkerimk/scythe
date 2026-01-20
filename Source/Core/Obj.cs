@@ -81,11 +81,8 @@ internal class Obj {
         
         Transform.UnloadAndQuit();
 
-        foreach (var component in Components.Values) {
-            
-            Transform.UnloadAndQuit();
-
-        }
+        foreach (var component in Components.Values)
+            component.UnloadAndQuit();
 
         foreach (var child in Children.Values)
             child.Dispose();

@@ -7,7 +7,7 @@ internal class RenderSettings {
         
         if (skipInitialization) return;
         
-        AmbientIntensity = 1f;
+        AmbientIntensity = 0.75f;
         AmbientColor = Color.White;
         
         ShadowFovScale = 1;

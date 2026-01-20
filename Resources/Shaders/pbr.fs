@@ -112,7 +112,8 @@ float geom_smith(float n_dot_v, float n_dot_l, float roughness) {
 vec4 compute_pbr() {
 
     vec4 albedo = texture(albedo_map, vec2(frag_tex_pos.x * tiling.x + offset.x, frag_tex_pos.y * tiling.y + offset.y));
-    albedo *= albedo_color;
+    albedo = vec4(pow(albedo.rgb, vec3(2.2)), albedo.a);
+    albedo *= vec4(pow(albedo_color.rgb, vec3(2.2)), albedo_color.a);
     
     float metallic = clamp(metallic_value, 0.0, 1.0);
     float roughness = clamp(roughness_value, 0.04, 1.0);
@@ -213,13 +214,13 @@ vec4 compute_pbr() {
             shadow = compute_shadow(frag_pos_light_space, n, l);
         }
 
-        vec3 radiance = lights[i].color.rgb * lights[i].intensity * attenuation * shadow;
+        vec3 radiance = pow(lights[i].color.rgb, vec3(2.2)) * lights[i].intensity * attenuation * shadow;
         light_accum += (kdiff * albedo.rgb / pi + kspec) * radiance * n_dot_l;
     }
     
-    vec3 ambientLight = ambient_color * ambient_intensity;
+    vec3 ambientLight = pow(ambient_color, vec3(2.2)) * ambient_intensity;
     
-    return vec4(albedo.rgb * (light_accum + ambientLight) * ao + emissive, albedo.a);
+    return vec4(light_accum + albedo.rgb * ambientLight * ao + emissive, albedo.a);
 }
 
 void main() {
