@@ -406,9 +406,9 @@ function Model:draw() end
 function Model:quit() end
 
 ---@class Script : Component
----@field path string
 ---@field labelIcon string
 ---@field labelColor Color
+---@field path string
 ---@field isSelected boolean
 ---@field up Vector3
 ---@field fwd Vector3

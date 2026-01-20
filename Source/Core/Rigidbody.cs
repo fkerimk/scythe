@@ -7,7 +7,7 @@ using Jitter2.Collision.Shapes;
 internal class Rigidbody(Obj obj) : Component(obj) {
 
     public override Color LabelColor => Colors.GuiTypePhysics;
-    public override string LabelIcon => Icons.Physics;
+    public override string LabelIcon => Icons.FaCrosshairs;
 
     [RecordHistory] [JsonProperty] [Label("Static")] public bool IsStatic { get; set; }
     [RecordHistory] [JsonProperty] [Label("Gravity")] public bool Gravity { get; set; } = true;

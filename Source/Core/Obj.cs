@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 internal class Obj {
 
-    public static string Icon => Icons.Obj;
+    public static string Icon => Icons.FaDotCircleO;
     public static Color Color => Colors.GuiTypeObject;
 
     [Label("Name"), RecordHistory] public string Name {

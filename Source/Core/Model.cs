@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 internal class Model(Obj obj) : Component(obj) {
 
-    public override string LabelIcon => Icons.Model;
+    public override string LabelIcon => Icons.FaCube;
     public override Color LabelColor => Colors.GuiTypeModel;
     
     [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";

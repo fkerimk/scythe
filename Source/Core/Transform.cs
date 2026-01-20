@@ -8,7 +8,7 @@ using static Raylib_cs.Raylib;
 [JsonObject(MemberSerialization.OptIn)]
 internal class Transform(Obj obj) : Component(obj) {
     
-    public override string LabelIcon => Icons.Transform;
+    public override string LabelIcon => Icons.FaArrows;
     public override Color LabelColor => Colors.GuiTypeTransform;
 
     #region Local Transform

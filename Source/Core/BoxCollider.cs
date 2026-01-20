@@ -6,7 +6,7 @@ using Jitter2.Collision.Shapes;
 internal class BoxCollider(Obj obj) : Component(obj) {
 
     public override Color LabelColor => Colors.GuiTypePhysics;
-    public override string LabelIcon => Icons.Box;
+    public override string LabelIcon => Icons.FaCube;
 
     [RecordHistory] [JsonProperty] [Label("Size")] public Vector3 Size { get; set; } = Vector3.One;
     [RecordHistory] [JsonProperty] [Label("Center")] public Vector3 Center { get; set; } = Vector3.Zero;

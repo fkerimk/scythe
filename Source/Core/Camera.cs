@@ -3,7 +3,7 @@ using Raylib_cs;
 
 internal class Camera(Obj obj) : Component(obj) {
 
-    public override string LabelIcon => Icons.Camera;
+    public override string LabelIcon => Icons.FaVideoCamera;
     public override Color LabelColor => Colors.GuiTypeCamera;
 
     public required Camera3D Cam = new();

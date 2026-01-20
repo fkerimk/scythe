@@ -5,7 +5,7 @@ using Raylib_cs;
 
 internal class Light(Obj obj) : Component(obj) {
     
-    public override string LabelIcon => Icons.Light;
+    public override string LabelIcon => Icons.FaLightbulbO;
     public override Color LabelColor => Colors.GuiTypeLight;
 
     [Label("Enabled"), JsonProperty, RecordHistory]

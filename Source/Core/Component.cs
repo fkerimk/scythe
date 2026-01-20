@@ -7,7 +7,7 @@ internal class Component(Obj obj) {
     
     public readonly Obj Obj = obj;
 
-    public virtual string LabelIcon => Icons.Obj;
+    public virtual string LabelIcon => Icons.FaDotCircleO;
     public virtual Color LabelColor => Colors.GuiTypeObject;
 
     public virtual bool Load() => true;
