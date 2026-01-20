@@ -1,4 +1,4 @@
-local moveSpeed = 1.5
+local moveSpeed = 3
 local sensitivity = 0.3
 
 local posTarget = self.pos
@@ -13,8 +13,6 @@ local anim = self:findComponent({"Animation"}) --[[@as Animation]]
 mouse.isLocked = true;
 
 function loop(dt)
-
-    --renderSettings.shadowFovScale = math.abs(math.sin(time.passed)) * 2 * 10
 
     movement(dt)
     camera(dt)

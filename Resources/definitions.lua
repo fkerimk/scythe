@@ -140,9 +140,11 @@ function Level:findComponent(t) end
 ---@field obj Obj
 ---@field isLoaded boolean
 local Camera = {}
----@param is2D boolean
 ---@return void
-function Camera:loop(is2D) end
+function Camera:logic() end
+
+---@return void
+function Camera:render3D() end
 
 ---@class RenderSettings
 ---@field ambientIntensity number
@@ -302,11 +304,28 @@ local Component = {}
 function Component:load() end
 
 ---@param is2D boolean
+---@param isLogic boolean
+---@param isRender boolean
 ---@return void
-function Component:loop(is2D) end
+function Component:loop(is2D, isLogic, isRender) end
+
+---@return void
+function Component:logic() end
+
+---@return void
+function Component:render3D() end
+
+---@return void
+function Component:render2D() end
+
+---@return void
+function Component:unload() end
 
 ---@return void
 function Component:quit() end
+
+---@return void
+function Component:unloadAndQuit() end
 
 ---@class Animation : Component
 ---@field labelIcon string
@@ -329,12 +348,11 @@ local Animation = {}
 ---@return boolean
 function Animation:load() end
 
----@param is2D boolean
 ---@return void
-function Animation:loop(is2D) end
+function Animation:logic() end
 
 ---@return void
-function Animation:quit() end
+function Animation:unload() end
 
 ---@class Light : Component
 ---@field labelIcon string
@@ -361,9 +379,11 @@ local Light = {}
 ---@return void
 function Light:update(index) end
 
----@param is2D boolean
 ---@return void
-function Light:loop(is2D) end
+function Light:logic() end
+
+---@return void
+function Light:render3D() end
 
 ---@class Model : Component
 ---@field labelIcon string
@@ -389,9 +409,11 @@ local Model = {}
 ---@return boolean
 function Model:load() end
 
----@param is2D boolean
 ---@return void
-function Model:loop(is2D) end
+function Model:logic() end
+
+---@return void
+function Model:render3D() end
 
 ---@return void
 function Model:drawTransparent() end
@@ -403,7 +425,7 @@ function Model:drawShadow() end
 function Model:draw() end
 
 ---@return void
-function Model:quit() end
+function Model:unload() end
 
 ---@class Script : Component
 ---@field labelIcon string
@@ -437,13 +459,12 @@ function Script.register() end
 ---@return boolean
 function Script:load() end
 
----@param is2D boolean
 ---@return void
-function Script:loop(is2D) end
+function Script:logic() end
 
 ---@param action Action
 ---@return void
-function Script:safeLuaCall(action) end
+function Script.safeLuaCall(action) end
 
 ---@class Transform : Component
 ---@field labelIcon string
@@ -469,9 +490,14 @@ local Transform = {}
 ---@return void
 function Transform:updateTransform() end
 
----@param is2D boolean
 ---@return void
-function Transform:loop(is2D) end
+function Transform:logic() end
+
+---@return void
+function Transform:render3D() end
+
+---@return void
+function Transform:render2D() end
 
 ---@param deg number
 ---@return void

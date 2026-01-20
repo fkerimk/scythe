@@ -158,69 +158,70 @@ internal class Transform(Obj obj) : Component(obj) {
     
     private bool _isAnyAxisHovered;
 
-    public override void Loop(bool is2D) {
-
-        if (is2D) {
-            
-            _canUseShortcuts = false;
+    public override void Logic() {
         
-            if (IsCursorHidden()) return;
-        
-            if (!Obj.IsSelected) return;
+        UpdateTransform();
+    }
 
-            _canUseShortcuts = true;
+    public override void Render3D() {
         
-            var modeName = _mode switch { 0 => "Pos", 1 => "Rot", 2 => "Scale", _ => "Bruh" };
-            var spaceName = (_mode == 2) ? ("") : (_isWorldSpace ? "(World)" : "(Local)");
+        if (!CommandLine.Editor || Core.ActiveCamera == null) return;
 
-            var textA = $"{modeName} {spaceName}";
-            var textPosA = Editor.Level3D.RelativeMouse with { Y = Editor.Level3D.RelativeMouse.Y - 15 };
+        if (!Obj.IsSelected) return;
         
-            DrawText(textA, (int)textPosA.X - 14, (int)textPosA.Y - 19, 20, Color.Black);
-            DrawText(textA, (int)textPosA.X - 15, (int)textPosA.Y - 20, 20, Color.Yellow);
+        if (_canUseShortcuts && _activeMove == 0) {
         
-            if (_activeMove == 0) return;
-        
-            var textB = _mode switch { 0 or 2 => $"{_activeMove:F2}m", 1 => $"{_activeMove:F2}°", _ => $"{_activeMove:F2}" }; 
-            var textPosB = Editor.Level3D.RelativeMouse with { Y = Editor.Level3D.RelativeMouse.Y - 15 };
-            
-            DrawText(textB, (int)textPosB.X - 14, (int)textPosB.Y - 39, 20, Color.Black);
-            DrawText(textB, (int)textPosB.X - 15, (int)textPosB.Y - 40, 20, Color.Yellow);
-            
-        } else {
-        
-            UpdateTransform();
-            
-            if (!CommandLine.Editor || Core.ActiveCamera == null || !Core.IsRendering) return;
-
-            if (!Obj.IsSelected) return;
-            
-            if (_canUseShortcuts && _activeMove == 0) {
-            
-                if (IsKeyPressed(KeyboardKey.Q)) _mode = 0;
-                if (IsKeyPressed(KeyboardKey.W)) _mode = 1;
-                if (IsKeyPressed(KeyboardKey.E)) _mode = 2;
-                if (IsKeyPressed(KeyboardKey.X)) _isWorldSpace = !_isWorldSpace;
-            }
-            
-            BeginShaderMode(Shaders.Transform);
-
-            var ray = GetScreenToWorldRay(Level3D.RelativeMouse3D, Core.ActiveCamera.Raylib);
-
-            var useWorld = _isWorldSpace && _mode != 2;
-
-            var r = useWorld ? Vector3.UnitX : Obj.Right;
-            var u = useWorld ? Vector3.UnitY : Obj.Up;
-            var f = useWorld ? Vector3.UnitZ : Obj.Fwd;
-            
-            _isAnyAxisHovered = false;
-            
-            Axis("x", Vector3.UnitX, r, new Color(0.9f, 0.3f, 0.3f), ray);
-            Axis("y", Vector3.UnitY, u, new Color(0.3f, 0.9f, 0.3f), ray);
-            Axis("z", Vector3.UnitZ, f, new Color(0.3f, 0.3f, 0.9f), ray);
-            
-            EndShaderMode();
+            if (IsKeyPressed(KeyboardKey.Q)) _mode = 0;
+            if (IsKeyPressed(KeyboardKey.W)) _mode = 1;
+            if (IsKeyPressed(KeyboardKey.E)) _mode = 2;
+            if (IsKeyPressed(KeyboardKey.X)) _isWorldSpace = !_isWorldSpace;
         }
+        
+        BeginShaderMode(Shaders.Transform);
+
+        var ray = GetScreenToWorldRay(Level3D.RelativeMouse3D, Core.ActiveCamera.Raylib);
+
+        var useWorld = _isWorldSpace && _mode != 2;
+
+        var r = useWorld ? Vector3.UnitX : Obj.Right;
+        var u = useWorld ? Vector3.UnitY : Obj.Up;
+        var f = useWorld ? Vector3.UnitZ : Obj.Fwd;
+        
+        _isAnyAxisHovered = false;
+        
+        Axis("x", Vector3.UnitX, r, new Color(0.9f, 0.3f, 0.3f), ray);
+        Axis("y", Vector3.UnitY, u, new Color(0.3f, 0.9f, 0.3f), ray);
+        Axis("z", Vector3.UnitZ, f, new Color(0.3f, 0.3f, 0.9f), ray);
+        
+        EndShaderMode();
+    }
+
+    public override void Render2D() {
+        
+        _canUseShortcuts = false;
+        
+        if (IsCursorHidden()) return;
+        
+        if (!Obj.IsSelected) return;
+
+        _canUseShortcuts = true;
+        
+        var modeName = _mode switch { 0 => "Pos", 1 => "Rot", 2 => "Scale", _ => "Bruh" };
+        var spaceName = (_mode == 2) ? ("") : (_isWorldSpace ? "(World)" : "(Local)");
+
+        var textA = $"{modeName} {spaceName}";
+        var textPosA = Editor.Level3D.RelativeMouse with { Y = Editor.Level3D.RelativeMouse.Y - 15 };
+        
+        DrawText(textA, (int)textPosA.X - 14, (int)textPosA.Y - 19, 20, Color.Black);
+        DrawText(textA, (int)textPosA.X - 15, (int)textPosA.Y - 20, 20, Color.Yellow);
+        
+        if (_activeMove == 0) return;
+        
+        var textB = _mode switch { 0 or 2 => $"{_activeMove:F2}m", 1 => $"{_activeMove:F2}°", _ => $"{_activeMove:F2}" }; 
+        var textPosB = Editor.Level3D.RelativeMouse with { Y = Editor.Level3D.RelativeMouse.Y - 15 };
+            
+        DrawText(textB, (int)textPosB.X - 14, (int)textPosB.Y - 39, 20, Color.Black);
+        DrawText(textB, (int)textPosB.X - 15, (int)textPosB.Y - 40, 20, Color.Yellow);
     }
 
     private void Axis(string id, Vector3 axis, Vector3 normal, Color color, Ray ray) {

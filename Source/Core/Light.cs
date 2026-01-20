@@ -49,8 +49,8 @@ internal class Light(Obj obj) : Component(obj) {
         Raylib.SetShaderValue(Shaders.Pbr, intensityLoc, Intensity, ShaderUniformDataType.Float);
     }
 
-    public override unsafe void Loop(bool is2D) {
-
+    public override unsafe void Logic() {
+        
         var position = Vector3.Zero;
         var rotation = Quaternion.Identity;
         var scale = Vector3.One;
@@ -59,9 +59,10 @@ internal class Light(Obj obj) : Component(obj) {
 
         _pos = position;
         _target = _pos + Obj.Fwd * (Type == 0 ? 1 : Range);
-        
-        if (!Core.IsRendering) return;
+    }
 
+    public override void Render3D() {
+        
         if (IsSelected) {
 
             var gizmoColor = Raylib.ColorAlpha(ScytheColor, 0.3f);

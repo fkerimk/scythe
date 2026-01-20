@@ -11,13 +11,13 @@ internal class ObjectBrowser : Viewport {
     private readonly IEnumerable<Type> _addComponentTypes;
     
     public ObjectBrowser() : base("Object") {
+
+        var hideComponents = new[] {
+            
+            "Transform"
+        };
         
-        _addComponentTypes = Assembly.GetExecutingAssembly()
-            .GetTypes()
-            .Where(t => 
-                t.IsSubclassOf(typeof(Component)) && !t.IsAbstract &&
-                ! new [] { "Transform" }.Contains(t.Name)
-            ) ;
+        _addComponentTypes = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(Component)) && !t.IsAbstract && ! hideComponents.Contains(t.Name)) ;
     }
     
     protected override void OnDraw() {
@@ -41,10 +41,7 @@ internal class ObjectBrowser : Viewport {
         DrawProperties(LevelBrowser.SelectedObject, false, null);
         DrawProperties(LevelBrowser.SelectedObject.Transform, true, "Transform");
 
-
-
-        var components = LevelBrowser.SelectedObject.Components.Values
-            .OrderBy(c => c.GetType().Name, new NaturalStringComparer());
+        var components = LevelBrowser.SelectedObject.Components.Values.OrderBy(c => c.GetType().Name, new NaturalStringComparer());
 
         foreach (var component in components)
             DrawProperties(component, true, component.GetType().Name);
@@ -58,59 +55,57 @@ internal class ObjectBrowser : Viewport {
 
         SetNextWindowPos(new Vector2(GetItemRectMin().X, GetItemRectMax().Y + 5.0f));
         SetNextWindowSize(new Vector2(GetItemRectSize().X, 0));
+
+        if (!BeginPopup("AddComponentPopup")) return;
         
-        if (BeginPopup("AddComponentPopup")) {
-            
-            foreach (var type in _addComponentTypes) {
-                    
-                if (!Selectable(type.Name)) continue;
+        foreach (var type in _addComponentTypes) {
+                
+            if (!Selectable(type.Name)) continue;
 
-                if (LevelBrowser.SelectedObject.Components.ContainsKey(type.Name)) {
+            if (LevelBrowser.SelectedObject.Components.ContainsKey(type.Name)) {
 
-                    Notifications.Show($"Component {type.Name} already exists!", 1.5f);
-                    break;
-                }
-
-                if (Activator.CreateInstance(type, LevelBrowser.SelectedObject) is not Component component) continue;
-                
-                // History
-                var targetObj = LevelBrowser.SelectedObject;
-                var compName = type.Name;
-                
-                History.StartRecording(targetObj, $"Add Component {compName}");
-                
-                targetObj.Components[compName] = component; // Do
-                
-                History.SetUndoAction(() => {
-                    if (targetObj.Components.TryGetValue(compName, out var c)) {
-                        c.Quit();
-                        c.IsLoaded = false;
-                        targetObj.Components.Remove(compName);
-                    }
-                });
-                
-                History.SetRedoAction(() => {
-                     // Create fresh instance for Redo as well
-                     if (Activator.CreateInstance(type, targetObj) is Component newComponent) {
-                         // Transfer State from original 'component' (which serves as the blueprint/snapshot)
-                         // Even if 'component' is Valid/Invalid, its properties (strings, ints) should remain in memory.
-                         foreach (var p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
-                             if (p.CanWrite && p.CanRead && p.Name != "IsLoaded") {
-                                 try { p.SetValue(newComponent, p.GetValue(component)); } catch {}
-                             }
-                         }
-                         targetObj.Components[compName] = newComponent;
-                     }
-                });
-                
-                History.StopRecording();
-
-                if (component is Animation animation &&  LevelBrowser.SelectedObject.Components.TryGetValue("Model", out var model))
-                    animation.Path = (model as Model)!.Path;
+                Notifications.Show($"Component {type.Name} already exists!", 1.5f);
+                break;
             }
+
+            if (Activator.CreateInstance(type, LevelBrowser.SelectedObject) is not Component component) continue;
             
-            EndPopup();
+            // History
+            var targetObj = LevelBrowser.SelectedObject;
+            var compName = type.Name;
+            
+            History.StartRecording(targetObj, $"Add Component {compName}");
+            
+            targetObj.Components[compName] = component; // Do
+            
+            History.SetUndoAction(() => {
+                
+                if (!targetObj.Components.TryGetValue(compName, out var c)) return;
+                
+                c.UnloadAndQuit();
+                targetObj.Components.Remove(compName);
+            });
+            
+            History.SetRedoAction(() => {
+                
+                if (Activator.CreateInstance(type, targetObj) is not Component newComponent) return;
+                
+                foreach (var p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
+                    
+                    if (!p.CanWrite || !p.CanRead || p.Name == "IsLoaded") continue;
+                    try { p.SetValue(newComponent, p.GetValue(component)); } catch { /**/ }
+                }
+                
+                targetObj.Components[compName] = newComponent;
+            });
+            
+            History.StopRecording();
+
+            if (component is Animation animation &&  LevelBrowser.SelectedObject.Components.TryGetValue("Model", out var model))
+                animation.Path = (model as Model)!.Path;
         }
+        
+        EndPopup();
     }
 
     private void DrawProperties(object obj, bool separator, string? title) {
@@ -164,30 +159,27 @@ internal class ObjectBrowser : Viewport {
                     
                     History.StartRecording(targetObj, $"Remove Component {compName}");
                     
-                    component.Quit();
+                    component.UnloadAndQuit();
                     targetObj.Components.Remove(compName); // Do
                     
                     History.SetUndoAction(() => {
-                        // Create fresh instance to avoid using disposed resources
-                        if (Activator.CreateInstance(component.GetType(), targetObj) is Component newComponent) {
+                        
+                        if (Activator.CreateInstance(component.GetType(), targetObj) is not Component newComponent) return;
+                        
+                        foreach (var p in component.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
                             
-                            // Transfer State (Simple Reflection Copy)
-                            foreach (var p in component.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
-                                if (p.CanWrite && p.CanRead && p.Name != "IsLoaded") {
-                                    try { p.SetValue(newComponent, p.GetValue(component)); } catch {}
-                                }
-                            }
-                            
-                            targetObj.Components[compName] = newComponent;
+                            if (!p.CanWrite || !p.CanRead || p.Name == "IsLoaded") continue;
+                            try { p.SetValue(newComponent, p.GetValue(component)); } catch { /**/ }
                         }
+                            
+                        targetObj.Components[compName] = newComponent;
                     });
                     
                     History.SetRedoAction(() => {
-                        if (targetObj.Components.TryGetValue(compName, out var c)) {
-                            c.Quit();
-                            c.IsLoaded = false;
-                            targetObj.Components.Remove(compName);
-                        }
+                        
+                        if (!targetObj.Components.TryGetValue(compName, out var comp)) return;
+                        comp.UnloadAndQuit();
+                        targetObj.Components.Remove(compName);
                     });
                     
                     History.StopRecording();

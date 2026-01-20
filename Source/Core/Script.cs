@@ -105,24 +105,21 @@ internal class Script(Obj obj) : Component(obj) {
         LuaScript = Make(Obj);
 
         var code = File.ReadAllText(scriptPath);
-        
+
         SafeLuaCall(() => LuaScript.DoString(code));
         LuaLoop = LuaScript.Globals.Get("loop");
 
         return true;
     }
 
-    public override void Loop(bool is2D) {
+    public override void Logic() {
         
-        if (is2D) return;
-        
-        if (CommandLine.Editor || !IsLoaded) return;
-        if (LuaLoop == null || LuaLoop.IsNil()) return;
+        if (CommandLine.Editor || LuaLoop == null || LuaLoop.IsNil()) return;
 
         SafeLuaCall(() => LuaScript.Call(LuaLoop, Raylib.GetFrameTime()));
     }
 
-    public void SafeLuaCall(Action action) {
+    public static void SafeLuaCall(Action action) {
         
         try { action.Invoke(); } catch (InterpreterException ex) {
 

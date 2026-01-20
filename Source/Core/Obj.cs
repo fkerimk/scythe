@@ -79,13 +79,12 @@ internal class Obj {
         
         IsSelected = false;
         
-        Transform.Quit();
-        Transform.IsLoaded = false;
+        Transform.UnloadAndQuit();
 
         foreach (var component in Components.Values) {
             
-            component.Quit();
-            component.IsLoaded = false;
+            Transform.UnloadAndQuit();
+
         }
 
         foreach (var child in Children.Values)

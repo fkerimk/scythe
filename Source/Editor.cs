@@ -22,8 +22,9 @@ internal static unsafe class Editor {
     }};
 
     public static readonly LevelBrowser LevelBrowser = new();
-    public static readonly ObjectBrowser ObjectBrowser = new();
     public static readonly ProjectBrowser ProjectBrowser = new();
+    
+    private static readonly ObjectBrowser ObjectBrowser = new();
     
     public static void Show() {
         
@@ -62,7 +63,7 @@ internal static unsafe class Editor {
                 
                 UnloadRenderTexture(Level3D.OutlineRt);
                 Level3D.OutlineRt = LoadRenderTexture((int)Level3D.TexSize.X, (int)Level3D.TexSize.Y);
-                Raylib.SetTextureWrap(Level3D.OutlineRt.Texture, TextureWrap.Clamp);
+                SetTextureWrap(Level3D.OutlineRt.Texture, TextureWrap.Clamp);
                 
                 Level3D.TexTemp = Level3D.TexSize;
             }
@@ -140,38 +141,38 @@ internal static unsafe class Editor {
         CloseWindow();
 
         
-        // Cleanup Temp
+        // Cleanup temp
         try {
-             var tempPath = PathUtil.ExeRelative("Temp");
-             if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
-        } catch {}
+            var tempPath = PathUtil.ExeRelative("Temp");
+            if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
+        } catch { /**/ }
 
         Core.Quit();
     }
 
     public static void Quit() => _scheduledQuit = true;
 
-    private static unsafe void RenderOutline(Obj obj) {
+    private static void RenderOutline(Obj obj) {
 
         foreach (var component in obj.Components.Values) {
             
-            if (component is Model model) {
+            if (component is not Model model) continue;
+            
+            // Override shaders
+            var originalShaders = new Shader[model.RlModel.MaterialCount];
+            
+            for (var i = 0; i < model.RlModel.MaterialCount; i++) {
                 
-               // Override shaders
-               var originalShaders = new Shader[model.RlModel.MaterialCount];
-               for (var i = 0; i < model.RlModel.MaterialCount; i++) {
-                   originalShaders[i] = model.RlModel.Materials[i].Shader;
-                   model.RlModel.Materials[i].Shader = Shaders.OutlineMask;
-               } 
+                originalShaders[i] = model.RlModel.Materials[i].Shader;
+                model.RlModel.Materials[i].Shader = Shaders.OutlineMask;
+            } 
                
-               // Draw
-               model.Draw();
+            // Draw
+            model.Draw();
                
-               // Restore
-               for (var i = 0; i < model.RlModel.MaterialCount; i++) {
-                   model.RlModel.Materials[i].Shader = originalShaders[i];
-               }
-            }
+            // Restore
+            for (var i = 0; i < model.RlModel.MaterialCount; i++)
+                model.RlModel.Materials[i].Shader = originalShaders[i];
         }
         
         foreach (var child in obj.Children.Values) RenderOutline(child);

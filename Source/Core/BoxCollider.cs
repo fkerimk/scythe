@@ -16,29 +16,17 @@ internal class BoxCollider(Obj obj) : Component(obj) {
     public override bool Load() {
         
         Obj.DecomposeWorldMatrix(out _, out _, out var scale);
-        
-        // Jitter2'de şekil boyutu yereldir, Rigidbody'ye eklenirken ölçeklendirilebilir 
-        // veya burada direkt dünya ölçeğiyle oluşturulabilir.
         Shape = new BoxShape(Size.X * scale.X, Size.Y * scale.Y, Size.Z * scale.Z);
         return true;
     }
 
-    public override void Loop(bool is2D) {
+    public override void Render3D() {
         
-        if (is2D) return;
-
         if (!IsSelected || !CommandLine.Editor) return;
         
-        // Sadece objenin dünya matrisini (pos, rot, scale) baz alıyoruz
-        // Center ve Size'ı DrawCubeWires içinde local olarak kullanıyoruz
         Rlgl.PushMatrix();
         Rlgl.MultMatrixf(Obj.WorldMatrix);
-        
-        // DrawCubeWires parametreleri: Center (Local), Width, Height, Length, Color
-        // Raylib DrawCubeWires merkezi baz alır, bu yüzden Center doğrudan çalışır.
-        // Size değerini geçiyoruz, Obj.WorldMatrix'teki scale ile zaten çarpılacaktır.
         Raylib.DrawCubeWires(Center, Size.X, Size.Y, Size.Z, Raylib.ColorAlpha(Color.Green, 0.5f));
-        
         Rlgl.PopMatrix();
     }
 }

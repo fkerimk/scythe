@@ -14,7 +14,7 @@ internal class Rigidbody(Obj obj) : Component(obj) {
 
     [Header("Material")]
     [RecordHistory] [JsonProperty] [Label("Friction")] public float Friction { get; set; } = 0.5f;
-    [RecordHistory] [JsonProperty] [Label("Bounciness")] public float Bounciness { get; set; } = 0.0f;
+    [RecordHistory] [JsonProperty] [Label("Bounciness")] public float Bounciness { get; set; }
 
     [Header("Constraints")]
     [RecordHistory] [JsonProperty] [Label("Freeze Pos X")] public bool FreezePosX { get; set; }
@@ -30,6 +30,7 @@ internal class Rigidbody(Obj obj) : Component(obj) {
     private Quaternion _lastSyncedRot;
 
     public override bool Load() {
+        
         if (CommandLine.Editor) return true;
 
         Body = Physics.World.CreateRigidBody();
@@ -41,17 +42,20 @@ internal class Rigidbody(Obj obj) : Component(obj) {
             var boxCollider = (BoxCollider)box;
             
             if (!boxCollider.IsLoaded) {
+                
                 boxCollider.Load();
                 boxCollider.IsLoaded = true;
             }
             
             if (boxCollider.Shape != null) {
+                
                 if (boxCollider.Center != Vector3.Zero) {
+                    
                     var scaledCenter = boxCollider.Center * scale;
                     Body.AddShape(new TransformedShape(boxCollider.Shape, Conversion.ToJitter(scaledCenter)), false);
-                } else {
-                    Body.AddShape(boxCollider.Shape, false);
                 }
+                
+                else Body.AddShape(boxCollider.Shape, false);
             }
         }
 
@@ -70,9 +74,9 @@ internal class Rigidbody(Obj obj) : Component(obj) {
         return true;
     }
 
-    public override void Loop(bool is2D) {
+    public override void Logic() {
         
-        if (is2D || CommandLine.Editor || Body == null) return;
+        if (CommandLine.Editor || Body == null) return;
 
         // Check for manual transform changes (Script or Teleport)
         if (Obj.Transform.Pos != _lastSyncedPos || Obj.Transform.Rot != _lastSyncedRot) {
@@ -114,7 +118,8 @@ internal class Rigidbody(Obj obj) : Component(obj) {
         }
     }
 
-    public override void Quit() {
+    public override void Unload() {
+        
         if (Body != null) Physics.World.Remove(Body);
     }
 }

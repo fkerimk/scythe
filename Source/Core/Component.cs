@@ -11,8 +11,19 @@ internal class Component(Obj obj) {
     public virtual Color LabelColor => Colors.GuiTypeObject;
 
     public virtual bool Load() => true;
-    public virtual void Loop(bool is2D) {}
+    public virtual void Loop(bool is2D, bool isLogic, bool isRender) {}
+    public virtual void Logic() {}
+    public virtual void Render3D() {}
+    public virtual void Render2D() {}
+    public virtual void Unload() {}
     public virtual void Quit() {}
+
+    public void UnloadAndQuit() {
+        
+        if (IsLoaded) Unload();
+        Quit();
+        IsLoaded = false;
+    }
 
     public bool IsLoaded;
     public bool IsSelected => Obj.IsSelected;

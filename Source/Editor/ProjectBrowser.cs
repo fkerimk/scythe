@@ -74,19 +74,33 @@ internal class ProjectBrowser : Viewport {
         // Top Bar: Navigation -> Path -> Spacer -> Search (Right)
         PushFont(Fonts.ImFontAwesomeNormal);
         
+        var isRoot = Path.GetFullPath(_currentPath).TrimEnd(Path.DirectorySeparatorChar)
+            .Equals(Path.GetFullPath(Config.Mod.Path).TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase);
+
+        BeginDisabled(isRoot);
         if (Button(Icons.FaLevelUp)) {
              var parent = Directory.GetParent(_currentPath);
              if (parent != null) _currentPath = parent.FullName;
         }
+        EndDisabled();
         
         PopFont();
-        if (IsItemHovered()) SetTooltip("Up");
+        if (IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) SetTooltip("Up");
 
         SameLine();
         if (Button("Home")) _currentPath = Config.Mod.Path;
 
         SameLine();
-        TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1.0f), GetUnixPath(_currentPath));
+        
+        var rootName = new DirectoryInfo(Config.Mod.Path).Name;
+        var relativePath = Path.GetRelativePath(Config.Mod.Path, _currentPath);
+        if (relativePath == ".") relativePath = "";
+
+        var displayPath = string.IsNullOrEmpty(relativePath) 
+            ? rootName 
+            : $"{rootName}/{relativePath.Replace('\\', '/')}";
+
+        TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1.0f), displayPath);
 
         // Right Align Search
         var avail = GetContentRegionAvail().X;
@@ -173,19 +187,17 @@ internal class ProjectBrowser : Viewport {
         
         if (!Directory.Exists(rootPath)) return;
 
-        var name = Path.GetFileName(rootPath);
+        var name = Path.GetFileName(rootPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         if (string.IsNullOrEmpty(name)) name = rootPath;
 
         var flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanAvailWidth;
         if (_currentPath == rootPath) flags |= ImGuiTreeNodeFlags.Selected;
 
-        var hasSubdirs = false;
-        try { hasSubdirs = Directory.EnumerateDirectories(rootPath).Any(); }
-        catch {
-            // ignored
-        }
+        var hasSubDirs = false;
+        try { hasSubDirs = Directory.EnumerateDirectories(rootPath).Any(); }
+        catch { /**/ }
 
-        if (!hasSubdirs) flags |= ImGuiTreeNodeFlags.Leaf;
+        if (!hasSubDirs) flags |= ImGuiTreeNodeFlags.Leaf;
 
         var isNodeOpen = TreeNodeEx(rootPath, flags, name);
         
@@ -197,7 +209,7 @@ internal class ProjectBrowser : Viewport {
 
         if (!isNodeOpen) return;
         
-        if (hasSubdirs)
+        if (hasSubDirs)
             foreach (var dir in Directory.GetDirectories(rootPath))
                 DrawDirectoryTree(dir);
         
@@ -943,9 +955,9 @@ internal class ProjectBrowser : Viewport {
 
         // Check for Image Extension
         var ext = Path.GetExtension(path).ToLower();
-        var imgExts = new HashSet<string> { ".png", ".jpg", ".jpeg", ".bmp", ".tga", ".gif", ".psd", ".hdr", ".qoi" };
+        var imgExtensions = new HashSet<string> { ".png", ".jpg", ".jpeg", ".bmp", ".tga", ".gif", ".psd", ".hdr", ".qoi" };
          
-        if (imgExts.Contains(ext)) {
+        if (imgExtensions.Contains(ext)) {
             
             _pendingThumbnails.Add(path);
             
@@ -1001,7 +1013,7 @@ internal class ProjectBrowser : Viewport {
         return IntPtr.Zero;
     }
     
-    private Texture2D LoadThumbnail(string path) {
+    private static Texture2D LoadThumbnail(string path) {
         
         // Windows System Thumbnail (Shell Icon)
         if (OperatingSystem.IsWindows())
@@ -1009,33 +1021,17 @@ internal class ProjectBrowser : Viewport {
         
         return new Texture2D { Id = 0 };
     }
-    
-    private static string GetUnixPath(string path) {
-        
-        if (string.IsNullOrEmpty(path)) return "/";
-        
-        var p = path.Replace('\\', '/');
-        
-        // Handle Drive Letter formatting: C:/ -> /c/
-        if (p.Length < 2 || p[1] != ':') return p;
-        
-        var drive = char.ToLower(p[0]);
-        var rest = p.Length > 2 ? p[2..] : "/";
-        if (!rest.StartsWith('/')) rest = "/" + rest;
-        return $"/{drive}{rest}";
-
-    }
 
     private static unsafe Texture2D TryLoadWindowsThumbnail(string path) {
         
         try {
             
-            var shinfo = new Win32.Shfileinfo();
+            var shellInfo = new Win32.Shfileinfo();
             
-            const uint flags = 0x000000100 | 0x000000000; // ICON | LARGEICON
+            const uint flags = 0x000000100 | 0x000000000; // ICON | LARGE-ICON
             
-            Win32.SHGetFileInfo(path, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), flags);
-            var hIcon = shinfo.hIcon;
+            Win32.SHGetFileInfo(path, 0, ref shellInfo, (uint)Marshal.SizeOf(shellInfo), flags);
+            var hIcon = shellInfo.hIcon;
             
             if (hIcon != IntPtr.Zero) {
                 

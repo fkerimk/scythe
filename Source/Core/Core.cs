@@ -17,7 +17,7 @@ internal static class Core {
     private static Raylib_cs.Model _skyboxModel;
     private static Texture2D _skyboxTexture;
     
-    public static bool IsRendering;
+    //public static bool IsRendering;
 
     public static unsafe void Init() {
 
@@ -60,28 +60,28 @@ internal static class Core {
         var target = new RenderTexture2D {
             Id = Rlgl.LoadFramebuffer()
         };
+        
         target.Texture.Width = width;
         target.Texture.Height = height;
 
-        if (target.Id > 0) {
-            
-            Rlgl.EnableFramebuffer(target.Id);
-            target.Depth.Id = Rlgl.LoadTextureDepth(width, height, false);
-            target.Depth.Width = width;
-            target.Depth.Height = height;
-            target.Depth.Format = PixelFormat.UncompressedGrayscale; // 19? In C# it might be different. 
-            target.Depth.Mipmaps = 1;
-
-            Rlgl.FramebufferAttach(target.Id, target.Depth.Id, FramebufferAttachType.Depth, FramebufferAttachTextureType.Texture2D, 0);
-
-            if (Rlgl.FramebufferComplete(target.Id)) Raylib.TraceLog(TraceLogLevel.Info, "FBO: Shadowmap created successfully");
-            
-            Raylib.SetTextureFilter(target.Depth, TextureFilter.Bilinear);
-            Raylib.SetTextureWrap(target.Depth, TextureWrap.Clamp);
-
-            Rlgl.DisableFramebuffer();
-        }
+        if (target.Id <= 0) return target;
         
+        Rlgl.EnableFramebuffer(target.Id);
+        target.Depth.Id = Rlgl.LoadTextureDepth(width, height, false);
+        target.Depth.Width = width;
+        target.Depth.Height = height;
+        target.Depth.Format = PixelFormat.UncompressedGrayscale; // 19? In C# it might be different. 
+        target.Depth.Mipmaps = 1;
+
+        Rlgl.FramebufferAttach(target.Id, target.Depth.Id, FramebufferAttachType.Depth, FramebufferAttachTextureType.Texture2D, 0);
+
+        if (Rlgl.FramebufferComplete(target.Id)) Raylib.TraceLog(TraceLogLevel.Info, "FBO: Shadowmap created successfully");
+            
+        Raylib.SetTextureFilter(target.Depth, TextureFilter.Bilinear);
+        Raylib.SetTextureWrap(target.Depth, TextureWrap.Clamp);
+
+        Rlgl.DisableFramebuffer();
+
         return target;
     }
 
@@ -91,6 +91,8 @@ internal static class Core {
         
         LoadObj(ActiveLevel.Root);
         
+        return;
+
         void LoadObj(Obj obj) {
 
             foreach (var component in obj.Components.Values) {
@@ -116,6 +118,8 @@ internal static class Core {
         if (!CommandLine.Editor) Physics.Update();
         
         UpdateObj(ActiveLevel.Root);
+        
+        return;
 
         void UpdateObj(Obj obj) {
             
@@ -131,11 +135,12 @@ internal static class Core {
             }
             
             // Logic and component updates
-            obj.Transform.Loop(false);
+            obj.Transform.Logic();
             
             foreach (var component in obj.Components.Values) {
                 
-                component.Loop(false);
+                if (component.IsLoaded)
+                    component.Logic();
                 
                 switch (component) {
                     
@@ -221,8 +226,6 @@ internal static class Core {
         
         if (ActiveLevel == null) return;
         
-        IsRendering = true;
-
         if (!is2D) {
             
             // Skybox
@@ -254,8 +257,6 @@ internal static class Core {
                 Rlgl.EnableDepthMask();
             }
         }
-        
-        IsRendering = false;
     }
 
     private static void RenderHierarchy(Obj obj, bool is2D, bool isShadowPass) {
@@ -272,11 +273,17 @@ internal static class Core {
             
         } else {
             
-            obj.Transform.Loop(is2D);
+            if (is2D)
+                 obj.Transform.Render2D();
+            else obj.Transform.Render3D();
             
             foreach (var component in obj.Components.Values) {
                 
-                component.Loop(is2D);
+                if (!component.IsLoaded) continue;
+                
+                if (is2D)
+                     component.Render2D();
+                else component.Render3D();
             }
         }
         
@@ -312,8 +319,17 @@ internal static class Core {
         return;
         
         void QuitObj(Obj obj) {
+            
+            obj.Transform.Quit();
 
-            foreach (var component in obj.Components.Values) component.Quit();
+            foreach (var component in obj.Components.Values) {
+                
+                if (component.IsLoaded)
+                    component.Unload();
+                
+                component.Quit();
+            }
+            
             foreach (var child in obj.Children) QuitObj(child.Value);
         }
     }

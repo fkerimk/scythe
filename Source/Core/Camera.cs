@@ -8,16 +8,17 @@ internal class Camera(Obj obj) : Component(obj) {
 
     public required Camera3D Cam = new();
 
-    public override void Loop(bool is2D) {
-
-        if (is2D) return;
-
+    public override void Logic() {
+        
         Obj.DecomposeMatrix(out var pos, out var rot, out _);
         
         var forward = Vector3.Transform(Vector3.UnitZ, rot);
 
         Cam.Position = pos;
         Cam.Target = (pos + forward);
+    }
+
+    public override void Render3D() {
 
         if (!CommandLine.Editor) return;
         

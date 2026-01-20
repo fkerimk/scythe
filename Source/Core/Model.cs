@@ -55,13 +55,14 @@ internal class Model(Obj obj) : Component(obj) {
         return true;
     }
 
-    public override void Loop(bool is2D) {
-        
-        if (is2D) return;
-        
+    public override void Logic() {
+
         RlModel.Transform = Obj.WorldMatrix;
+    }
+
+    public override void Render3D() {
         
-        if (!Core.IsRendering | IsTransparent) return;
+        if (IsTransparent) return;
         
         Draw();
     }
@@ -96,8 +97,5 @@ internal class Model(Obj obj) : Component(obj) {
         Raylib.DrawModel(RlModel, Vector3.Zero, 1, Color);
     }
 
-    public override void Quit() {
-        
-        Raylib.UnloadModel(RlModel);
-    }
+    public override void Unload() => Raylib.UnloadModel(RlModel);
 }

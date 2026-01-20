@@ -46,9 +46,9 @@ internal unsafe class Animation(Obj obj) : Component(obj) {
         return true;
     }
 
-    public override void Loop(bool is2D) {
+    public override void Logic() {
         
-        if (is2D || !IsLoaded || _count == -1 || !IsPlaying || !Obj.Components.TryGetValue("Model", out var model)) return;
+        if (_count == -1 || !IsPlaying || !Obj.Components.TryGetValue("Model", out var model)) return;
         
         _frame = (int)MathF.Floor(_frameRaw);
             
@@ -62,11 +62,8 @@ internal unsafe class Animation(Obj obj) : Component(obj) {
         
         Raylib.UpdateModelAnimation((model as Model)!.RlModel, _rlAnims[Track], _frame);
             
-        _frameRaw += Raylib.GetFrameTime() * 30;
+        _frameRaw += Raylib.GetFrameTime() * 60;
     }
 
-    public override void Quit() {
-        
-        Raylib.UnloadModelAnimations(_rlAnims, _count);
-    }
+    public override void Unload() => Raylib.UnloadModelAnimations(_rlAnims, _count);
 }

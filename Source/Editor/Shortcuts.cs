@@ -36,31 +36,30 @@ internal static class Shortcuts {
         
         var currentPath = Process.GetCurrentProcess().MainModule?.FileName;
 
-        if (!string.IsNullOrEmpty(currentPath)) {
-            
-            var psi = new ProcessStartInfo {
+        if (string.IsNullOrEmpty(currentPath)) return;
+        
+        var psi = new ProcessStartInfo {
                 
-                FileName = currentPath,
-                Arguments = "nosplash",
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                WorkingDirectory = PathUtil.LaunchPath,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            };
+            FileName = currentPath,
+            Arguments = $"nosplash cfg:Mod.Path!=\"{Config.Mod.Path}\"",
+            CreateNoWindow = true,
+            UseShellExecute = false,
+            WorkingDirectory = PathUtil.LaunchPath,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
             
-            using var process = new Process();
+        using var process = new Process();
             
-            process.StartInfo = psi;
-            process.OutputDataReceived += (_, e) => { if (e.Data != null) Console.WriteLine(e.Data); };
-            process.ErrorDataReceived += (_, e) => { if (e.Data != null) Console.Error.WriteLine(e.Data); };
+        process.StartInfo = psi;
+        process.OutputDataReceived += (_, e) => { if (e.Data != null) Console.WriteLine(e.Data); };
+        process.ErrorDataReceived += (_, e) => { if (e.Data != null) Console.Error.WriteLine(e.Data); };
 
-            process.Start();
+        process.Start();
             
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
             
-            process.WaitForExit();
-        }
+        process.WaitForExit();
     }
 }
