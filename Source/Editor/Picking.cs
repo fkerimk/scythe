@@ -11,6 +11,9 @@ internal static class Picking {
         if (!Editor.Level3D.IsHovered) return;
         if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
 
+        // Prevent picking if gizmo is interacting
+        if (LevelBrowser.SelectedObject?.Transform.IsHovered == true || LevelBrowser.SelectedObject?.Transform.IsDragging == true) return;
+
         // Perform raycasting using the camera and the normalized mouse position 
         // specifically mapped for the 3D viewport dimensions in Level3D.cs
         // Fixed: Use GetScreenToWorldRay instead of obsolete GetMouseRay

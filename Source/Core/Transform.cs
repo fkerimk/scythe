@@ -153,6 +153,11 @@ internal class Transform(Obj obj) : Component(obj) {
             RefreshWorldMatrices(child.Value);
     }
 
+    public bool IsHovered => _isAnyAxisHovered;
+    public bool IsDragging => !string.IsNullOrEmpty(_activeId);
+    
+    private bool _isAnyAxisHovered;
+
     public override void Loop(bool is2D) {
 
         if (is2D) {
@@ -207,6 +212,8 @@ internal class Transform(Obj obj) : Component(obj) {
             var r = useWorld ? Vector3.UnitX : Obj.Right;
             var u = useWorld ? Vector3.UnitY : Obj.Up;
             var f = useWorld ? Vector3.UnitZ : Obj.Fwd;
+            
+            _isAnyAxisHovered = false;
             
             Axis("x", Vector3.UnitX, r, new Color(0.9f, 0.3f, 0.3f), ray);
             Axis("y", Vector3.UnitY, u, new Color(0.3f, 0.9f, 0.3f), ray);
@@ -382,6 +389,8 @@ internal class Transform(Obj obj) : Component(obj) {
             
             History.StartRecording(this, "Transform");
         }
+        
+        if (isHovered) _isAnyAxisHovered = true;
 
         if ((isActive && IsMouseButtonReleased(MouseButton.Left)) || IsCursorHidden()) {
             

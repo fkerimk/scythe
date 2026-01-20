@@ -62,6 +62,7 @@ internal static unsafe class Editor {
                 
                 UnloadRenderTexture(Level3D.OutlineRt);
                 Level3D.OutlineRt = LoadRenderTexture((int)Level3D.TexSize.X, (int)Level3D.TexSize.Y);
+                Raylib.SetTextureWrap(Level3D.OutlineRt.Texture, TextureWrap.Clamp);
                 
                 Level3D.TexTemp = Level3D.TexSize;
             }
@@ -100,11 +101,10 @@ internal static unsafe class Editor {
                  
                 BeginShaderMode(Shaders.OutlinePost);
                 SetShaderValue(Shaders.OutlinePost, Shaders.OutlineTextureSize, new Vector2(Level3D.TexSize.X, Level3D.TexSize.Y), ShaderUniformDataType.Vec2);
-                SetShaderValue(Shaders.OutlinePost, Shaders.OutlineWidth, 5.0f, ShaderUniformDataType.Float);
+                SetShaderValue(Shaders.OutlinePost, Shaders.OutlineWidth, 2.0f, ShaderUniformDataType.Float);
                 SetShaderValue(Shaders.OutlinePost, Shaders.OutlineColor, ColorNormalize(Colors.Primary), ShaderUniformDataType.Vec4);
-                
                 DrawTextureRec(Level3D.OutlineRt.Texture, new Rectangle(0, 0, Level3D.TexSize.X, -Level3D.TexSize.Y), Vector2.Zero, Color.White);
-            EndShaderMode();
+                EndShaderMode();
             }
             
             Core.Render(true); // Draw 2D UI for components

@@ -455,6 +455,8 @@ function Script:safeLuaCall(action) end
 ---@field worldPos Vector3
 ---@field worldRot Quaternion
 ---@field worldEuler Vector3
+---@field isHovered boolean
+---@field isDragging boolean
 ---@field isSelected boolean
 ---@field up Vector3
 ---@field fwd Vector3
