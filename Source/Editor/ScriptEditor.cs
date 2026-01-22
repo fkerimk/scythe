@@ -254,45 +254,71 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private void UpdateDiagnostics(JToken p) {
-        ActiveTab.Diagnostics.Clear();
-        foreach (var d in p["diagnostics"] ?? Enumerable.Empty<JToken>()) {
-            var m = (string)d["message"]!;
-            if (m.Contains("lowercase initial")) continue;
-            var r = d["range"];
-            ActiveTab.Diagnostics.Add(new DiagnosticInfo {
-                Message = m, Severity = (int)d["severity"]!, Line = (int)r!["start"]!["line"]!,
+        
+        var newDiags = new List<DiagnosticInfo>();
+        
+        foreach (var diagnostic in p["diagnostics"] ?? Enumerable.Empty<JToken>()) {
+            
+            var msg = (string)diagnostic["message"]!;
+            
+            if (msg.Contains("lowercase initial")) continue;
+            
+            var r = diagnostic["range"];
+            
+            newDiags.Add(new DiagnosticInfo {
+                
+                Message = msg, Severity = (int)diagnostic["severity"]!, Line = (int)r!["start"]!["line"]!,
                 StartChar = (int)r["start"]!["character"]!, EndChar = (int)r["end"]!["character"]!
             });
+        }
+        
+        lock (ActiveTab.Diagnostics) {
+            
+            ActiveTab.Diagnostics.Clear();
+            ActiveTab.Diagnostics.AddRange(newDiags);
         }
     }
 
     protected override void OnDraw() {
+        
         if (ContentRegion.X <= 0 || ContentRegion.Y <= 0) return;
+        
         var dt = GetFrameTime();
+        
         if (_tabs.Count > 0 && _activeTabIndex >= 0) {
+            
             UpdateVisualOffsets(dt);
+            
             _timer += dt;
+            
             if (_lspUpdateTimer > 0 && (_lspUpdateTimer -= dt) <= 0) RequestSemanticTokens();
             if (_didChangeTimer > 0 && (_didChangeTimer -= dt) <= 0) SyncChanges();
+            
             if (_acCooldown > 0) _acCooldown -= dt;
+            
             if (ActiveTab.CursorLine == _lastWedgeLine && ActiveTab.CursorChar == _lastWedgeChar)
                 _wedgeAnim = Lerp(_wedgeAnim, 1, dt * 20);
+            
             else {
+                
                 _wedgeAnim = Lerp(_wedgeAnim, 0, dt * 20);
                 if (_wedgeAnim < 0.01f) _wedgeAnim = 0;
             }
 
             _lastWedgeLine = ActiveTab.CursorLine;
             _lastWedgeChar = ActiveTab.CursorChar;
+            
             HandleInput();
             UpdateParticles();
             UpdateShake();
         }
 
         if (_restartTimer > 0 && (_restartTimer -= dt) <= 0) InitLsp();
+        
         var fSize = _tabs.Count != 0 ? 20 * ActiveTab.Zoom : 20;
         var lSpace = _tabs.Count != 0 ? 26 * ActiveTab.Zoom : 26;
         var margin = _tabs.Count != 0 ? new Vector2(60, 40) * ActiveTab.Zoom : new Vector2(60, 40);
+        
         PushStyleVar(ImGuiStyleVar.ItemSpacing, Vector2.Zero);
         PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(10, 7));
         Dummy(new Vector2(4, 0));
@@ -301,13 +327,15 @@ internal unsafe class ScriptEditor : Viewport {
         PushStyleColor(ImGuiCol.TabHovered, Colors.GuiTabHovered.ToVector4());
         PushStyleColor(ImGuiCol.TabSelected, Colors.GuiTabSelected.ToVector4());
         PushStyleColor(ImGuiCol.TabSelectedOverline, Colors.Primary.ToVector4());
-        if (BeginTabBar("ScriptTabs",
-                ImGuiTabBarFlags.Reorderable | ImGuiTabBarFlags.AutoSelectNewTabs |
-                ImGuiTabBarFlags.FittingPolicyScroll)) {
+        
+        if (BeginTabBar("ScriptTabs",ImGuiTabBarFlags.Reorderable | ImGuiTabBarFlags.AutoSelectNewTabs | ImGuiTabBarFlags.FittingPolicyScroll)) {
+            
             for (var i = 0; i < _tabs.Count; i++) {
+                
                 var open = true;
-                if (BeginTabItem($"{(_tabs[i].IsDirty ? "• " : " ")}{_tabs[i].Title} ###tab_{_tabs[i].Uri}", ref open,
-                        (_scrollToTab && i == _activeTabIndex) ? ImGuiTabItemFlags.SetSelected : 0)) {
+                
+                if (BeginTabItem($"{(_tabs[i].IsDirty ? "• " : " ")}{_tabs[i].Title} ###tab_{_tabs[i].Uri}", ref open, (_scrollToTab && i == _activeTabIndex) ? ImGuiTabItemFlags.SetSelected : 0)) {
+                    
                     _activeTabIndex = i;
                     EndTabItem();
                 }
@@ -322,10 +350,14 @@ internal unsafe class ScriptEditor : Viewport {
         PopStyleColor(4);
         Separator();
         PopStyleVar(2);
+        
         if (_tabs.Count > 0 && _activeTabIndex >= 0) {
+            
             var origin = GetCursorScreenPos();
             var avail = GetContentRegionAvail();
+            
             if (_rt.Texture.Width != (int)avail.X || _rt.Texture.Height != (int)avail.Y) {
+                
                 if (_rt.Id != 0) UnloadRenderTexture(_rt);
                 _rt = LoadRenderTexture((int)avail.X, (int)avail.Y);
             }
@@ -335,6 +367,7 @@ internal unsafe class ScriptEditor : Viewport {
             UpdateCamera();
             DrawEditorContent(margin, fSize, lSpace, origin);
             Image((IntPtr)_rt.Texture.Id, avail, new Vector2(0, 1), new Vector2(1, 0));
+            
             if (BeginDragDropTarget()) {
                 if (AcceptDragDropPayload("object").NativePtr != null && LevelBrowser._dragObject is { } o) {
                     var varName = char.ToLower(o.Name[0]) + o.Name[1..];
@@ -731,7 +764,7 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         KeyboardKey[] keys = [
-            KeyboardKey.Backspace, KeyboardKey.Delete, KeyboardKey.Enter, KeyboardKey.Left, KeyboardKey.Right,
+            KeyboardKey.Backspace, KeyboardKey.Delete, KeyboardKey.Enter, KeyboardKey.KpEnter, KeyboardKey.Left, KeyboardKey.Right,
             KeyboardKey.Up, KeyboardKey.Down, KeyboardKey.Escape, KeyboardKey.Tab, KeyboardKey.Home, KeyboardKey.End
         ];
         var hit = false;
@@ -748,6 +781,17 @@ internal unsafe class ScriptEditor : Viewport {
                 hit = true;
                 break;
             }
+
+        if (!hit && IsKeyPressed((KeyboardKey)13)) {
+            if (shift && !HasSelection()) {
+                ActiveTab.SelectionStartLine = ActiveTab.CursorLine;
+                ActiveTab.SelectionStartChar = ActiveTab.CursorChar;
+            }
+            PerformAction(KeyboardKey.Enter, shift);
+            _lastRepeatedKey = KeyboardKey.Enter;
+            _repeatTimer = 0;
+            hit = true;
+        }
 
         if (!hit && _lastRepeatedKey != KeyboardKey.Null) {
             if (IsKeyDown(_lastRepeatedKey)) {
@@ -826,7 +870,7 @@ internal unsafe class ScriptEditor : Viewport {
         if (k == KeyboardKey.Left || k == KeyboardKey.Right || k == KeyboardKey.Up || k == KeyboardKey.Down)
             _showAutoComplete = false;
         if (!s && k != KeyboardKey.Backspace && k != KeyboardKey.Delete && k != KeyboardKey.Enter &&
-            k != KeyboardKey.Tab && HasSelection()) {
+            k != KeyboardKey.KpEnter && k != KeyboardKey.Tab && HasSelection()) {
             var (sL, sC, eL, eC) = GetSelectionRange();
             if (k == KeyboardKey.Left || k == KeyboardKey.Up) {
                 ActiveTab.CursorLine = sL;
@@ -890,6 +934,7 @@ internal unsafe class ScriptEditor : Viewport {
                 EndHistoryAction();
                 break;
             case KeyboardKey.Enter:
+            case KeyboardKey.KpEnter:
                 BeginHistoryAction("enter");
                 if (HasSelection()) DeleteSelection();
                 HandleEnter();
@@ -993,9 +1038,23 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         var l = ActiveTab.Lines[ActiveTab.CursorLine];
-        var i = ActiveTab.CursorChar - 1;
-        while (i > 0 && char.IsWhiteSpace(l[i])) i--;
-        while (i > 0 && (char.IsLetterOrDigit(l[i - 1]) || l[i - 1] == '_')) i--;
+        var i = ActiveTab.CursorChar;
+
+        // 1. Skip whitespace backwards
+        while (i > 0 && char.IsWhiteSpace(l[i - 1])) i--;
+
+        if (i > 0) {
+            bool isWord = char.IsLetterOrDigit(l[i - 1]) || l[i - 1] == '_';
+            if (isWord) {
+                // 2. Skip word characters backwards
+                while (i > 0 && (char.IsLetterOrDigit(l[i - 1]) || l[i - 1] == '_')) i--;
+            }
+            else {
+                // 3. Skip symbol characters backwards
+                while (i > 0 && !char.IsLetterOrDigit(l[i - 1]) && l[i - 1] != '_' && !char.IsWhiteSpace(l[i - 1])) i--;
+            }
+        }
+
         ActiveTab.CursorChar = i;
     }
 
@@ -1011,8 +1070,22 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         var i = ActiveTab.CursorChar;
+
+        // 1. Skip whitespace forwards
         while (i < l.Length && char.IsWhiteSpace(l[i])) i++;
-        while (i < l.Length && (char.IsLetterOrDigit(l[i]) || l[i] == '_')) i++;
+
+        if (i < l.Length) {
+            bool isWord = char.IsLetterOrDigit(l[i]) || l[i] == '_';
+            if (isWord) {
+                // 2. Skip word characters forwards
+                while (i < l.Length && (char.IsLetterOrDigit(l[i]) || l[i] == '_')) i++;
+            }
+            else {
+                // 3. Skip symbol characters forwards
+                while (i < l.Length && !char.IsLetterOrDigit(l[i]) && l[i] != '_' && !char.IsWhiteSpace(l[i])) i++;
+            }
+        }
+
         ActiveTab.CursorChar = i;
     }
 
@@ -1489,7 +1562,10 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         if (last < l.Length) DrawRegexChunk(l[last..], ref curX, p.Y, fS, a, lI, last, p.X);
-        var diags = ActiveTab.Diagnostics.Where(d => d.Line == lI);
+
+        DiagnosticInfo[] diags;
+        lock (ActiveTab.Diagnostics) diags = ActiveTab.Diagnostics.Where(d => d.Line == lI).ToArray();
+        
         foreach (var d in diags) {
             var x1 = p.X + MeasureTextEx(EditorFont, l[..Math.Min(l.Length, d.StartChar)], fS, 1).X;
             var x2 = p.X + MeasureTextEx(EditorFont, l[..Math.Min(l.Length, d.EndChar)], fS, 1).X;

@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using Raylib_cs;
+using static Raylib_cs.Raylib;
 
 internal static class Core {
 
@@ -25,10 +26,10 @@ internal static class Core {
         // Physics
         Physics.Init();
 
-        Raylib.SetShaderValue(Shaders.Pbr, Raylib.GetShaderLocation(Shaders.Pbr, "use_tex_albedo"  ), CommandLine.Editor ? Config.Editor.PbrAlbedo   : Config.Runtime.PbrAlbedo , ShaderUniformDataType.Int);
-        Raylib.SetShaderValue(Shaders.Pbr, Raylib.GetShaderLocation(Shaders.Pbr, "use_tex_normal"  ), CommandLine.Editor ? Config.Editor.PbrNormal   : Config.Runtime.PbrNormal, ShaderUniformDataType.Int);
-        Raylib.SetShaderValue(Shaders.Pbr, Raylib.GetShaderLocation(Shaders.Pbr, "use_tex_mra"     ), CommandLine.Editor ? Config.Editor.PbrMra      : Config.Runtime.PbrMra, ShaderUniformDataType.Int);
-        Raylib.SetShaderValue(Shaders.Pbr, Raylib.GetShaderLocation(Shaders.Pbr, "use_tex_emissive"), CommandLine.Editor ? Config.Editor.PbrEmissive : Config.Runtime.PbrEmissive, ShaderUniformDataType.Int);
+        SetShaderValue(Shaders.Pbr, GetShaderLocation(Shaders.Pbr, "use_tex_albedo"  ), CommandLine.Editor ? Config.Editor.PbrAlbedo   : Config.Runtime.PbrAlbedo , ShaderUniformDataType.Int);
+        SetShaderValue(Shaders.Pbr, GetShaderLocation(Shaders.Pbr, "use_tex_normal"  ), CommandLine.Editor ? Config.Editor.PbrNormal   : Config.Runtime.PbrNormal, ShaderUniformDataType.Int);
+        SetShaderValue(Shaders.Pbr, GetShaderLocation(Shaders.Pbr, "use_tex_mra"     ), CommandLine.Editor ? Config.Editor.PbrMra      : Config.Runtime.PbrMra, ShaderUniformDataType.Int);
+        SetShaderValue(Shaders.Pbr, GetShaderLocation(Shaders.Pbr, "use_tex_emissive"), CommandLine.Editor ? Config.Editor.PbrEmissive : Config.Runtime.PbrEmissive, ShaderUniformDataType.Int);
 
         // Fonts
         Fonts.Init();
@@ -42,15 +43,15 @@ internal static class Core {
         _shadowMap = LoadShadowmapRenderTexture(ShadowMapResolution, ShadowMapResolution);
         
         // Skybox
-        var cube = Raylib.GenMeshCube(1.0f, 1.0f, 1.0f);
-        _skyboxModel = Raylib.LoadModelFromMesh(cube);
+        var cube = GenMeshCube(1.0f, 1.0f, 1.0f);
+        _skyboxModel = LoadModelFromMesh(cube);
         _skyboxModel.Materials[0].Shader = Shaders.Skybox;
         
         if (PathUtil.BestPath("Models/Skybox.png", out var skyboxPath)) {
             
-            var image = Raylib.LoadImage(skyboxPath);
-            _skyboxTexture = Raylib.LoadTextureCubemap(image, CubemapLayout.AutoDetect);
-            Raylib.UnloadImage(image);
+            var image = LoadImage(skyboxPath);
+            _skyboxTexture = LoadTextureCubemap(image, CubemapLayout.AutoDetect);
+            UnloadImage(image);
             _skyboxModel.Materials[0].Maps[(int)MaterialMapIndex.Cubemap].Texture = _skyboxTexture;
         }
     }
@@ -73,10 +74,10 @@ internal static class Core {
 
         Rlgl.FramebufferAttach(target.Id, target.Depth.Id, FramebufferAttachType.Depth, FramebufferAttachTextureType.Texture2D, 0);
 
-        if (Rlgl.FramebufferComplete(target.Id)) Raylib.TraceLog(TraceLogLevel.Info, "FBO: Shadowmap created successfully");
+        if (Rlgl.FramebufferComplete(target.Id)) TraceLog(TraceLogLevel.Info, "FBO: Shadowmap created successfully");
             
-        Raylib.SetTextureFilter(target.Depth, TextureFilter.Bilinear);
-        Raylib.SetTextureWrap(target.Depth, TextureWrap.Clamp);
+        SetTextureFilter(target.Depth, TextureFilter.Bilinear);
+        SetTextureWrap(target.Depth, TextureWrap.Clamp);
 
         Rlgl.DisableFramebuffer();
 
@@ -111,7 +112,7 @@ internal static class Core {
         Lights.Clear();
         TransparentRenderQueue.Clear();
         
-        Raylib.SetShaderValue(Shaders.Pbr, Shaders.Pbr.Locs[(int)ShaderLocationIndex.VectorView], ActiveCamera?.Position ?? Vector3.Zero, ShaderUniformDataType.Vec3);
+        SetShaderValue(Shaders.Pbr, Shaders.Pbr.Locs[(int)ShaderLocationIndex.VectorView], ActiveCamera?.Position ?? Vector3.Zero, ShaderUniformDataType.Vec3);
         
         if (!CommandLine.Editor) Physics.Update();
         
@@ -162,7 +163,7 @@ internal static class Core {
         
         if (ActiveLevel == null) return;
 
-        Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrLightCount, Lights.Count, ShaderUniformDataType.Int);
+        SetShaderValue(Shaders.Pbr, Shaders.PbrLightCount, Lights.Count, ShaderUniformDataType.Int);
             
         var shadowLight = Lights.FirstOrDefault(l => l is { Enabled: true, Shadows: true });
 
@@ -186,36 +187,36 @@ internal static class Core {
                 Projection = shadowLight.Type == 0 ? CameraProjection.Orthographic : CameraProjection.Perspective
             };
 
-            Raylib.BeginTextureMode(_shadowMap);
-            Raylib.ClearBackground(Color.White);
-            Raylib.BeginMode3D(lightCamera);
+            BeginTextureMode(_shadowMap);
+            ClearBackground(Color.White);
+            BeginMode3D(lightCamera);
             
             var lightView = Rlgl.GetMatrixModelview();
             var lightProj = Rlgl.GetMatrixProjection();
             var lightVp = Raymath.MatrixMultiply(lightView, lightProj);
 
             // Draw objects for shadow depth
-            Raylib.BeginShaderMode(Shaders.Depth);
+            BeginShaderMode(Shaders.Depth);
             RenderHierarchy(ActiveLevel.Root, false, true);
-            Raylib.EndShaderMode();
+            EndShaderMode();
 
-            Raylib.EndMode3D();
-            Raylib.EndTextureMode();
+            EndMode3D();
+            EndTextureMode();
             
-            Raylib.SetShaderValueMatrix(Shaders.Pbr, Shaders.PbrLightVp, lightVp);
-            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, shadowLightIndex, ShaderUniformDataType.Int);
-            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowStrength, shadowLight.ShadowStrength, ShaderUniformDataType.Float);
-            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMapResolution, ShadowMapResolution, ShaderUniformDataType.Int);
+            SetShaderValueMatrix(Shaders.Pbr, Shaders.PbrLightVp, lightVp);
+            SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, shadowLightIndex, ShaderUniformDataType.Int);
+            SetShaderValue(Shaders.Pbr, Shaders.PbrShadowStrength, shadowLight.ShadowStrength, ShaderUniformDataType.Float);
+            SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMapResolution, ShadowMapResolution, ShaderUniformDataType.Int);
 
             const int shadowMapSlot = 10;
             Rlgl.ActiveTextureSlot(shadowMapSlot);
             Rlgl.EnableTexture(_shadowMap.Depth.Id);
-            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMap, shadowMapSlot, ShaderUniformDataType.Int);
+            SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMap, shadowMapSlot, ShaderUniformDataType.Int);
             Rlgl.ActiveTextureSlot(0);
             
         }
         
-        else Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, -1, ShaderUniformDataType.Int);
+        else SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, -1, ShaderUniformDataType.Int);
 
         for (var i = 0; i < Lights.Count; i++) Lights[i].Update(i);
     }
@@ -229,7 +230,7 @@ internal static class Core {
             // Skybox
             Rlgl.DisableBackfaceCulling();
             Rlgl.DisableDepthMask();
-            Raylib.DrawModel(_skyboxModel, Vector3.Zero, 1.0f, Color.White);
+            DrawModel(_skyboxModel, Vector3.Zero, 1.0f, Color.White);
             Rlgl.EnableBackfaceCulling();
             Rlgl.EnableDepthMask();
         }
@@ -243,15 +244,15 @@ internal static class Core {
                 TransparentRenderQueue.Sort((a, b) => b.Distance.CompareTo(a.Distance));
                 
                 Rlgl.DisableDepthMask();
-                Raylib.BeginBlendMode(BlendMode.Alpha);
+                BeginBlendMode(BlendMode.Alpha);
                 
                 foreach (var call in TransparentRenderQueue) {
                     
-                    Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrAlphaCutoff, 0.0f, ShaderUniformDataType.Float);
+                    SetShaderValue(Shaders.Pbr, Shaders.PbrAlphaCutoff, 0.0f, ShaderUniformDataType.Float);
                     call.Model.Draw();
                 }
                 
-                Raylib.EndBlendMode();
+                EndBlendMode();
                 Rlgl.EnableDepthMask();
             }
         }
@@ -303,14 +304,16 @@ internal static class Core {
 
     public static void Quit() {
         
+        CloseAudioDevice();
+        
         Shaders.Quit();
         Fonts.UnloadRlFonts();
 
         if (ActiveLevel == null) return;
         
-        Raylib.UnloadRenderTexture(_shadowMap);
-        Raylib.UnloadModel(_skyboxModel);
-        Raylib.UnloadTexture(_skyboxTexture);
+        UnloadRenderTexture(_shadowMap);
+        UnloadModel(_skyboxModel);
+        UnloadTexture(_skyboxTexture);
         
         QuitObj(ActiveLevel.Root);
         

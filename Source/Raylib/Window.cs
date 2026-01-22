@@ -93,6 +93,7 @@ internal static class Window {
             UnloadImage(img);
         }
         
-        //while (!Raylib.IsWindowReady()) Task.Delay(0);
+        // Initialize Audio
+        if (!IsAudioDeviceReady()) InitAudioDevice();
     }
 }
