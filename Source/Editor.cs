@@ -21,6 +21,8 @@ internal static unsafe class Editor {
     public static ObjectBrowser ObjectBrowser = null!;
     // ReSharper disable once MemberCanBePrivate.Global
     public static ScriptEditor ScriptEditor = null!;
+    // ReSharper disable once MemberCanBePrivate.Global
+    public static MusicPlayer MusicPlayer = null!;
     
     public static bool IsScriptEditorFocused => ScriptEditor.IsFocused;
     
@@ -33,18 +35,21 @@ internal static unsafe class Editor {
         // Setup ImGui
         Setup(true, true);
 
-        EditorRender = new() {
+        EditorRender = new EditorRender {
+            
             CustomStyle = new CustomStyle {
+                
                 WindowPadding = new Vector2(0, 0),
                 CellPadding = new Vector2(0, 0),
                 SeparatorTextPadding = new Vector2(0, 0)
             }
         };
 
-        LevelBrowser = new();
-        ProjectBrowser = new();
-        ObjectBrowser = new();
-        ScriptEditor = new();
+        LevelBrowser = new LevelBrowser();
+        ProjectBrowser = new ProjectBrowser();
+        ObjectBrowser = new ObjectBrowser();
+        ScriptEditor = new ScriptEditor();
+        MusicPlayer = new MusicPlayer();
 
         var layoutPath = PathUtil.ExeRelative("Layouts/User.ini");
         
@@ -60,6 +65,9 @@ internal static unsafe class Editor {
         FreeCam.SetFromTarget(Core.ActiveCamera);
         
         ViewSettings.Load();
+        MusicPlayer.Load();
+        ScriptEditor.Load();
+        ProjectBrowser.Load();
         
         while (!WindowShouldClose()) {
 
@@ -103,10 +111,12 @@ internal static unsafe class Editor {
             BeginTextureMode(EditorRender.Rt);
             Window.Clear(Colors.Game);
             
+            // Freecam
             FreeCam.Loop(EditorRender);
             
+            // Draw objects and skybox
             BeginMode3D(Core.ActiveCamera.Raylib);
-            Core.Render(false); // Draw objects and skybox
+            Core.Render(false);
             Grid.Draw(Core.ActiveCamera);
             EndMode3D();
             
@@ -121,7 +131,8 @@ internal static unsafe class Editor {
                 EndShaderMode();
             }
             
-            Core.Render(true); // Draw 2D UI for components
+            // Draw 2D UI for components
+            Core.Render(true);
             Window.DrawFps();
             EndTextureMode();
 
@@ -140,6 +151,7 @@ internal static unsafe class Editor {
             ObjectBrowser.Draw();
             ProjectBrowser.Draw();
             ScriptEditor.Draw();
+            MusicPlayer.Draw();
             PopFont();
             Style.Pop();
             rlImGui.End();
@@ -152,6 +164,9 @@ internal static unsafe class Editor {
         }
 
         ViewSettings.Save();
+        MusicPlayer.Save();
+        ScriptEditor.Save();
+        ProjectBrowser.Save();
         CloseWindow();
 
         Directory.Delete(PathUtil.TempPath, true);

@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using ImGuiNET;
 using Raylib_cs;
 using static ImGuiNET.ImGui;
+using Newtonsoft.Json;
 
 internal class ProjectBrowser : Viewport {
 
@@ -48,6 +49,33 @@ internal class ProjectBrowser : Viewport {
         
         // Settings
         GetIO().MouseDoubleClickTime = 0.5f; // Windows standard
+    }
+
+    private string GetPath() => PathUtil.ModRelative("ProjectBrowser.json");
+
+    public void Load() {
+        var path = GetPath();
+        if (!File.Exists(path)) return;
+        try {
+            var settings = JsonConvert.DeserializeObject<ProjectBrowserSettings>(File.ReadAllText(path));
+            if (settings == null) return;
+            var absPath = PathUtil.ModRelative(settings.CurrentPath);
+            if (Directory.Exists(absPath))
+                _currentPath = absPath;
+        } catch { /**/ }
+    }
+
+    public void Save() {
+        var path = GetPath();
+        var dir = Path.GetDirectoryName(path);
+        if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+        var relPath = Path.GetRelativePath(Config.Mod.Path, _currentPath);
+        var settings = new ProjectBrowserSettings { CurrentPath = relPath };
+        File.WriteAllText(path, JsonConvert.SerializeObject(settings, Formatting.Indented));
+    }
+
+    private class ProjectBrowserSettings {
+        public string CurrentPath { get; set; } = "";
     }
 
     protected override void OnDraw() {
@@ -310,7 +338,7 @@ internal class ProjectBrowser : Viewport {
         
         foreach (var entryPath in entriesList) {
             
-            if (Path.GetFullPath(entryPath).Contains(PathUtil.TempPath)) return;
+            if (Path.GetFullPath(entryPath).Contains(PathUtil.TempPath)) continue;
             
             var isDirectory = Directory.Exists(entryPath);
 

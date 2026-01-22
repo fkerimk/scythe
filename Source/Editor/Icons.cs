@@ -17,4 +17,6 @@
     public const string FaSearch = "";
     public const string FaPlus = "";
     public const string FaAsterisk = "*";
+    public const string FaPlay = "";
+    public const string FaStop = "";
 }

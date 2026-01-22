@@ -3,5 +3,6 @@
   "LevelBrowser": true,
   "ProjectBrowser": true,
   "ObjectBrowser": true,
-  "ScriptEditor": true
+  "ScriptEditor": true,
+  "MusicPlayer": true
 }

@@ -7,6 +7,7 @@ using static ImGuiNET.ImGui;
 using static Raylib_cs.Raylib;
 using static Raylib_cs.Raymath;
 using System.Runtime.InteropServices;
+using Newtonsoft.Json;
 
 internal unsafe class ScriptEditor : Viewport {
     
@@ -74,6 +75,41 @@ internal unsafe class ScriptEditor : Viewport {
         CustomStyle = new CustomStyle
             { WindowPadding = Vector2.Zero, CellPadding = Vector2.Zero, SeparatorTextPadding = Vector2.Zero };
         InitLsp();
+    }
+
+    private string GetPath() => PathUtil.ModRelative("ScriptEditor.json");
+
+    public void Load() {
+        var path = GetPath();
+        if (!File.Exists(path)) return;
+        try {
+            var settings = JsonConvert.DeserializeObject<ScriptEditorSettings>(File.ReadAllText(path));
+            if (settings == null) return;
+            foreach (var relTabPath in settings.OpenTabs) {
+                var absPath = PathUtil.ModRelative(relTabPath);
+                if (File.Exists(absPath)) NewTab(absPath);
+            }
+            if (settings.ActiveTabIndex >= 0 && settings.ActiveTabIndex < _tabs.Count)
+                _activeTabIndex = settings.ActiveTabIndex;
+        } catch { /**/ }
+    }
+
+    public void Save() {
+        var path = GetPath();
+        var dir = Path.GetDirectoryName(path);
+        if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+        var settings = new ScriptEditorSettings {
+            OpenTabs = _tabs.Where(t => t.FilePath != null)
+                            .Select(t => Path.GetRelativePath(Config.Mod.Path, t.FilePath!))
+                            .ToList(),
+            ActiveTabIndex = _activeTabIndex
+        };
+        File.WriteAllText(path, JsonConvert.SerializeObject(settings, Formatting.Indented));
+    }
+
+    private class ScriptEditorSettings {
+        public List<string> OpenTabs { get; set; } = [];
+        public int ActiveTabIndex { get; set; } = -1;
     }
 
     public void Open(string path) {
