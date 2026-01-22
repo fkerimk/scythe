@@ -10,10 +10,15 @@ internal static class Fonts {
         NormalSize = 16,
         LargeSize = 32;
     
-    public static ImFontPtr ImMontserratRegular;  public static Font RlMontserratRegular;
-    public static ImFontPtr ImFontAwesomeSmall ;
-    public static ImFontPtr ImFontAwesomeNormal;
-    public static ImFontPtr ImFontAwesomeLarge ;
+    public static ImFontPtr
+        ImMontserratRegular,
+        ImFontAwesomeSmall,
+        ImFontAwesomeNormal,
+        ImFontAwesomeLarge ;
+    
+    public static Font
+        RlMontserratRegular,
+        RlCascadiaCode;
 
     private static ImFontConfigPtr _imFontConfigPtr;
     private static IntPtr _iconRanges;
@@ -37,20 +42,43 @@ internal static class Fonts {
         }
         
         RlMontserratRegular = LoadFont<Font>("Fonts/montserrat-regular.otf");
+        RlCascadiaCode = LoadFont<Font>("Fonts/CascadiaCode-Regular.ttf");
     }
     
     public static void UnloadRlFonts() {
         
         Raylib.UnloadFont(RlMontserratRegular);
+        Raylib.UnloadFont(RlCascadiaCode);
     }
 
-    private static T LoadFont<T>(string path, int size = NormalSize, bool useIconRanges = false) {
+    private static unsafe T LoadFont<T>(string path, int size = NormalSize, bool useIconRanges = false) {
 
         if (!PathUtil.BestPath(path, out var bestPath)) throw new FileNotFoundException($"Font {path} not found");
 
         if (typeof(T) == typeof(Font)) {
 
-            return (T)(object)Raylib.LoadFont(bestPath) ;
+            var codepoints = new List<int>();
+            for (var i = 32; i < 127; i++) codepoints.Add(i); // Basic ASCII
+            
+            int[] turkishChars = [
+
+                0x00c7, 0x00e7, 0x011e, 0x011f, 0x0130, 0x0131, 
+                0x00d6, 0x00f6, 0x015e, 0x015f, 0x00dc, 0x00fc
+            ];
+            
+            codepoints.AddRange(turkishChars);
+
+            fixed (int* pCodepoints = codepoints.ToArray()) {
+                    
+                var bytes = System.Text.Encoding.UTF8.GetBytes(bestPath);
+                    
+                fixed (byte* pBytes = bytes) {
+                        
+                    var font = Raylib.LoadFontEx((sbyte*)pBytes, 96, pCodepoints, codepoints.Count);
+                    Raylib.SetTextureFilter(font.Texture, TextureFilter.Bilinear);
+                    return (T)(object)font;
+                }
+            }
         }
         
         if (typeof(T) == typeof(ImFontPtr)) {

@@ -9,6 +9,8 @@ internal class Obj {
     public static string Icon => Icons.FaDotCircleO;
     public static Color Color => Colors.GuiTypeObject;
 
+    public static event Action<Obj>? OnDelete;
+
     [Label("Name"), RecordHistory] public string Name {
         
         get; set {
@@ -70,9 +72,9 @@ internal class Obj {
 
         if (Parent == null) return;
         
+        OnDelete?.Invoke(this);
         Dispose();
         Parent.Children.Remove(Name);
-        Parent.OrderChildren();
     }
 
     public void Dispose() {
@@ -103,48 +105,44 @@ internal class Obj {
     }
     
     [MoonSharpHidden]
-    public void SetParent(Obj? obj) {
+    public void SetParent(Obj? obj, bool keepWorld = false) {
         
         if (obj == null || obj == this || Parent == null) return;
+
+        Vector3 wp = Vector3.Zero;
+        Quaternion wr = Quaternion.Identity;
+        Vector3 ws = Vector3.One;
+
+        if (keepWorld) DecomposeWorldMatrix(out wp, out wr, out ws);
 
         Parent.Children.Remove(Name);
         obj.Children.Add(Name, this);
         Parent = obj;
-        
-        Parent.OrderChildren();
-    }
 
-    private static readonly System.Text.RegularExpressions.Regex NaturalRegex = new(@"(\d+)");
-
-    private void OrderChildren() {
-    
-        //if (CommandLine.Editor)
-        //     Children.Sort((a, b) => NaturalCompare(a.Name, b.Name));
-        //else Children.Sort(Component.Comparer.Instance);
-    }
-    
-    private static int NaturalCompare(string a, string b) {
-    
-        var tokensA = NaturalRegex.Split(a);
-        var tokensB = NaturalRegex.Split(b);
-
-        for (var i = 0; i < MathF.Min(tokensA.Length, tokensB.Length); i++) {
-        
-            if (int.TryParse(tokensA[i], out var aNum) && int.TryParse(tokensB[i], out var bNum)) {
+        if (keepWorld) {
             
-                var cmp = aNum.CompareTo(bNum);
-                if (cmp != 0) return cmp;
-            
-            } else {
-            
-                var cmp = string.Compare(tokensA[i], tokensB[i], StringComparison.Ordinal);
-                if (cmp != 0) return cmp;
-            }
+            Transform.WorldPos = wp;
+            Transform.WorldRot = wr;
+            Transform.WorldScale = ws;
         }
-
-        return tokensA.Length.CompareTo(tokensB.Length);
     }
 
+    public void RecordedSetParent(Obj? obj) {
+
+        if (obj == null || obj == this || Parent == null) return;
+        
+        var oldParent = Parent;
+        History.StartRecording(this, $"Change Parent of {Name}");
+        History.StartRecording(Transform);
+        
+        SetParent(obj, true);
+
+        History.SetUndoAction(() => SetParent(oldParent));
+        History.SetRedoAction(() => SetParent(obj, true));
+        
+        History.StopRecording();
+    }
+    
     public unsafe void DecomposeMatrix(out Vector3 pos, out Quaternion rot, out Vector3 scale) {
         
         var position = Vector3.Zero;
@@ -170,6 +168,17 @@ internal class Obj {
         worldScale = lossyScale;
         worldRot = rotation;
     }
+
+    public string[] GetPathFromRoot() {
+        var path = new List<string>();
+        var current = this;
+        while (current != null && current.Parent != null) {
+            path.Add(current.Name);
+            current = current.Parent;
+        }
+        path.Reverse();
+        return path.ToArray();
+    }
     
     [MoonSharpHidden]
     public Obj? Find(params string[] names) {
@@ -178,8 +187,7 @@ internal class Obj {
         
         var current = this;
 
-        foreach (var name in names)
-            current = current.Children[name];
+        current = names.Aggregate(current, (current1, name) => current1.Children[name]);
 
         return current.Name != names[^1] ? null : current;
     }
@@ -197,35 +205,58 @@ internal class Obj {
         Components[name] = component;
         return component;
     }
-    
-    public string SafeNameForChild(string name) {
-        
-        var newName = name;
-        
-        var i = 0;
-
-        while (Children.ContainsKey(newName)) {
-            
-            i++;
-            newName = name + i;
-        }
-        
-        return newName;
-    }
 }
 
 internal static partial class Extensions {
     
-    public static IEnumerable<Obj> GetChildrenRecursive (this Obj obj) {
+    extension(Obj source) {
+        
+        private Obj Clone(Obj? parent = null) {
+        
+            parent ??= source.Parent;
 
-        foreach (var child in obj.Children) {
+            var name = source.Name;
+        
+            if (parent != null)
+                name = Generators.AvailableName(name, parent.Children.Keys);
+
+            var clone = new Obj(name, parent);
+
+            // Copy Transform
+            var transformJson = JsonConvert.SerializeObject(source.Transform);
+            JsonConvert.PopulateObject(transformJson, clone.Transform);
+
+            // Copy Components
+            foreach (var (key, sourceComponent) in source.Components) {
             
-            yield return child.Value;
-
-            foreach (var grandChild in child.Value.GetChildrenRecursive()) {
+                var compType = sourceComponent.GetType();
                 
-                yield return grandChild;
+                if (Activator.CreateInstance(compType, clone) is not Component cloneComp) continue;
+                
+                var compJson = JsonConvert.SerializeObject(sourceComponent);
+                JsonConvert.PopulateObject(compJson, cloneComp);
+                
+                clone.Components[key] = cloneComp;
             }
+
+            // Clone children recursively
+            foreach (var child in source.Children.Values.ToList()) child.Clone(clone);
+
+            return clone;
+        }
+
+        public Obj CloneRecorded() {
+        
+            History.StartRecording(source.Parent!, $"Duplicate {source.Name}");
+
+            var clone = source.Clone();
+            var parent = source.Parent!;
+
+            History.SetUndoAction(clone.Delete);
+            History.SetRedoAction(() => clone.SetParent(parent));
+        
+            History.StopRecording();
+            return clone;
         }
     }
 }

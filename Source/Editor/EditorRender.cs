@@ -2,7 +2,7 @@
 using ImGuiNET;
 using Raylib_cs;
 
-internal class Level3D() : Viewport("3D") {
+internal class EditorRender() : Viewport("Render (Editor)") {
 
     public RenderTexture2D Rt = new(), OutlineRt = new();
     public Vector2 TexSize = Vector2.One, TexTemp = Vector2.Zero;

@@ -5,6 +5,8 @@ using static Raylib_cs.Raylib;
 internal static class Shortcuts {
 
     public static void Check() {
+        // Ignore shortcuts if text inputs are active (like Script Editor)
+        if (Editor.IsScriptEditorFocused) return;
         
         if (IsKeyDown(KeyboardKey.LeftControl)) {
             
@@ -21,17 +23,16 @@ internal static class Shortcuts {
 
     private static void DuplicateSelectedObject() {
         
-        if (LevelBrowser.SelectedObject != null) {
-            
-            var clone = Core.ActiveLevel?.RecordedCloneObject(LevelBrowser.SelectedObject);
-            if (clone != null) LevelBrowser.SelectObject(clone);
-        }
+        if (LevelBrowser.SelectedObject == null) return;
+        LevelBrowser.SelectObject(LevelBrowser.SelectedObject.CloneRecorded());
     }
+    
     private static void SaveActiveLevel() {
         
         Core.ActiveLevel?.Save();
         Notifications.Show("Saved");
     }
+    
     private static void RunPlayMode() {
         
         var currentPath = Process.GetCurrentProcess().MainModule?.FileName;

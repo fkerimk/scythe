@@ -1,114 +1,190 @@
-﻿using System.Reflection;
+﻿using System.Collections;
+using System.Reflection;
 
-internal static class History {
+internal class HistoryStack {
     
-    private static readonly List<Record> Records = [];
+    private readonly List<Record> _records = [];
+    private int _currentIndex = -1;
+    private Record? _activeRecord;
 
-    private static int _currentIndex = -1;
-    private static Record? _activeRecord;
-    
-    public static bool CanUndo => _currentIndex >= 0;
-    public static bool CanRedo => _currentIndex < Records.Count - 1;
-    
-    public static void StartRecording(object reference, string? description = null) {
+    public bool CanUndo => _currentIndex >= 0;
+    public bool CanRedo => _currentIndex < _records.Count - 1;
 
+    public void StartRecording(object reference, string? description = null) {
+        
         _activeRecord ??= new Record(description);
-
-        if (_activeRecord.Objects.All(o => o.Reference != reference)) {
-            
+        
+        if (_activeRecord.Objects.All(o => o.Reference != reference))
             _activeRecord.Objects.Add(new ObjectRecord(reference));
-        }
     }
 
-    public static void StopRecording() {
+    public void StopRecording() {
         
         if (_activeRecord == null) return;
 
         foreach (var record in _activeRecord.Objects)
-            record.FinalState = GetState(record.Reference);
-        
-        if (_currentIndex < Records.Count - 1)
-            Records.RemoveRange(_currentIndex + 1, Records.Count - (_currentIndex + 1));
-        
-        Records.Add(_activeRecord);
+            record.FinalState = History.GetState(record.Reference);
 
-        _currentIndex = Records.Count - 1;
+        if (_currentIndex < _records.Count - 1)
+            _records.RemoveRange(_currentIndex + 1, _records.Count - (_currentIndex + 1));
+
+        _records.Add(_activeRecord);
+        _currentIndex = _records.Count - 1;
         _activeRecord = null;
     }
-    
-    private static object[] GetState(object reference) {
 
-        var values = reference
-            .GetType()
-            .GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-            .Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute)))
-            .Select(f => f.GetValue(reference)!)
-            .ToArray();
-
-        return values;
-    }
-
-    private static void ApplyState(object reference, object[] state) {
-
-        var props = reference
-            .GetType()
-            .GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-            .Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute)))
-            .ToArray();
-        
-        for (var i = 0; i < props.Length; i++)
-            props[i].SetValue(reference, state[i]);
-    }
-
-    public static void Undo() {
+    public void Undo() {
         
         if (!CanUndo) return;
         
-        var currentRecord = Records[_currentIndex];
+        var currentRecord = _records[_currentIndex];
         
-        if (currentRecord.Description != null)
-            Notifications.Show("Undo " + currentRecord.Description);
+        if (currentRecord.Description != null) Notifications.Show("Undo " + currentRecord.Description);
         
-        currentRecord.UndoAction?.Invoke();        
+        currentRecord.UndoAction?.Invoke();
 
         foreach (var record in currentRecord.Objects)
-            ApplyState(record.Reference, record.StartState);
+            History.ApplyState(record.Reference, record.StartState);
 
         _currentIndex--;
     }
-    
-    
-    public static void Redo() {
+
+    public void Redo() {
         
         if (!CanRedo) return;
         
         _currentIndex++;
-        var currentRecord = Records[_currentIndex];
         
-        if (currentRecord.Description != null)
-            Notifications.Show("Redo " + currentRecord.Description);
-
+        var currentRecord = _records[_currentIndex];
+        
+        if (currentRecord.Description != null) Notifications.Show("Redo " + currentRecord.Description);
+        
         currentRecord.RedoAction?.Invoke();
-        
+
         foreach (var record in currentRecord.Objects)
-            ApplyState(record.Reference, record.FinalState);
+            History.ApplyState(record.Reference, record.FinalState);
+    }
+    
+    public bool UpdateLastRecord(object reference, string description) {
+        
+        if (_activeRecord != null) return false; 
+        if (_records.Count == 0 || _currentIndex != _records.Count - 1) return false; 
+
+        var last = _records[_currentIndex];
+        if (last.Description != description) return false;
+
+        var objRec = last.Objects.FirstOrDefault(o => o.Reference == reference);
+        if (objRec == null) return false;
+
+        objRec.FinalState = History.GetState(reference);
+        return true;
     }
 
-    private class Record(string? description = null) {
+    public void SetUndoAction(Action action) { if (_activeRecord != null) _activeRecord.UndoAction = action; }
+    public void SetRedoAction(Action action) { if (_activeRecord != null) _activeRecord.RedoAction = action; }
 
+    private class Record(string? description = null) {
+        
         public readonly List<ObjectRecord> Objects = [];
         public readonly string? Description = description;
-        
         public Action? UndoAction, RedoAction;
     }
 
-    private class ObjectRecord(object reference) {
-            
+    internal class ObjectRecord(object reference) {
+        
         public readonly object Reference = reference;
-        public readonly object[] StartState = GetState(reference);
-        public object[] FinalState = [];
+        public readonly object?[] StartState = History.GetState(reference);
+        public object?[] FinalState = [];
+    }
+}
+
+internal static class History {
+    
+    private static readonly HistoryStack Global = new();
+
+    public static bool CanUndo => Global.CanUndo;
+    public static bool CanRedo => Global.CanRedo;
+    
+    public static void StartRecording(object reference, string? description = null) => Global.StartRecording(reference, description);
+    public static void StopRecording() => Global.StopRecording();
+    public static void Undo() => Global.Undo();
+    public static void Redo() => Global.Redo();
+    public static void SetUndoAction(Action action) => Global.SetUndoAction(action);
+    public static void SetRedoAction(Action action) => Global.SetRedoAction(action);
+
+    // Helpers exposed for HistoryStack
+    public static object?[] GetState(object reference) {
+        
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+        
+        var props = reference.GetType().GetProperties(flags)
+            .Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute)))
+            .Select(f => CloneValue(f.GetValue(reference)));
+            
+        var fields = reference.GetType().GetFields(flags)
+            .Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute)))
+            .Select(f => CloneValue(f.GetValue(reference)));
+            
+        return props.Concat(fields).ToArray();
     }
 
-    public static void SetUndoAction(Action action) => _activeRecord?.UndoAction = action;
-    public static void SetRedoAction(Action action) => _activeRecord?.RedoAction = action;
+    private static object? CloneValue(object? value) {
+        
+        switch (value) {
+            
+            case null:
+                return null;
+            
+            case ICloneable cloneable:
+                return cloneable.Clone();
+            
+            case IList list: {
+                
+                // Handle generic lists (specifically List<T>)
+                var type = value.GetType();
+                
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>)) {
+                
+                    // Create new instance of List<T>
+                    var newList = (IList?)Activator.CreateInstance(type);
+                    if (newList == null) return value; // Fallback
+                
+                    foreach (var item in list) {
+                        
+                        // Deep clone items if possible, otherwise copy reference
+                        var clonedItem = CloneValue(item);
+                        newList.Add(clonedItem);
+                    }
+                    
+                    return newList;
+                }
+
+                break;
+            }
+        }
+
+        return value;
+    }
+
+    public static void ApplyState(object reference, object?[] state) {
+        
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
+        
+        var props = reference.GetType().GetProperties(flags)
+            .Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute)))
+            .ToArray();
+            
+        var fields = reference.GetType().GetFields(flags)
+            .Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute)))
+            .ToArray();
+            
+        var i = 0;
+        
+        foreach (var prop in props) prop.SetValue(reference, state[i++]);
+        foreach (var field in fields) field.SetValue(reference, state[i++]);
+
+        if (reference is Component comp) comp.UnloadAndQuit();
+    }
 }
+
+

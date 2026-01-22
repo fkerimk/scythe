@@ -181,6 +181,17 @@ internal static class LuaDefinitionGenerator {
         if (t == typeof(void) || t.Name == "Void") return "void";
         if (t.IsPrimitive || t == typeof(decimal)) return "number";
 
+        // Handle delegates
+        if (t.IsGenericType && (t.Name.StartsWith("Func") || t.Name.StartsWith("Action"))) {
+            var args = t.GetGenericArguments();
+            var isFunc = t.Name.StartsWith("Func");
+            var paramCount = isFunc ? args.Length - 1 : args.Length;
+            var paramNames = new List<string>();
+            for (var i = 0; i < paramCount; i++) paramNames.Add($"arg{i}: {MapType(args[i], queue)}");
+            var retType = isFunc ? MapType(args[^1], queue) : "void";
+            return $"fun({string.Join(", ", paramNames)}): {retType}";
+        }
+
         var name = CleanName(t.Name);
         if (string.IsNullOrEmpty(name) || t.IsGenericParameter) return "any";
 

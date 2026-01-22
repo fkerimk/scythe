@@ -1,4 +1,3 @@
-using System.Numerics;
 using Raylib_cs;
 
 internal static class Picking {
@@ -8,13 +7,13 @@ internal static class Picking {
         if (Core.ActiveCamera == null || Core.ActiveLevel == null) return;
         
         // Ensure viewport interaction is valid and prevent picking when clicking UI
-        if (!Editor.Level3D.IsHovered) return;
+        if (!Editor.EditorRender.IsHovered) return;
         if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
 
         // Prevent picking if gizmo is interacting
         if (LevelBrowser.SelectedObject?.Transform.IsHovered == true || LevelBrowser.SelectedObject?.Transform.IsDragging == true) return;
 
-        var ray = Raylib.GetScreenToWorldRay(Level3D.RelativeMouse3D, Core.ActiveCamera.Raylib);
+        var ray = Raylib.GetScreenToWorldRay(EditorRender.RelativeMouse3D, Core.ActiveCamera.Raylib);
         
         Obj? closestObj = null;
         var minDistance = float.MaxValue;
@@ -34,9 +33,9 @@ internal static class Picking {
                 // Only perform collision check if the model is loaded
                 if (component is not Model { IsLoaded: true } model) continue;
                 
-                for (var i = 0; i < model.RlModel.MeshCount; i++) {
+                for (var i = 0; i < model.Asset.RlModel.MeshCount; i++) {
                         
-                    var collision = Raylib.GetRayCollisionMesh(ray, model.RlModel.Meshes[i], model.RlModel.Transform);
+                    var collision = Raylib.GetRayCollisionMesh(ray, model.Asset.RlModel.Meshes[i], obj.WorldMatrix);
 
                     if (!collision.Hit || !(collision.Distance < minDistance)) continue;
                     

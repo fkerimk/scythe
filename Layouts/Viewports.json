@@ -1,5 +1,7 @@
 {
-  "Level3D": true,
+  "EditorRender": true,
   "LevelBrowser": true,
-  "ProjectBrowser": true
+  "ProjectBrowser": true,
+  "ObjectBrowser": true,
+  "ScriptEditor": true
 }

@@ -8,7 +8,7 @@ internal class Script(Obj obj) : Component(obj) {
     public override string LabelIcon => Icons.FaCode;
     public override Color LabelColor => Color.White;
 
-    [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
+    [RecordHistory] [JsonProperty] [Label("Path")] [FilePath("Scripts", ".lua")] public string Path { get; set; } = "";
 
     public required MoonSharp.Interpreter.Script LuaScript;
     public DynValue? LuaLoop;

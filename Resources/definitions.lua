@@ -69,6 +69,10 @@ function Obj:dispose() end
 ---@return void
 function Obj:recordedDelete() end
 
+---@param obj Obj
+---@return void
+function Obj:recordedSetParent(obj) end
+
 ---@param pos Vector3
 ---@param rot Quaternion
 ---@param scale Vector3
@@ -81,6 +85,9 @@ function Obj:decomposeMatrix(pos, rot, scale) end
 ---@return void
 function Obj:decomposeWorldMatrix(worldPos, worldRot, worldScale) end
 
+---@return String
+function Obj:getPathFromRoot() end
+
 ---@param t Table
 ---@return Obj
 function Obj:find(t) end
@@ -92,10 +99,6 @@ function Obj:findComponent(t) end
 ---@param name string
 ---@return Component
 function Obj:makeComponent(name) end
-
----@param name string
----@return string
-function Obj:safeNameForChild(name) end
 
 ---@class Level
 ---@field root Obj
@@ -111,11 +114,7 @@ function Level.makeObject(name, parent) end
 ---@param name string
 ---@param parent Obj
 ---@return Obj
-function Level:recordedBuildObject(name, parent) end
-
----@param source Obj
----@return Obj
-function Level:recordedCloneObject(source) end
+function Level.recordedMakeObject(name, parent) end
 
 ---@param t Table
 ---@return Obj
@@ -152,7 +151,7 @@ function Camera:render3D() end
 ---@field shadowFovScale number
 local RenderSettings = {}
 ---@class LuaF2
----@field new Func
+---@field new fun(arg0: number, arg1: number): Vector2
 ---@field zero Vector2
 ---@field up Vector2
 ---@field down Vector2
@@ -173,7 +172,7 @@ function LuaF2.lerp(a, b, t) end
 ---@field back Vector3
 ---@field right Vector3
 ---@field left Vector3
----@field new Func
+---@field new fun(arg0: number, arg1: number, arg2: number): Vector3
 local LuaF3 = {}
 ---@param a Vector3
 ---@param b Vector3
@@ -351,9 +350,6 @@ function Animation:load() end
 ---@return void
 function Animation:logic() end
 
----@return void
-function Animation:unload() end
-
 ---@class Light : Component
 ---@field labelIcon string
 ---@field labelColor Color
@@ -402,6 +398,7 @@ function Light:render3D() end
 ---@field rightFlat Vector3
 ---@field pos Vector3
 ---@field rot Quaternion
+---@field asset ModelAsset
 ---@field rlModel Model
 ---@field obj Obj
 ---@field isLoaded boolean
@@ -423,9 +420,6 @@ function Model:drawShadow() end
 
 ---@return void
 function Model:draw() end
-
----@return void
-function Model:unload() end
 
 ---@class Script : Component
 ---@field labelIcon string
@@ -476,6 +470,7 @@ function Script.safeLuaCall(action) end
 ---@field worldPos Vector3
 ---@field worldRot Quaternion
 ---@field worldEuler Vector3
+---@field worldScale Vector3
 ---@field isHovered boolean
 ---@field isDragging boolean
 ---@field isSelected boolean
@@ -2060,6 +2055,17 @@ function Matrix4x4:withRow(index, value) end
 ---@field up Vector3
 ---@field raylib Camera3D
 local Camera3D = {}
+---@class ModelAsset : Asset
+---@field isLoaded boolean
+---@field file string
+---@field rlModel Model
+local ModelAsset = {}
+---@return boolean
+function ModelAsset:load() end
+
+---@return void
+function ModelAsset:unload() end
+
 ---@class RigidBody
 ---@field data RigidBodyData
 ---@field handle JHandle
@@ -2841,6 +2847,16 @@ function Plane:toString() end
 ---@field perspective CameraProjection
 ---@field orthographic CameraProjection
 local CameraProjection = {}
+---@class Asset
+---@field isLoaded boolean
+---@field file string
+local Asset = {}
+---@return boolean
+function Asset:load() end
+
+---@return void
+function Asset:unload() end
+
 ---@class RigidBodyData
 ---@field isActive boolean
 ---@field enableGyroscopicForces boolean
@@ -3550,7 +3566,7 @@ function ReadOnlyPartitionedSet:getEnumerator() end
 ---@class DynamicTree
 ---@field proxies ReadOnlyPartitionedSet
 ---@field root number
----@field filter Func
+---@field filter fun(arg0: IDynamicTreeProxy, arg1: IDynamicTreeProxy): boolean
 ---@field updatedProxyCount number
 ---@field hashSetInfo ValueTuple
 ---@field nodes Node
@@ -3561,7 +3577,7 @@ function ReadOnlyPartitionedSet:getEnumerator() end
 ---@field expandFactor number
 ---@field expandEps number
 local DynamicTree = {}
----@param action Action
+---@param action fun(arg0: IDynamicTreeProxy, arg1: IDynamicTreeProxy): void
 ---@param multiThread boolean
 ---@return void
 function DynamicTree:enumerateOverlaps(action, multiThread) end
@@ -3595,7 +3611,7 @@ function DynamicTree:removeProxy(proxy) end
 ---@return number
 function DynamicTree:calculateCost() end
 
----@param action Action
+---@param action fun(arg0: TreeBox, arg1: number): void
 ---@return void
 function DynamicTree:enumerateTreeBoxes(action) end
 
@@ -3715,6 +3731,70 @@ function Node:set(arg0, arg1) end
 ---@param arg0 number
 ---@return Node
 function Node:address(arg0) end
+
+---@class TreeBox
+---@field vectorMin Vector128
+---@field vectorMax Vector128
+---@field center JVector
+---@field min JVector
+---@field minW number
+---@field max JVector
+---@field maxW number
+---@field epsilon number
+local TreeBox = {}
+---@return JBoundingBox
+function TreeBox:asJBoundingBox() end
+
+---@param point JVector
+---@return boolean
+function TreeBox:contains(point) end
+
+---@param box JBoundingBox
+---@return boolean
+function TreeBox:notDisjoint(box) end
+
+---@param box JBoundingBox
+---@return boolean
+function TreeBox:disjoint(box) end
+
+---@param box JBoundingBox
+---@return boolean
+function TreeBox:encompasses(box) end
+
+---@param origin JVector
+---@param direction JVector
+---@return boolean
+function TreeBox:segmentIntersect(origin, direction) end
+
+---@param origin JVector
+---@param direction JVector
+---@return boolean
+function TreeBox:rayIntersect(origin, direction) end
+
+---@return string
+function TreeBox:toString() end
+
+---@return number
+function TreeBox:getSurfaceArea() end
+
+---@param first TreeBox
+---@param second TreeBox
+---@return number
+function TreeBox.mergedSurface(first, second) end
+
+---@param first TreeBox
+---@param second TreeBox
+---@param result TreeBox
+---@return void
+function TreeBox.createMerged(first, second, result) end
+
+---@param first TreeBox
+---@param second TreeBox
+---@return boolean
+function TreeBox.equals(first, second) end
+
+---@return number
+function TreeBox:getHashCode() end
 
 ---@class RayCastFilterPre
 ---@field target Object

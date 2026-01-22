@@ -1,7 +1,6 @@
 local moveSpeed = 3
 local sensitivity = 0.3
 
-local posTarget = self.pos
 local rotTarget = quat.fromEuler(-90, 0, 0)
 
 local camRotTarget = f2.zero

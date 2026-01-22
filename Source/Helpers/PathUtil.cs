@@ -6,7 +6,7 @@ internal abstract class PathUtil {
 
     private static string CurrentRelative(string path) => Process(Path.Join(CurrentPath, path));
     private static string LaunchRelative(string path) => Process(Path.Join(LaunchPath, path));
-    
+
     public static string ModRelative(string path) => Process(Path.Join(Config.Mod.Path, path));
     public static string ExeRelative(string path) => Process(Path.Join(ExePath, path));
 
@@ -35,11 +35,8 @@ internal abstract class PathUtil {
             
                 case false when File.Exists(checkPath):
                 case true when Directory.Exists(checkPath):
-                    //Console.WriteLine("PASS: " + checkPath);
                     return true;
             }
-            
-            //Console.WriteLine("FAIL: " + checkPath);
             
             return false;
         }

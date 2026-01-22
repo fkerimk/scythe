@@ -14,17 +14,17 @@ internal static unsafe class Editor {
     
     public static ImGuiIOPtr ImGuiIoPtr;
 
-    public static readonly Level3D Level3D = new() { CustomStyle = new CustomStyle {
-        
-        WindowPadding = new Vector2(0, 0),
-        CellPadding = new Vector2(0, 0),
-        SeparatorTextPadding = new Vector2(0, 0)
-    }};
-
-    public static readonly LevelBrowser LevelBrowser = new();
-    public static readonly ProjectBrowser ProjectBrowser = new();
+    public static EditorRender EditorRender = null!;
+    public static LevelBrowser LevelBrowser = null!;
+    public static ProjectBrowser ProjectBrowser = null!;
+    // ReSharper disable once MemberCanBePrivate.Global
+    public static ObjectBrowser ObjectBrowser = null!;
+    // ReSharper disable once MemberCanBePrivate.Global
+    public static ScriptEditor ScriptEditor = null!;
     
-    private static readonly ObjectBrowser ObjectBrowser = new();
+    public static bool IsScriptEditorFocused => ScriptEditor.IsFocused;
+    
+    public static void OpenScript(string path) => ScriptEditor.Open(path);
     
     public static void Show() {
         
@@ -32,7 +32,20 @@ internal static unsafe class Editor {
 
         // Setup ImGui
         Setup(true, true);
-        
+
+        EditorRender = new() {
+            CustomStyle = new CustomStyle {
+                WindowPadding = new Vector2(0, 0),
+                CellPadding = new Vector2(0, 0),
+                SeparatorTextPadding = new Vector2(0, 0)
+            }
+        };
+
+        LevelBrowser = new();
+        ProjectBrowser = new();
+        ObjectBrowser = new();
+        ScriptEditor = new();
+
         var layoutPath = PathUtil.ExeRelative("Layouts/User.ini");
         
         if (PathUtil.BestPath("Layouts/User.ini", out var existLayoutPath))
@@ -56,16 +69,16 @@ internal static unsafe class Editor {
             Core.Load();
 
             // Reload viewport render
-            if (Level3D.TexSize != Level3D.TexTemp) {
+            if (EditorRender.TexSize != EditorRender.TexTemp) {
 
-                UnloadRenderTexture(Level3D.Rt);
-                Level3D.Rt = LoadRenderTexture((int)Level3D.TexSize.X, (int)Level3D.TexSize.Y);
+                UnloadRenderTexture(EditorRender.Rt);
+                EditorRender.Rt = LoadRenderTexture((int)EditorRender.TexSize.X, (int)EditorRender.TexSize.Y);
                 
-                UnloadRenderTexture(Level3D.OutlineRt);
-                Level3D.OutlineRt = LoadRenderTexture((int)Level3D.TexSize.X, (int)Level3D.TexSize.Y);
-                SetTextureWrap(Level3D.OutlineRt.Texture, TextureWrap.Clamp);
+                UnloadRenderTexture(EditorRender.OutlineRt);
+                EditorRender.OutlineRt = LoadRenderTexture((int)EditorRender.TexSize.X, (int)EditorRender.TexSize.Y);
+                SetTextureWrap(EditorRender.OutlineRt.Texture, TextureWrap.Clamp);
                 
-                Level3D.TexTemp = Level3D.TexSize;
+                EditorRender.TexTemp = EditorRender.TexSize;
             }
 
             // Core Logic & Shadow Mapping (Internal switches RT, ends in screen buffer)
@@ -75,7 +88,7 @@ internal static unsafe class Editor {
             // Outline Mask Pass
             if (LevelBrowser.SelectedObject != null) {
             
-                BeginTextureMode(Level3D.OutlineRt);
+                BeginTextureMode(EditorRender.OutlineRt);
                 ClearBackground(Color.Blank);
                 ClearScreenBuffers(); // Explicitly clear depth and color buffers
                 
@@ -87,10 +100,10 @@ internal static unsafe class Editor {
             }
 
             // Viewport Rendering
-            BeginTextureMode(Level3D.Rt);
+            BeginTextureMode(EditorRender.Rt);
             Window.Clear(Colors.Game);
             
-            FreeCam.Loop(Level3D);
+            FreeCam.Loop(EditorRender);
             
             BeginMode3D(Core.ActiveCamera.Raylib);
             Core.Render(false); // Draw objects and skybox
@@ -101,10 +114,10 @@ internal static unsafe class Editor {
             if (LevelBrowser.SelectedObject != null) {
                  
                 BeginShaderMode(Shaders.OutlinePost);
-                SetShaderValue(Shaders.OutlinePost, Shaders.OutlineTextureSize, new Vector2(Level3D.TexSize.X, Level3D.TexSize.Y), ShaderUniformDataType.Vec2);
+                SetShaderValue(Shaders.OutlinePost, Shaders.OutlineTextureSize, new Vector2(EditorRender.TexSize.X, EditorRender.TexSize.Y), ShaderUniformDataType.Vec2);
                 SetShaderValue(Shaders.OutlinePost, Shaders.OutlineWidth, 2.0f, ShaderUniformDataType.Float);
                 SetShaderValue(Shaders.OutlinePost, Shaders.OutlineColor, ColorNormalize(Colors.Primary), ShaderUniformDataType.Vec4);
-                DrawTextureRec(Level3D.OutlineRt.Texture, new Rectangle(0, 0, Level3D.TexSize.X, -Level3D.TexSize.Y), Vector2.Zero, Color.White);
+                DrawTextureRec(EditorRender.OutlineRt.Texture, new Rectangle(0, 0, EditorRender.TexSize.X, -EditorRender.TexSize.Y), Vector2.Zero, Color.White);
                 EndShaderMode();
             }
             
@@ -121,11 +134,12 @@ internal static unsafe class Editor {
             DockSpaceOverViewport(GetMainViewport().ID);
             ImGuiIoPtr.MouseDoubleClickTime = 0.2f;
             MenuBar.Draw();
-            Level3D.Draw();
+            EditorRender.Draw();
             Picking.Update();
             LevelBrowser.Draw();
             ObjectBrowser.Draw();
             ProjectBrowser.Draw();
+            ScriptEditor.Draw();
             PopFont();
             Style.Pop();
             rlImGui.End();
@@ -143,8 +157,10 @@ internal static unsafe class Editor {
         
         // Cleanup temp
         try {
+            
             var tempPath = PathUtil.ExeRelative("Temp");
             if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
+            
         } catch { /**/ }
 
         Core.Quit();
@@ -156,26 +172,25 @@ internal static unsafe class Editor {
 
         foreach (var component in obj.Components.Values) {
             
-            if (component is not Model model) continue;
+            if (component is not Model { IsLoaded: true } model) continue;
             
             // Override shaders
-            var originalShaders = new Shader[model.RlModel.MaterialCount];
+            var originalShaders = new Shader[model.Asset.RlModel.MaterialCount];
             
-            for (var i = 0; i < model.RlModel.MaterialCount; i++) {
+            for (var i = 0; i < model.Asset.RlModel.MaterialCount; i++) {
                 
-                originalShaders[i] = model.RlModel.Materials[i].Shader;
-                model.RlModel.Materials[i].Shader = Shaders.OutlineMask;
+                originalShaders[i] = model.Asset.RlModel.Materials[i].Shader;
+                model.Asset.RlModel.Materials[i].Shader = Shaders.OutlineMask;
             } 
                
             // Draw
             model.Draw();
                
             // Restore
-            for (var i = 0; i < model.RlModel.MaterialCount; i++)
-                model.RlModel.Materials[i].Shader = originalShaders[i];
+            for (var i = 0; i < model.Asset.RlModel.MaterialCount; i++)
+                model.Asset.RlModel.Materials[i].Shader = originalShaders[i];
         }
         
         foreach (var child in obj.Children.Values) RenderOutline(child);
     }
 }
-

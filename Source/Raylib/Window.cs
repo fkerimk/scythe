@@ -22,8 +22,12 @@ internal static class Window {
 
     public static void DrawFps() {
         
-        if (CommandLine.Editor ? Config.Editor.DrawFps : Config.Runtime.DrawFps)
-            DrawText($"{GetFPS()}", 10, 10, 20, Colors.Primary);
+        if (CommandLine.Editor ? !Config.Editor.DrawFps : !Config.Runtime.DrawFps) return;
+        
+        var fpsText = $"{GetFPS()}";
+
+        DrawTextEx(Fonts.RlMontserratRegular, fpsText, new System.Numerics.Vector2(11, 10), 20, 1, Color.Black);
+        DrawTextEx(Fonts.RlMontserratRegular, fpsText, new System.Numerics.Vector2(10, 10), 20, 1, Colors.Primary);
     }
 
     private static void CenterWindow() => SetWindowPosition((Screen.Width - Width) / 2, (Screen.Height - Height) / 2);

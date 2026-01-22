@@ -53,6 +53,8 @@ CommandLine.Init();
 
 Script.Register();
 
+if (CommandLine.Editor && !LspInstaller.CheckLspFiles()) CommandLine.NoSplash = false;
+
 if (!CommandLine.NoSplash) Splash.Show();
 
 if (CommandLine.Editor) 

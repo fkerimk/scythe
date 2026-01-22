@@ -1,17 +1,20 @@
 ﻿internal static class Icons {
     
-    // font awesome icon codes - https://fontawesome.com/v4/cheatsheet/
-    public const string FaFile = ""; // fa-file
-    public const string FaFolder = ""; // fa-folder
-    public const string FaLevelUp = ""; // fa-level-up 
-    public const string FaDotCircleO = ""; // fa-dot-circle-o
-    public const string FaCube = ""; // fa-cube
-    public const string FaArrowsAlt = ""; // fa-arrows-alt
-    public const string FaPlayCircle = ""; // fa-play-circle
-    public const string FaArrows = ""; // fa-arrows
-    public const string FaLightbulbO = ""; // fa-lightbulb-o
-    public const string FaVideoCamera = ""; // fa-video-camera
-    public const string FaCrosshairs = ""; // fa-crosshairs
-    public const string FaCode = ""; // fa-code 
-    public const string FaSearch = ""; //fa-search
+    // https://fontawesome.com/search
+    public const string FaFile = "";
+    public const string FaFolder = "";
+    public const string FaLevelUp = "";
+    public const string FaDotCircleO = "";
+    public const string FaCube = "";
+    public const string FaArrowsAlt = "";
+    public const string FaPlayCircle = "";
+    public const string FaArrows = "";
+    public const string FaLightbulbO = "";
+    public const string FaVideoCamera = "";
+    public const string FaCrosshairs = "";
+    public const string FaCode = ""; 
+    public const string FaFileCode = "";
+    public const string FaSearch = "";
+    public const string FaPlus = "";
+    public const string FaAsterisk = "*";
 }

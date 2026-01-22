@@ -17,8 +17,6 @@ internal static class Core {
     private static Raylib_cs.Model _skyboxModel;
     private static Texture2D _skyboxTexture;
     
-    //public static bool IsRendering;
-
     public static unsafe void Init() {
 
         // Shaders
@@ -37,6 +35,8 @@ internal static class Core {
         
         // Level & camera
         ActiveLevel = new Level("Main");
+        ActiveLevel.Root.Transform.UpdateTransform();
+        
         ActiveCamera = CommandLine.Editor ? new Camera3D() : (ActiveLevel.Root.Children["Camera"].Components["Camera"] as Camera)?.Cam;
         
         _shadowMap = LoadShadowmapRenderTexture(ShadowMapResolution, ShadowMapResolution);
@@ -57,9 +57,7 @@ internal static class Core {
 
     private static RenderTexture2D LoadShadowmapRenderTexture(int width, int height) {
         
-        var target = new RenderTexture2D {
-            Id = Rlgl.LoadFramebuffer()
-        };
+        var target = new RenderTexture2D { Id = Rlgl.LoadFramebuffer() };
         
         target.Texture.Width = width;
         target.Texture.Height = height;
@@ -70,7 +68,7 @@ internal static class Core {
         target.Depth.Id = Rlgl.LoadTextureDepth(width, height, false);
         target.Depth.Width = width;
         target.Depth.Height = height;
-        target.Depth.Format = PixelFormat.UncompressedGrayscale; // 19? In C# it might be different. 
+        target.Depth.Format = PixelFormat.UncompressedGrayscale;
         target.Depth.Mipmaps = 1;
 
         Rlgl.FramebufferAttach(target.Id, target.Depth.Id, FramebufferAttachType.Depth, FramebufferAttachTextureType.Texture2D, 0);
@@ -267,7 +265,7 @@ internal static class Core {
             
             foreach (var component in obj.Components.Values) {
                 
-                if (component is Model { CastShadows: true } m)
+                if (component is Model { CastShadows: true, IsLoaded: true } m)
                     m.DrawShadow();
             }
             

@@ -190,6 +190,7 @@ internal class ProjectBrowser : Viewport {
 
         var flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanAvailWidth;
         if (_currentPath == rootPath) flags |= ImGuiTreeNodeFlags.Selected;
+        if (rootPath == Config.Mod.Path) flags |= ImGuiTreeNodeFlags.DefaultOpen;
 
         var hasSubDirs = false;
         try { hasSubDirs = Directory.EnumerateDirectories(rootPath).Any(); }
@@ -256,8 +257,16 @@ internal class ProjectBrowser : Viewport {
         // Background Context Menu
         if (BeginPopupContextItem("GridCMS", ImGuiPopupFlags.MouseButtonRight)) {
             
-            if (MenuItem("Create New Text File"))
-                CreateNewTextFile();
+            if (MenuItem("New Text File")) CreateNewFile("Text", ".txt");
+            
+            if (MenuItem("New Script")) CreateNewFile("Script", ".lua", name =>
+            $"""
+            print("{name} is working, yay!")
+            
+            function loop()
+                -- loop is called once per frame
+            end
+            """);
             
             EndPopup();
         }
@@ -354,10 +363,11 @@ internal class ProjectBrowser : Viewport {
         doubleClicked = false;
 
         var name = Path.GetFileName(path);
-        
-        // Truncate logic for safety
         var displayName = name;
-        if (displayName.Length > 24) displayName = displayName.Substring(0, 21) + "...";
+        var ext = Path.GetExtension(path).ToLower();
+
+        if (ext == ".lua") displayName = displayName[..^4];
+        if (displayName.Length > 24) displayName = displayName[..24] + "...";
 
         PushID(path);
         
@@ -406,33 +416,23 @@ internal class ProjectBrowser : Viewport {
              
         } else {
             
-            // Font Icon Fallback
-            var fallbackIcon = isDirectory ? Icons.FaFolder : Icons.FaFile;
-            
-            // Simple Extension Mapping for better generic look (Linux/Fallback)
-            if (!isDirectory) {
+            var icon = isDirectory switch {
                 
-                fallbackIcon = Icons.FaFile;
+                true => Icons.FaFolder,
                 
-                //var ext = Path.GetExtension(path).ToLower();
-                //
-                //fallbackIcon = ext switch {
-                //    
-                //    ".cs" or ".json" or ".xml" or ".shader" or ".lua" or ".js" => Icons.FaCode,
-                //    ".txt" or ".md" => Icons.FaFile,
-                //    
-                //    _ => fallbackIcon
-                //};
-            }
+                false when ext is ".lua" => Icons.FaFileCode,
+                
+                _ => Icons.FaFile    
+            };
 
-            var iconSize = CalcTextSize(fallbackIcon);
+            var iconSize = CalcTextSize(icon);
             
             var iconOffset = (ThumbnailSize - iconSize.X) * 0.5f;
             if (iconOffset < 0) iconOffset = 0;
             SetCursorPosX(groupStartX + iconOffset);
             
             if (isDirectory) PushStyleColor(ImGuiCol.Text, new Vector4(1f, 0.8f, 0.2f, 1f));
-            Text(fallbackIcon);
+            Text(icon);
             if (isDirectory) PopStyleColor();
         }
 
@@ -569,6 +569,11 @@ internal class ProjectBrowser : Viewport {
                 _itemClickedThisFrame = true;
                 _currentPath = path;
                 _selectedPaths.Clear();
+            } else {
+                
+                 if (Path.GetExtension(path).Equals(".lua", StringComparison.OrdinalIgnoreCase)) {
+                      Editor.OpenScript(path);
+                 }
             }
         }
 
@@ -758,7 +763,6 @@ internal class ProjectBrowser : Viewport {
                         
                     else if (!b.IsDir && !File.Exists(b.Original))
                         if (File.Exists(b.Backup)) File.Copy(b.Backup, b.Original);
-                    
                 }
                 
                 catch { /**/ }
@@ -805,25 +809,13 @@ internal class ProjectBrowser : Viewport {
         catch (Exception e) { Console.WriteLine($"Error deleting {path}: {e.Message}"); }
     }
 
-    private void CreateNewTextFile() {
-        
-        const string baseName = "New Text Document";
-        const string extension = ".txt";
-        
-        var fileName = baseName + extension;
+    private void CreateNewFile(string name, string extension, Func<string, string>? content = null) {
+
+        name = Generators.AvailableName(name, Directory.GetFiles(_currentPath).Select(Path.GetFileNameWithoutExtension));
+        var fileName = name + extension;
         var fullPath = Path.Combine(_currentPath, fileName);
         
-        var counter = 1;
-        
-        while (File.Exists(fullPath) || Directory.Exists(fullPath)) {
-            
-            fileName = $"{baseName} ({counter}){extension}";
-            fullPath = Path.Combine(_currentPath, fileName);
-            counter++;
-        }
-        
-        try { File.WriteAllText(fullPath, ""); }
-        catch (Exception e) { Console.WriteLine($"Error creating file: {e.Message}"); }
+        File.WriteAllText(fullPath, content?.Invoke(name) ?? "");
     }
     
     // Rename Helpers
@@ -882,7 +874,7 @@ internal class ProjectBrowser : Viewport {
         // Final Path check
         if (Directory.Exists(newPath) || File.Exists(newPath)) {
             
-             Console.WriteLine("Rename failed: Destination exists.");
+             Notifications.Show("Rename failed: Destination exists.");
              _renamingPath = null;
              return;
         }
@@ -928,7 +920,6 @@ internal class ProjectBrowser : Viewport {
         
         if (_failedThumbnails.Contains(path)) return IntPtr.Zero;
         if (_thumbnailCache.TryGetValue(path, out var tex)) return (IntPtr)tex.Id;
-        
         if (_pendingThumbnails.Contains(path)) return IntPtr.Zero;
 
         // Check for Image Extension
@@ -970,8 +961,6 @@ internal class ProjectBrowser : Viewport {
                     }
                         
                     _imageQueue.Enqueue((path, img));
-
-                    // Failed
                 }
             });
             

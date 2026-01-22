@@ -2,14 +2,28 @@
 using ImGuiNET;
 using static ImGuiNET.ImGui;
 
-internal class LevelBrowser() : Viewport("Level") {
+internal class LevelBrowser : Viewport {
+
+    public LevelBrowser() : base("Level") {
+        
+        Obj.OnDelete += obj => {
+            if (SelectedObject == obj || (SelectedObject != null && IsAncestorOf(obj, SelectedObject))) 
+                SelectObject(null);
+        };
+    }
 
     // cache
     private float? _savedScroll;
 
-    private static Obj?
+    internal static Obj?
         _dragObject,
-        _dragTarget,
+        _dragTarget;
+
+    internal static Component? _dragComponent;
+
+    internal static bool _isDragCancelled;
+    
+    private static Obj?
         _scheduledDeleteObject;
     
     public static Obj? SelectedObject { get; private set; }
@@ -27,6 +41,8 @@ internal class LevelBrowser() : Viewport("Level") {
 
         if (Core.ActiveLevel == null) return;
         
+        if (ImGui.IsMouseReleased(ImGuiMouseButton.Left)) _isDragCancelled = false;
+
         _rowCount = 0;
         Array.Clear(_lastRowY, 0, _lastRowY.Length);
 
@@ -42,7 +58,7 @@ internal class LevelBrowser() : Viewport("Level") {
         // drag object
         if (_dragObject != null && _dragTarget != null) {
 
-            _dragObject.SetParent(_dragTarget);
+            _dragObject.RecordedSetParent(_dragTarget);
             
             _dragObject = null;
             _dragTarget = null;
@@ -80,6 +96,7 @@ internal class LevelBrowser() : Viewport("Level") {
 
     private static bool IsAncestorOf(Obj ancestor, Obj target) {
 
+        if (target == null) return false;
         var current = target.Parent;
 
         while (current != null) {
@@ -177,7 +194,7 @@ internal class LevelBrowser() : Viewport("Level") {
                 //var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.IsSubclassOf(typeof(Component)) && !t.IsAbstract);
 
                 if (MenuItem("Object"))
-                    Core.ActiveLevel.RecordedBuildObject("Object", obj);
+                    Level.RecordedMakeObject("Object", obj);
 
                 Separator();
                 
@@ -185,21 +202,21 @@ internal class LevelBrowser() : Viewport("Level") {
                     
                     if (MenuItem("Directional Light")) {
 
-                        var light = Core.ActiveLevel.RecordedBuildObject("Directional Light", obj);
+                        var light = Level.RecordedMakeObject("Directional Light", obj);
                         (light.MakeComponent("Light") as Light)?.Type = 0;
                         SelectObject(light);
                     }
                 
                     if (MenuItem("Point Light")) {
                             
-                        var light = Core.ActiveLevel.RecordedBuildObject("Point Light", obj);
+                        var light = Level.RecordedMakeObject("Point Light", obj);
                         (light.MakeComponent("Light") as Light)?.Type = 1;
                         SelectObject(light);
                     }
                 
                     if (MenuItem("Spot Light")) {
                             
-                        var light = Core.ActiveLevel.RecordedBuildObject("Point Light", obj);
+                        var light = Level.RecordedMakeObject("Point Light", obj);
                         (light.MakeComponent("Light") as Light)?.Type = 2;
                         SelectObject(light);
                     }
@@ -286,7 +303,7 @@ internal class LevelBrowser() : Viewport("Level") {
         }
 
         // start drag
-        if (BeginDragDropSource()) {
+        if (!_isDragCancelled && BeginDragDropSource()) {
             
             _dragObject = obj;
             
@@ -369,7 +386,6 @@ internal class LevelBrowser() : Viewport("Level") {
         if (obj != null) obj.IsSelected = true;
     }
 
-    public static void Delete(Obj? obj) => _scheduledDeleteObject = obj;
     public static void DeleteSelectedObject() {
         
         if (!CanDeleteSelectedObject) return;

@@ -4,52 +4,53 @@ internal static class Colors {
     
     // generic
     public static Color Clear => new(0f, 0f, 0f, 0f);
-    public static Color Primary => new(1f, 0.27f, 0f);
-    private static Color PrimarySoft => new(0.7f, 0.3f, 0f);
-    public static Color Back => new(0.23f, 0.23f, 0.26f);
-    public static Color Game => new(0.1f, 0.1f, 0.11f);
-    public static Color Grid => new(0.18f, 0.18f, 0.18f, 0.15f);
+    public static Color Primary => new(255, 110, 40, 255);
+    public static Color TextDisabled => new(110, 110, 125, 255);
+    private static Color PrimarySoft => new(180, 80, 30, 255);
+    public static Color Back => new(18, 18, 26, 255);
+    public static Color Game => new(12, 12, 14, 255);
+    public static Color Grid => new(80, 100, 200, 20);
     
     // ImGui
-    public static Color GuiText => Color.White;
-    public static Color GuiTextDisabled => new(0.75f, 0.75f, 0.75f);
-    public static Color GuiWindowBg => new(0.15f, 0.16f, 0.17f);
+    public static Color GuiText => new(230, 230, 245, 255);
+    public static Color GuiTextDisabled => new(110, 110, 125, 255);
+    public static Color GuiWindowBg => new(22, 22, 30, 255); 
     //ChildBg,
     //PopupBg,
-    public static Color GuiBorder => new(0.1f, 0.1f, 0.11f);
+    public static Color GuiBorder => new(45, 45, 60, 255);
     //BorderShadow,
-    public static Color GuiFrameBg => PrimarySoft;
-    public static Color GuiFrameBgHovered => Primary;
+    public static Color GuiFrameBg => new(32, 32, 48, 255);
+    public static Color GuiFrameBgHovered => new(55, 55, 85, 255);
     public static Color GuiFrameBgActive => PrimarySoft;
-    public static Color GuiTitleBg => new(0.1f, 0.11f, 0.12f);
-    public static Color GuiTitleBgActive => GuiTitleBg;
+    public static Color GuiTitleBg => new(18, 18, 25, 255);
+    public static Color GuiTitleBgActive => new(30, 30, 42, 255);
     public static Color GuiTitleBgCollapsed => GuiTitleBg;
     //MenuBarBg,
     //ScrollbarBg,
     //ScrollbarGrab,
     //ScrollbarGrabHovered,
     //ScrollbarGrabActive,
-    public static Color GuiCheckMark => GuiText;
+    public static Color GuiCheckMark => Primary;
     //SliderGrab,
     //SliderGrabActive,
-    public static Color GuiButton => PrimarySoft;
-    public static Color GuiButtonHovered => Primary;
-    public static Color GuiButtonActive => PrimarySoft;
-    public static Color GuiHeader => GuiWindowBg;
-    public static Color GuiHeaderHovered => new(0.3f, 0.31f, 0.32f);
+    public static Color GuiButton => new(45, 45, 65, 255);
+    public static Color GuiButtonHovered => new(70, 70, 105, 255);
+    public static Color GuiButtonActive => Primary;
+    public static Color GuiHeader => new(40, 40, 58, 255);
+    public static Color GuiHeaderHovered => new(65, 65, 95, 255);
     public static Color GuiHeaderActive => Primary;
     //Separator,
     //SeparatorHovered,
     //SeparatorActive,
     public static Color GuiResizeGrip => Clear;
-    public static Color GuiResizeGripHovered => new(0.41f, 0.43f, 0.44f);
+    public static Color GuiResizeGripHovered => new(0.45f, 0.45f, 0.65f, 1.0f);
     public static Color GuiResizeGripActive => Primary;
-    public static Color GuiTabHovered => new(0.34f, 0.36f, 0.37f);
-    public static Color GuiTab => new(0.2f, 0.21f, 0.22f);
-    public static Color GuiTabSelected => new(0.28f, 0.29f, 0.3f);
-    public static Color GuiTabSelectedOverline => GuiTabSelected;
+    public static Color GuiTabHovered => new(60, 60, 95, 255);
+    public static Color GuiTab => new(28, 28, 42, 255);
+    public static Color GuiTabSelected => new(40, 40, 65, 255);
+    public static Color GuiTabSelectedOverline => Primary;
     public static Color GuiTabDimmed => GuiTab;
-    public static Color GuiTabDimmedSelected => GuiTabDimmed;
+    public static Color GuiTabDimmedSelected => GuiTabSelected;
     public static Color GuiTabDimmedSelectedOverline => GuiTabDimmed;
     public static Color GuiDockingPreview => Primary;
     //DockingEmptyBg,

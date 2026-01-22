@@ -7,63 +7,33 @@ internal class Model(Obj obj) : Component(obj) {
     public override string LabelIcon => Icons.FaCube;
     public override Color LabelColor => Colors.GuiTypeModel;
     
-    [RecordHistory] [JsonProperty] [Label("Path")] public string Path { get; set; } = "";
+    [RecordHistory] [JsonProperty] [Label("Path")] [FilePath("Models", ".iqm")] public string Path { get; set; } = "";
     [RecordHistory] [JsonProperty] [Label("Color")] public Color Color { get; set; } = Color.White;
     [RecordHistory] [JsonProperty] [Label("Transparent")] public bool IsTransparent { get; set; }
     [RecordHistory] [JsonProperty] [Label("Alpha Cutoff")] public float AlphaCutoff { get; set; } = 0.5f;
     [RecordHistory] [JsonProperty] [Label("Cast Shadows")] public bool CastShadows { get; set; } = true;
     [RecordHistory] [JsonProperty] [Label("Receive Shadows")] public bool ReceiveShadows { get; set; } = true;
-
+    
+    public ModelAsset Asset = null!;
     public Raylib_cs.Model RlModel;
 
-    public override unsafe bool Load() {
+    public override bool Load() {
         
         if (!PathUtil.BestPath($"Models/{Path}.iqm", out var modelPath)) return false;
-        
-        RlModel = Raylib.LoadModel(modelPath);
-                
-        if (CommandLine.Editor ? Config.Editor.GenTangents : Config.Runtime.GenTangents)
-            for (var m = 0; m < RlModel.MeshCount; m++)
-                Raylib.GenMeshTangents(ref RlModel.Meshes[m]);
+        if (!AssetManager.Load(modelPath, out Asset!)) return false;
 
-        if (CommandLine.Editor ? Config.Editor.NoShade : Config.Runtime.NoShade) return true;
+        // Create a local copy of the model structure (shallow copy)
+        // This ensures this component has its own transform and bone state
+        RlModel = Asset.RlModel; 
         
-        for (var i = 0; i < RlModel.MaterialCount; i++) {
-                    
-            RlModel.Materials[i].Shader = Shaders.Pbr;
-            //rl_model.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Value = 0f;
-            //rl_model.Materials[i].Maps[(int)MaterialMapIndex.Roughness].Value = 0.5f;
-            //rl_model.Materials[i].Maps[(int)MaterialMapIndex.Occlusion].Value = 1;
-            RlModel.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Value = 0;
-            RlModel.Materials[i].Maps[(int)MaterialMapIndex.Roughness].Value = 0.5f;
-            RlModel.Materials[i].Maps[(int)MaterialMapIndex.Occlusion].Value = 1f;
-            RlModel.Materials[i].Maps[(int)MaterialMapIndex.Emission].Color = Color.Black;
-
-            // Default flat normal map (128, 128, 255) = (0, 0, 1) in normalized space
-            var normalImg = Raylib.GenImageColor(1, 1, new Color(128, 128, 255, 255));
-            var normalTex = Raylib.LoadTextureFromImage(normalImg);
-            Raylib.UnloadImage(normalImg);
-        
-            RlModel.Materials[i].Maps[(int)MaterialMapIndex.Normal].Texture = normalTex;
-        
-            //var mraImg = Raylib.GenImageColor(1, 1, Color.White);
-            //var mraTex = Raylib.LoadTextureFromImage(mraImg);
-            //Raylib.UnloadImage(mraImg);
-            //rl_model.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Texture = mraTex;
-        }
-
         return true;
     }
 
-    public override void Logic() {
-
-        RlModel.Transform = Obj.WorldMatrix;
-    }
+    public override void Logic() => RlModel.Transform = Obj.WorldMatrix;
 
     public override void Render3D() {
         
         if (IsTransparent) return;
-        
         Draw();
     }
 
@@ -96,6 +66,4 @@ internal class Model(Obj obj) : Component(obj) {
         
         Raylib.DrawModel(RlModel, Vector3.Zero, 1, Color);
     }
-
-    public override void Unload() => Raylib.UnloadModel(RlModel);
 }

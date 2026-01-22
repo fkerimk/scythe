@@ -69,7 +69,7 @@ internal class Transform(Obj obj) : Component(obj) {
 
             if (Obj.Parent == null) Rot = value; else {
 
-                var parentRot = Quaternion.CreateFromRotationMatrix(Obj.Parent.WorldRotMatrix);
+                var parentRot = Obj.Parent.Transform.WorldRot;
                 var q = Quaternion.Inverse(parentRot) * value;
                 if (MathF.Abs(Quaternion.Dot(Rot, q)) > 0.9999f) return;
                 Rot = q;
@@ -91,6 +91,24 @@ internal class Transform(Obj obj) : Component(obj) {
             WorldRot = q;
         }
     }
+    
+    public Vector3 WorldScale {
+        
+        get {
+            
+            Obj.DecomposeWorldMatrix(out _, out _, out var scale);
+            return scale;
+            
+        } set {
+            
+            if (Obj.Parent == null) Scale = value; else {
+                
+                var parentScale = Obj.Parent.Transform.WorldScale;
+                Scale = value / parentScale;
+            }
+        }
+    }
+
     #endregion
 
     private const float MoveSnap = 0.2f;
@@ -153,15 +171,10 @@ internal class Transform(Obj obj) : Component(obj) {
             RefreshWorldMatrices(child.Value);
     }
 
-    public bool IsHovered => _isAnyAxisHovered;
+    public bool IsHovered { get; private set; }
     public bool IsDragging => !string.IsNullOrEmpty(_activeId);
-    
-    private bool _isAnyAxisHovered;
 
-    public override void Logic() {
-        
-        UpdateTransform();
-    }
+    public override void Logic() => UpdateTransform();
 
     public override void Render3D() {
         
@@ -169,7 +182,7 @@ internal class Transform(Obj obj) : Component(obj) {
 
         if (!Obj.IsSelected) return;
         
-        if (_canUseShortcuts && _activeMove == 0) {
+        if (_canUseShortcuts && _activeMove == 0 && Editor.EditorRender.IsHovered) {
         
             if (IsKeyPressed(KeyboardKey.Q)) _mode = 0;
             if (IsKeyPressed(KeyboardKey.W)) _mode = 1;
@@ -179,7 +192,7 @@ internal class Transform(Obj obj) : Component(obj) {
         
         BeginShaderMode(Shaders.Transform);
 
-        var ray = GetScreenToWorldRay(Level3D.RelativeMouse3D, Core.ActiveCamera.Raylib);
+        var ray = GetScreenToWorldRay(EditorRender.RelativeMouse3D, Core.ActiveCamera.Raylib);
 
         var useWorld = _isWorldSpace && _mode != 2;
 
@@ -187,7 +200,7 @@ internal class Transform(Obj obj) : Component(obj) {
         var u = useWorld ? Vector3.UnitY : Obj.Up;
         var f = useWorld ? Vector3.UnitZ : Obj.Fwd;
         
-        _isAnyAxisHovered = false;
+        IsHovered = false;
         
         Axis("x", Vector3.UnitX, r, new Color(0.9f, 0.3f, 0.3f), ray);
         Axis("y", Vector3.UnitY, u, new Color(0.3f, 0.9f, 0.3f), ray);
@@ -197,6 +210,8 @@ internal class Transform(Obj obj) : Component(obj) {
     }
 
     public override void Render2D() {
+        
+        if (!CommandLine.Editor || !Editor.EditorRender.IsHovered) return;
         
         _canUseShortcuts = false;
         
@@ -210,18 +225,22 @@ internal class Transform(Obj obj) : Component(obj) {
         var spaceName = (_mode == 2) ? ("") : (_isWorldSpace ? "(World)" : "(Local)");
 
         var textA = $"{modeName} {spaceName}";
-        var textPosA = Editor.Level3D.RelativeMouse with { Y = Editor.Level3D.RelativeMouse.Y - 15 };
+        var textPosA = Editor.EditorRender.RelativeMouse with { Y = Editor.EditorRender.RelativeMouse.Y - 15 };
         
-        DrawText(textA, (int)textPosA.X - 14, (int)textPosA.Y - 19, 20, Color.Black);
-        DrawText(textA, (int)textPosA.X - 15, (int)textPosA.Y - 20, 20, Color.Yellow);
+        DrawTextEx(Fonts.RlMontserratRegular, textA, new Vector2(textPosA.X - 13, textPosA.Y - 19), 20, 1, Color.Black);
+        DrawTextEx(Fonts.RlMontserratRegular, textA, new Vector2(textPosA.X - 14, textPosA.Y - 19), 20, 1, Color.Black);
+        DrawTextEx(Fonts.RlMontserratRegular, textA, new Vector2(textPosA.X - 14, textPosA.Y - 20), 20, 1, Color.Yellow);
+        DrawTextEx(Fonts.RlMontserratRegular, textA, new Vector2(textPosA.X - 15, textPosA.Y - 20), 20, 1, Color.Yellow);
         
         if (_activeMove == 0) return;
         
         var textB = _mode switch { 0 or 2 => $"{_activeMove:F2}m", 1 => $"{_activeMove:F2}°", _ => $"{_activeMove:F2}" }; 
-        var textPosB = Editor.Level3D.RelativeMouse with { Y = Editor.Level3D.RelativeMouse.Y - 15 };
+        var textPosB = Editor.EditorRender.RelativeMouse with { Y = Editor.EditorRender.RelativeMouse.Y - 15 };
             
-        DrawText(textB, (int)textPosB.X - 14, (int)textPosB.Y - 39, 20, Color.Black);
-        DrawText(textB, (int)textPosB.X - 15, (int)textPosB.Y - 40, 20, Color.Yellow);
+        DrawTextEx(Fonts.RlMontserratRegular, textB, new Vector2(textPosB.X - 13, textPosB.Y - 39), 20, 1, Color.Black);
+        DrawTextEx(Fonts.RlMontserratRegular, textB, new Vector2(textPosB.X - 14, textPosB.Y - 39), 20, 1, Color.Black);
+        DrawTextEx(Fonts.RlMontserratRegular, textB, new Vector2(textPosB.X - 14, textPosB.Y - 40), 20, 1, Color.Yellow);
+        DrawTextEx(Fonts.RlMontserratRegular, textB, new Vector2(textPosB.X - 15, textPosB.Y - 40), 20, 1, Color.Yellow);
     }
 
     private void Axis(string id, Vector3 axis, Vector3 normal, Color color, Ray ray) {
@@ -345,32 +364,34 @@ internal class Transform(Obj obj) : Component(obj) {
         const int rayQuality = 64;
         
         var isHovered = false;
-        var centerPos = worldPos;
+        
+        if (Editor.EditorRender.IsHovered){
 
-        if (_mode == 1) { // Rotation circle collision
-            
-            var normal1 = Vector3.Normalize(Vector3.Cross(normal, MathF.Abs(normal.Y) > 0.9f ? Vector3.UnitX : Vector3.UnitY));
-            var normal2 = Vector3.Cross(normal, normal1);
+            if (_mode == 1) { // Rotation circle collision
+                
+                var normal1 = Vector3.Normalize(Vector3.Cross(normal, MathF.Abs(normal.Y) > 0.9f ? Vector3.UnitX : Vector3.UnitY));
+                var normal2 = Vector3.Cross(normal, normal1);
 
-            for (var i = 0; i < rayQuality + 1; i++) {
+                for (var i = 0; i < rayQuality + 1; i++) {
+                    
+                    var angle = (i / (float)rayQuality) * MathF.PI * 2f;
+                    var step = worldPos + (normal1 * MathF.Cos(angle) + normal2 * MathF.Sin(angle)) * 1.5f;
+                    
+                    if (GetRayCollisionSphere(ray, step, rayRadius * 1.5f).Hit) isHovered = true;
+                }
                 
-                var angle = (i / (float)rayQuality) * MathF.PI * 2f;
-                var step = centerPos + (normal1 * MathF.Cos(angle) + normal2 * MathF.Sin(angle)) * 1.5f;
+            } else { // Line collision
                 
-                if (GetRayCollisionSphere(ray, step, rayRadius * 1.5f).Hit) isHovered = true;
-            }
-            
-        } else { // Line collision
-            
-            for (var i = 0; i < rayQuality + 1; i++) {
-                
-                var step = Vector3.Lerp(a, b, 1f / rayQuality * i);
-                
-                if (GetRayCollisionSphere(ray, step, rayRadius).Hit) isHovered = true;
+                for (var i = 0; i < rayQuality + 1; i++) {
+                    
+                    var step = Vector3.Lerp(a, b, 1f / rayQuality * i);
+                    
+                    if (GetRayCollisionSphere(ray, step, rayRadius).Hit) isHovered = true;
+                }
             }
         }
         
-        if (isHovered && IsMouseButtonPressed(MouseButton.Left)) {
+        if (isHovered && IsMouseButtonPressed(MouseButton.Left) && Editor.EditorRender.IsHovered) {
             
             _activeId = id;
             _activeLocalAxis = axis;
@@ -391,7 +412,7 @@ internal class Transform(Obj obj) : Component(obj) {
             History.StartRecording(this, "Transform");
         }
         
-        if (isHovered) _isAnyAxisHovered = true;
+        if (isHovered) IsHovered = true;
 
         if ((isActive && IsMouseButtonReleased(MouseButton.Left)) || IsCursorHidden()) {
             
@@ -412,8 +433,8 @@ internal class Transform(Obj obj) : Component(obj) {
                 
                 var angle1 = (i / 48f) * MathF.PI * 2f;
                 var angle2 = ((i + 1) / 48f) * MathF.PI * 2f;
-                var p1 = centerPos + (normal1 * MathF.Cos(angle1) + normal2 * MathF.Sin(angle1)) * 1.5f;
-                var p2 = centerPos + (normal1 * MathF.Cos(angle2) + normal2 * MathF.Sin(angle2)) * 1.5f;
+                var p1 = worldPos + (normal1 * MathF.Cos(angle1) + normal2 * MathF.Sin(angle1)) * 1.5f;
+                var p2 = worldPos + (normal1 * MathF.Cos(angle2) + normal2 * MathF.Sin(angle2)) * 1.5f;
                 
                 DrawCylinderEx(p1, p2, radius, radius, 1, targetColor);
             }

@@ -17,7 +17,7 @@ internal class SphereCollider(Obj obj) : Component(obj) {
         
         Obj.DecomposeWorldMatrix(out _, out _, out var scale);
         // Küre için uniform scale varsayıyoruz, en büyüğünü alalım
-        float maxScale = MathF.Max(scale.X, MathF.Max(scale.Y, scale.Z));
+        var maxScale = MathF.Max(scale.X, MathF.Max(scale.Y, scale.Z));
         Shape = new SphereShape(Radius * maxScale);
         return true;
     }

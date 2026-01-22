@@ -10,6 +10,12 @@ internal class ObjectBrowser : Viewport {
 
     private readonly IEnumerable<Type> _addComponentTypes;
     
+    private string[] _foundFiles = [];
+    private string _searchFilter = "";
+    private object? _pickerTarget;
+    private PropertyInfo? _pickerProp;
+    private bool _shouldOpenPicker;
+
     public ObjectBrowser() : base("Object") {
 
         var hideComponents = new[] {
@@ -56,56 +62,93 @@ internal class ObjectBrowser : Viewport {
         SetNextWindowPos(new Vector2(GetItemRectMin().X, GetItemRectMax().Y + 5.0f));
         SetNextWindowSize(new Vector2(GetItemRectSize().X, 0));
 
-        if (!BeginPopup("AddComponentPopup")) return;
+        if (BeginPopup("AddComponentPopup")) {
         
-        foreach (var type in _addComponentTypes) {
+            foreach (var type in _addComponentTypes) {
+                    
+                if (!Selectable(type.Name)) continue;
+
+                if (LevelBrowser.SelectedObject.Components.ContainsKey(type.Name)) {
+
+                    Notifications.Show($"Component {type.Name} already exists!", 1.5f);
+                    break;
+                }
+
+                if (Activator.CreateInstance(type, LevelBrowser.SelectedObject) is not Component component) continue;
                 
-            if (!Selectable(type.Name)) continue;
+                // History
+                var targetObj = LevelBrowser.SelectedObject;
+                var compName = type.Name;
+                
+                History.StartRecording(targetObj, $"Add Component {compName}");
+                
+                targetObj.Components[compName] = component; // Do
+                
+                History.SetUndoAction(() => {
+                    
+                    if (!targetObj.Components.TryGetValue(compName, out var c)) return;
+                    
+                    c.UnloadAndQuit();
+                    targetObj.Components.Remove(compName);
+                });
+                
+                History.SetRedoAction(() => {
+                    
+                    if (Activator.CreateInstance(type, targetObj) is not Component newComponent) return;
+                    
+                    foreach (var p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
+                        
+                        if (!p.CanWrite || !p.CanRead || p.Name == "IsLoaded") continue;
+                        try { p.SetValue(newComponent, p.GetValue(component)); } catch { /**/ }
+                    }
+                    
+                    targetObj.Components[compName] = newComponent;
+                });
+                
+                History.StopRecording();
 
-            if (LevelBrowser.SelectedObject.Components.ContainsKey(type.Name)) {
+                if (component is Animation animation &&  LevelBrowser.SelectedObject.Components.TryGetValue("Model", out var model))
+                    animation.Path = (model as Model)!.Path;
+            }
+            
+            EndPopup();
+        }
 
-                Notifications.Show($"Component {type.Name} already exists!", 1.5f);
-                break;
+        DrawFilePicker();
+    }
+
+    private void DrawFilePicker() {
+        if (_shouldOpenPicker) {
+            OpenPopup("File Picker");
+            _shouldOpenPicker = false;
+        }
+
+        if (BeginPopup("File Picker")) {
+            SetNextItemWidth(300);
+            if (InputTextWithHint("##filter", "Search...", ref _searchFilter, 128)) {
+                // Filter is handled by just checking contains below
             }
 
-            if (Activator.CreateInstance(type, LevelBrowser.SelectedObject) is not Component component) continue;
-            
-            // History
-            var targetObj = LevelBrowser.SelectedObject;
-            var compName = type.Name;
-            
-            History.StartRecording(targetObj, $"Add Component {compName}");
-            
-            targetObj.Components[compName] = component; // Do
-            
-            History.SetUndoAction(() => {
-                
-                if (!targetObj.Components.TryGetValue(compName, out var c)) return;
-                
-                c.UnloadAndQuit();
-                targetObj.Components.Remove(compName);
-            });
-            
-            History.SetRedoAction(() => {
-                
-                if (Activator.CreateInstance(type, targetObj) is not Component newComponent) return;
-                
-                foreach (var p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
-                    
-                    if (!p.CanWrite || !p.CanRead || p.Name == "IsLoaded") continue;
-                    try { p.SetValue(newComponent, p.GetValue(component)); } catch { /**/ }
-                }
-                
-                targetObj.Components[compName] = newComponent;
-            });
-            
-            History.StopRecording();
+            BeginChild("##files", new Vector2(300, 400));
+            foreach (var file in _foundFiles) {
+                if (!string.IsNullOrEmpty(_searchFilter) && !file.Contains(_searchFilter, StringComparison.OrdinalIgnoreCase))
+                    continue;
 
-            if (component is Animation animation &&  LevelBrowser.SelectedObject.Components.TryGetValue("Model", out var model))
-                animation.Path = (model as Model)!.Path;
+                if (Selectable(file)) {
+                    if (_pickerTarget != null && _pickerProp != null) {
+                        History.StartRecording(_pickerTarget, _pickerProp.Name);
+                        _pickerProp.SetValue(_pickerTarget, file);
+                        History.StopRecording();
+
+                        if (_pickerTarget is Component comp) comp.UnloadAndQuit();
+                    }
+                    CloseCurrentPopup();
+                }
+            }
+            EndChild();
+
+            EndPopup();
         }
-        
-        EndPopup();
     }
 
     private void DrawProperties(object obj, bool separator, string? title) {
@@ -127,6 +170,14 @@ internal class ObjectBrowser : Viewport {
             
             var treeOpen = TreeNodeEx($"##{title}_header", ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.SpanFullWidth);
             
+            // Drag Source (Attached to the header row)
+            if (obj is Component comp && BeginDragDropSource()) {
+                LevelBrowser._dragComponent = comp;
+                SetDragDropPayload("component", IntPtr.Zero, 0);
+                Text($"Reference {title}");
+                EndDragDropSource();
+            }
+
             PopStyleColor();
             PopStyleVar();
 
@@ -143,7 +194,9 @@ internal class ObjectBrowser : Viewport {
                 SameLine();
             }
             
+            ImGui.PushFont(Fonts.ImMontserratRegular);
             Text(title);
+            ImGui.PopFont();
 
             if (obj is Component component and not Transform) {
                 
@@ -177,8 +230,8 @@ internal class ObjectBrowser : Viewport {
                     
                     History.SetRedoAction(() => {
                         
-                        if (!targetObj.Components.TryGetValue(compName, out var comp)) return;
-                        comp.UnloadAndQuit();
+                        if (!targetObj.Components.TryGetValue(compName, out var c)) return;
+                        c.UnloadAndQuit();
                         targetObj.Components.Remove(compName);
                     });
                     
@@ -200,7 +253,12 @@ internal class ObjectBrowser : Viewport {
                     if (headAttr != null) {
                         Columns(1);
                         Spacing();
+                        ImGui.PushFont(Fonts.ImMontserratRegular);
+                        var headerCp = ImGui.GetCursorPos();
                         TextColored(Colors.Primary.ToVector4(), headAttr.Title);
+                        ImGui.SetCursorPos(headerCp + new Vector2(0.3f, 0));
+                        TextColored(Colors.Primary.ToVector4(), headAttr.Title);
+                        ImGui.PopFont();
                         Separator();
                         Spacing();
                         Columns(2, "##props", false);
@@ -211,7 +269,12 @@ internal class ObjectBrowser : Viewport {
                     if (labelAttr == null) continue;
 
                     AlignTextToFramePadding();
+                    ImGui.PushFont(Fonts.ImMontserratRegular);
+                    var labelCp = ImGui.GetCursorPos();
                     Text(labelAttr.Value);
+                    ImGui.SetCursorPos(labelCp + new Vector2(0.3f, 0));
+                    Text(labelAttr.Value);
+                    ImGui.PopFont();
                     NextColumn();
                     
                     DrawProperty(obj, prop);
@@ -236,7 +299,12 @@ internal class ObjectBrowser : Viewport {
                 if (labelAttr == null) continue;
 
                 AlignTextToFramePadding();
+                ImGui.PushFont(Fonts.ImMontserratRegular);
+                var labelAltCp = ImGui.GetCursorPos();
                 Text(labelAttr.Value);
+                ImGui.SetCursorPos(labelAltCp + new Vector2(0.3f, 0));
+                Text(labelAttr.Value);
+                ImGui.PopFont();
                 NextColumn();
                 DrawProperty(obj, prop);
                 NextColumn();
@@ -263,7 +331,44 @@ internal class ObjectBrowser : Viewport {
             if (prop.PropertyType == typeof(string)) {
 
                 var castValue = (string)value;
+                var filePathAttr = prop.GetCustomAttribute<FilePathAttribute>();
+
+                if (filePathAttr != null) {
+                    
+                    PushFont(Fonts.ImFontAwesomeSmall);
+                    var pressed = Button($"{Icons.FaSearch}##{id}");
+                    PopFont();
+
+                    if (pressed) {
+                        
+                        var baseDir = PathUtil.ModRelative(filePathAttr.Category);
+                        
+                        if (Directory.Exists(baseDir)) {
+                            
+                            _foundFiles = Directory.GetFiles(baseDir, $"*{filePathAttr.Extension}", SearchOption.AllDirectories)
+                                .Select(f => Path.GetRelativePath(baseDir, f).Replace('\\', '/'))
+                                .Select(f => f.Substring(0, f.Length - filePathAttr.Extension.Length))
+                                .ToArray();
+
+                            if (_foundFiles.Length == 0)
+                                Notifications.Show($"There is no {filePathAttr.Extension} file in {filePathAttr.Category}");
+                            
+                            else {
+                                
+                                _pickerTarget = target;
+                                _pickerProp = prop;
+                                _searchFilter = "";
+                                _shouldOpenPicker = true;
+                            }
+                        }
+                        
+                        else Notifications.Show($"Folder not found: {filePathAttr.Category}");
+                    }
+                    SameLine();
+                }
+
                 if (InputTextWithHint(id, "object", ref castValue, 512)) {
+                    
                     newValue = castValue;
                     changed = true;
                 }
@@ -273,7 +378,9 @@ internal class ObjectBrowser : Viewport {
 
                 var castValue = (Vector3)value;
                 var convertedValue = castValue;
+                
                 if (InputFloat3(id, ref convertedValue)) {
+                    
                     newValue = convertedValue;
                     changed = true;
                 }
@@ -283,7 +390,9 @@ internal class ObjectBrowser : Viewport {
 
                 var castValue = (Color)value;
                 var convertedValue = castValue.ToVector4();
+                
                 if (ColorEdit4(id, ref convertedValue, ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.AlphaBar)) {
+                    
                     newValue = convertedValue.ToColor();
                     changed = true;
                 }
@@ -292,7 +401,9 @@ internal class ObjectBrowser : Viewport {
             else if (prop.PropertyType == typeof(int)) {
 
                 var castValue = (int)value;
+                
                 if (InputInt(id, ref castValue)) {
+                    
                     newValue = castValue;
                     changed = true;
                 }
@@ -301,7 +412,9 @@ internal class ObjectBrowser : Viewport {
             else if (prop.PropertyType == typeof(bool)) {
 
                 var castValue = (bool)value;
+                
                 if (Checkbox(id, ref castValue)) {
+                    
                     newValue = castValue;
                     changed = true;
                 }
@@ -310,7 +423,9 @@ internal class ObjectBrowser : Viewport {
             else if (prop.PropertyType == typeof(float)) {
 
                 var castValue = (float)value;
+                
                 if (InputFloat(id, ref castValue)) {
+                    
                     newValue = castValue;
                     changed = true;
                 }
@@ -318,7 +433,13 @@ internal class ObjectBrowser : Viewport {
             
             if (IsItemActivated()) History.StartRecording(target, prop.Name);
             
-            if (changed && newValue != null) prop.SetValue(target, newValue);
+            if (changed && newValue != null) {
+                
+                prop.SetValue(target, newValue);
+                
+                if (target is Component comp && (prop.Name == "Path" || prop.GetCustomAttribute<FilePathAttribute>() != null)) 
+                    comp.UnloadAndQuit();
+            }
             
             if (IsItemDeactivatedAfterEdit()) History.StopRecording();
 
@@ -326,8 +447,5 @@ internal class ObjectBrowser : Viewport {
         }
         
         _propIndex++;
-    }
-    private class NaturalStringComparer : IComparer<string> {
-        public int Compare(string? x, string? y) => SortUtil.NaturalCompare(x, y);
     }
 }

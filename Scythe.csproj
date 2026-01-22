@@ -9,7 +9,6 @@
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         
-        <PlatformTarget>x64</PlatformTarget>
         <Prefer32Bit>false</Prefer32Bit>
         
         <PublishAot>false</PublishAot>
@@ -19,9 +18,9 @@
         <TrimMode>link</TrimMode>
 
         <ApplicationIcon>Resources/Images/Icon.ico</ApplicationIcon>
-        
-        <NoWarn>SYSLIB1054</NoWarn>
 
+        <NoWarn>SYSLIB1045</NoWarn>
+        
     </PropertyGroup>
 
     <ItemGroup>
