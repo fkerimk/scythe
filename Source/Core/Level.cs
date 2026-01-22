@@ -1,4 +1,5 @@
-﻿using MoonSharp.Interpreter;
+﻿using System.Numerics;
+using MoonSharp.Interpreter;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -9,6 +10,13 @@ internal class Level {
     private string _jsonPath = null!;
     
     [JsonProperty] public readonly Obj Root = null!;
+    [JsonProperty] public CameraData? EditorCamera;
+
+    public class CameraData {
+        
+        public Vector3 Position;
+        public Vector2 Rotation;
+    }
 
     public Level(string? name) {
 
@@ -28,9 +36,29 @@ internal class Level {
         
         foreach (var property in children.Properties())
             BuildHierarchy(new KeyValuePair<string, JToken>(property.Name, property.Value), Root);
+
+        // Load camera
+        if (CommandLine.Editor && rawData["EditorCamera"] is JObject cameraJson) {
+            
+            EditorCamera = cameraJson.ToObject<CameraData>();
+            
+            if (EditorCamera != null) {
+                
+                FreeCam.Pos = EditorCamera.Position;
+                FreeCam.Rot = EditorCamera.Rotation;
+            }
+        }
     }
 
     public void Save() {
+        
+        if (CommandLine.Editor) {
+            
+            EditorCamera = new CameraData {
+                Position = FreeCam.Pos,
+                Rotation = FreeCam.Rot
+            };
+        }
         
         var settings = new JsonSerializerSettings { 
             

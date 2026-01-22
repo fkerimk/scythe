@@ -45,6 +45,7 @@ internal class Obj {
     
     public Matrix4x4 WorldMatrix = Matrix4x4.Identity;
     public Matrix4x4 WorldRotMatrix = Matrix4x4.Identity;
+    public Matrix4x4 VisualWorldMatrix = Matrix4x4.Identity;
 
     public Vector3 Up    => Vector3.Normalize(new Vector3(WorldRotMatrix.M12, WorldRotMatrix.M22, WorldRotMatrix.M32));
     public Vector3 Fwd   => Vector3.Normalize(new Vector3(WorldRotMatrix.M13, WorldRotMatrix.M23, WorldRotMatrix.M33));

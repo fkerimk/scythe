@@ -22,14 +22,13 @@ internal class Model(Obj obj) : Component(obj) {
         if (!PathUtil.BestPath($"Models/{Path}.iqm", out var modelPath)) return false;
         if (!AssetManager.Load(modelPath, out Asset!)) return false;
 
-        // Create a local copy of the model structure (shallow copy)
-        // This ensures this component has its own transform and bone state
+        // Create a local copy of the model structure (shallow copy) - This ensures this component has its own transform and bone state
         RlModel = Asset.RlModel; 
         
         return true;
     }
 
-    public override void Logic() => RlModel.Transform = Obj.WorldMatrix;
+    public override void Logic() => RlModel.Transform = Obj.VisualWorldMatrix;
 
     public override void Render3D() {
         

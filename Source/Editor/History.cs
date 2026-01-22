@@ -9,6 +9,7 @@ internal class HistoryStack {
 
     public bool CanUndo => _currentIndex >= 0;
     public bool CanRedo => _currentIndex < _records.Count - 1;
+    public bool CanExtend => _currentIndex == _records.Count - 1;
 
     public void StartRecording(object reference, string? description = null) {
         
@@ -119,10 +120,12 @@ internal static class History {
         
         var props = reference.GetType().GetProperties(flags)
             .Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute)))
+            .OrderBy(p => p.Name)
             .Select(f => CloneValue(f.GetValue(reference)));
             
         var fields = reference.GetType().GetFields(flags)
             .Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute)))
+            .OrderBy(f => f.Name)
             .Select(f => CloneValue(f.GetValue(reference)));
             
         return props.Concat(fields).ToArray();
@@ -172,10 +175,12 @@ internal static class History {
         
         var props = reference.GetType().GetProperties(flags)
             .Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute)))
+            .OrderBy(p => p.Name)
             .ToArray();
             
         var fields = reference.GetType().GetFields(flags)
             .Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute)))
+            .OrderBy(f => f.Name)
             .ToArray();
             
         var i = 0;

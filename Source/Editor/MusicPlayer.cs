@@ -106,8 +106,6 @@ internal class MusicPlayer() : Viewport("Music Player") {
                 _isPlaying = true;
                 _isConnecting = false;
 
-                Console.WriteLine($"[MusicPlayer] Playback started: {sampleRate}Hz, {channels}ch");
-
                 // This decouples audio from the GUI frame rate, eliminating stuttering.
                 while (!token.IsCancellationRequested && _isPlaying) {
                     

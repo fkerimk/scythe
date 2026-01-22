@@ -127,10 +127,14 @@ internal static class Core {
                 obj.WorldMatrix = obj.Parent.WorldMatrix * obj.Matrix;
                 obj.WorldRotMatrix = obj.Parent.WorldRotMatrix * obj.RotMatrix;
                 
+                // Inherit parent's visual transform so children follow the bounce
+                obj.VisualWorldMatrix = obj.Parent.VisualWorldMatrix * obj.Matrix;
+                
             } else {
                 
                 obj.WorldMatrix = obj.Matrix;
                 obj.WorldRotMatrix = obj.RotMatrix;
+                obj.VisualWorldMatrix = obj.WorldMatrix;
             }
             
             // Logic and component updates

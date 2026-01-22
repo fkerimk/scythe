@@ -86,11 +86,13 @@ internal unsafe class ScriptEditor : Viewport {
             var settings = JsonConvert.DeserializeObject<ScriptEditorSettings>(File.ReadAllText(path));
             if (settings == null) return;
             foreach (var relTabPath in settings.OpenTabs) {
-                var absPath = PathUtil.ModRelative(relTabPath);
+                var normalized = relTabPath.Replace('\\', '/');
+                var absPath = PathUtil.ModRelative(normalized);
                 if (File.Exists(absPath)) NewTab(absPath);
             }
             if (settings.ActiveTabIndex >= 0 && settings.ActiveTabIndex < _tabs.Count)
                 _activeTabIndex = settings.ActiveTabIndex;
+            else if (_tabs.Count > 0) _activeTabIndex = 0;
         } catch { /**/ }
     }
 
@@ -100,7 +102,7 @@ internal unsafe class ScriptEditor : Viewport {
         if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
         var settings = new ScriptEditorSettings {
             OpenTabs = _tabs.Where(t => t.FilePath != null)
-                            .Select(t => Path.GetRelativePath(Config.Mod.Path, t.FilePath!))
+                            .Select(t => Path.GetRelativePath(Config.Mod.Path, t.FilePath!).Replace('\\', '/'))
                             .ToList(),
             ActiveTabIndex = _activeTabIndex
         };
@@ -198,7 +200,7 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private void BeginHistoryAction(string a) {
-        if (Raylib.GetTime() - ActiveTab.LastRecordTime < 1.0 && ActiveTab.CurrentHistoryAction == a)
+        if (Raylib.GetTime() - ActiveTab.LastRecordTime < 1.0 && ActiveTab.CurrentHistoryAction == a && History.CanExtend)
             _isExtendingHistory = true;
         else {
             History.StartRecording(ActiveTab, a);
@@ -334,7 +336,7 @@ internal unsafe class ScriptEditor : Viewport {
                 
                 var open = true;
                 
-                if (BeginTabItem($"{(_tabs[i].IsDirty ? "• " : " ")}{_tabs[i].Title} ###tab_{_tabs[i].Uri}", ref open, (_scrollToTab && i == _activeTabIndex) ? ImGuiTabItemFlags.SetSelected : 0)) {
+                if (BeginTabItem($"{(_tabs[i].IsDirty ? Icons.FaAsterisk + " " : " ")}{_tabs[i].Title} ###tab_{_tabs[i].Uri}", ref open, (_scrollToTab && i == _activeTabIndex) ? ImGuiTabItemFlags.SetSelected : 0)) {
                     
                     _activeTabIndex = i;
                     EndTabItem();
@@ -411,6 +413,9 @@ internal unsafe class ScriptEditor : Viewport {
     private void AcceptCompletion(string l) {
         var item = _acItems.FirstOrDefault(i => i.Label == l);
         if (item.Label == null) return;
+        
+        BeginHistoryAction("autocomplete");
+        
         var line = ActiveTab.Lines[ActiveTab.CursorLine];
         var sW = ActiveTab.CursorChar;
         while (sW > 0 && (char.IsLetterOrDigit(line[sW - 1]) || line[sW - 1] == '_')) sW--;
@@ -454,6 +459,7 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         _showAutoComplete = false;
+        EndHistoryAction();
         OnType(true, false, true, true);
     }
 

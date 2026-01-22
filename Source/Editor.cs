@@ -62,7 +62,9 @@ internal static unsafe class Editor {
         
         // Setup core
         Core.Init();
-        FreeCam.SetFromTarget(Core.ActiveCamera);
+        
+        if (Core.ActiveLevel?.EditorCamera == null)
+            FreeCam.SetFromTarget(Core.ActiveCamera);
         
         ViewSettings.Load();
         MusicPlayer.Load();

@@ -133,6 +133,11 @@ internal class Transform(Obj obj) : Component(obj) {
     private Vector2 _activeMouseTemp;
     private Quaternion _activeRot = Quaternion.Identity;
 
+    private Vector3 _visualVel;
+    private Vector3 _visualPos;
+    private Quaternion _visualRot = Quaternion.Identity;
+    private Vector3 _visualScale = Vector3.One;
+
     public void UpdateTransform() {
         
         var rotMatrix = Matrix4x4.Transpose(Matrix4x4.CreateFromQuaternion(Rot));
@@ -174,7 +179,93 @@ internal class Transform(Obj obj) : Component(obj) {
     public bool IsHovered { get; private set; }
     public bool IsDragging => !string.IsNullOrEmpty(_activeId);
 
-    public override void Logic() => UpdateTransform();
+    public override void Logic() {
+        
+        UpdateTransform();
+        
+        if (CommandLine.Editor) UpdateCartoon();
+    }
+
+    private void UpdateCartoon() {
+        
+        var dt = GetFrameTime();
+        if (dt > 0.1f) dt = 0.1f;
+        if (dt <= 0) return;
+
+        var targetPos = WorldPos;
+        var targetRot = WorldRot;
+        var targetScale = WorldScale;
+
+        // Force reset if too far (e.g. teleporting or level load)
+        if (Vector3.Distance(_visualPos, targetPos) > 10f) {
+            _visualPos = targetPos;
+            _visualRot = targetRot;
+            _visualVel = Vector3.Zero;
+        }
+
+        // Initialize if first frame
+        if (_visualPos == Vector3.Zero && targetPos != Vector3.Zero) {
+            _visualPos = targetPos;
+            _visualRot = targetRot;
+        }
+
+        // Only process bounce if selected, moving, or still settling
+        var isMoving = _visualVel.LengthSquared() > 0.0001f;
+        var isRotating = Quaternion.Dot(_visualRot, targetRot) < 0.9999f;
+        
+        if (!Obj.IsSelected && !isMoving && !isRotating) {
+            _visualPos = targetPos;
+            _visualRot = targetRot;
+            return;
+        }
+
+        // Pos Spring logic
+        var posDiff = targetPos - _visualPos;
+        _visualVel += posDiff * 600f * dt;
+        _visualVel *= MathF.Exp(-22f * dt);
+        _visualPos += _visualVel * dt;
+
+        // Rot Lag logic
+        _visualRot = Quaternion.Slerp(_visualRot, targetRot, 1f - MathF.Exp(-18f * dt));
+
+        // Building Matrix (Follows UpdateTransform logic: Scale * Rotation * Translation)
+        
+        // 1. Base Scale
+        var mScale = Raymath.MatrixScale(targetScale.X, targetScale.Y, targetScale.Z);
+        
+        // 2. Base Rotation (Must transpose System.Numerics matrices for Raylib)
+        var mRot = Matrix4x4.Transpose(Matrix4x4.CreateFromQuaternion(_visualRot));
+        
+        // Combine Scale * Rotation
+        var baseMatrix = Raymath.MatrixMultiply(mScale, mRot);
+
+        // 3. Squash & Stretch (Aligned with velocity)
+        var speed = _visualVel.Length();
+        if (speed > 0.1f) {
+            
+            var stretch = MathF.Min(speed * 0.05f, 0.4f); 
+            var dir = Vector3.Normalize(_visualVel);
+            var s = 1f + stretch;
+            var k = 1f / MathF.Sqrt(s);
+            
+            // Build Row-Major stretch matrix and then transpose it
+            var stretchM = new Matrix4x4(
+                
+                k + (s - k) * dir.X * dir.X, (s - k) * dir.X * dir.Y, (s - k) * dir.X * dir.Z, 0,
+                (s - k) * dir.Y * dir.X, k + (s - k) * dir.Y * dir.Y, (s - k) * dir.Y * dir.Z, 0,
+                (s - k) * dir.Z * dir.X, (s - k) * dir.Z * dir.Y, k + (s - k) * dir.Z * dir.Z, 0,
+                0, 0, 0, 1
+            );
+            
+            baseMatrix = Raymath.MatrixMultiply(baseMatrix, Matrix4x4.Transpose(stretchM));
+        }
+
+        // 4. Final Translation
+        var mTrans = Raymath.MatrixTranslate(_visualPos.X, _visualPos.Y, _visualPos.Z);
+        
+        // Write the final corrected visual matrix
+        Obj.VisualWorldMatrix = Raymath.MatrixMultiply(baseMatrix, mTrans);
+    }
 
     public override void Render3D() {
         

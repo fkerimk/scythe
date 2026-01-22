@@ -7,6 +7,9 @@ internal static class FreeCam {
     private const float Clamp = 1.55f;
     private const float Speed = 15;
     
+    public static Vector3 Pos { get => _pos; set => _pos = _lerpedPos = value; }
+    public static Vector2 Rot { get => _rot; set { _rot = value; UpdateForward(); } }
+    
     private static Vector3 _pos;
     private static Vector3 _lerpedPos;
     private static Vector3 _forward;
@@ -59,6 +62,11 @@ internal static class FreeCam {
         _rot -= new Vector2(input.Y * Sens, input.X * Sens);
         _rot.X = Raymath.Clamp(_rot.X, -Clamp, Clamp);
 
+        UpdateForward();
+    }
+
+    private static void UpdateForward() {
+        
         _forward = new Vector3(
             
             MathF.Cos(_rot.X) * MathF.Sin(_rot.Y),
