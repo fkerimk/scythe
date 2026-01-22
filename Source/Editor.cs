@@ -154,14 +154,7 @@ internal static unsafe class Editor {
         ViewSettings.Save();
         CloseWindow();
 
-        
-        // Cleanup temp
-        try {
-            
-            var tempPath = PathUtil.ExeRelative("Temp");
-            if (Directory.Exists(tempPath)) Directory.Delete(tempPath, true);
-            
-        } catch { /**/ }
+        Directory.Delete(PathUtil.TempPath, true);
 
         Core.Quit();
     }

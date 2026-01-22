@@ -1,4 +1,4 @@
-﻿PathUtil.LaunchPath = Environment.CurrentDirectory;
+﻿PathUtil.Init();
 
 foreach (var arg in args) {
     
@@ -22,9 +22,9 @@ if (PathUtil.BestPath("Scythe.ini", out var scytheIniPath)) {
 }
     
 else throw new FileNotFoundException("Scythe.ini not found");
-    
-if (PathUtil.BestPath(Config.Mod.Path, out var modPath))
-    Config.Mod.Path = modPath;
+
+if (PathUtil.BestPath(Config.Mod.Path, out var newModPath, true))
+    Config.Mod.Path = newModPath;
 
 if (PathUtil.BestPath("Mod.ini", out var modIniPath)) {
         

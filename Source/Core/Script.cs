@@ -92,9 +92,8 @@ internal class Script(Obj obj) : Component(obj) {
         };
 
         if (!generateDefinitions) return script;
-        
-        if (PathUtil.BestPath("Resources/definitions.lua", out var definitionsPath))
-            LuaDefinitionGenerator.Generate(script, definitionsPath);
+    
+        LuaDefinitionGenerator.Generate(script, PathUtil.TempRelative("Scythe.lua"));
 
         return script;
     }

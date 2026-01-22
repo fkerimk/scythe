@@ -29,7 +29,7 @@ internal static class Splash {
 
             _time += GetFrameTime();
 
-            if (!LspInstaller.IsDone) {
+            if (CommandLine.Editor && !LspInstaller.IsDone) {
 
                 DrawRectangle(0, Window.Height - 40, Window.Width, 40, new Color(0, 0, 0, 200));
                 

@@ -119,18 +119,8 @@ internal unsafe class ScriptEditor : Viewport {
         var sPath = Path.Combine(AppContext.BaseDirectory, $"External/{plat}/LuaLSP/bin",
             isWin ? "lua-language-server.exe" : "lua-language-server");
         if (!File.Exists(sPath)) return;
-        var tDir = PathUtil.ExeRelative("Temp/Lua");
-        Directory.CreateDirectory(tDir);
-        var dDst = Path.Combine(tDir, "definitions.lua");
-        if (PathUtil.BestPath("Resources/definitions.lua", out var s))
-            try {
-                File.Copy(s, dDst, true);
-            }
-            catch {
-                /**/
-            }
 
-        _lsp = new LuaLspClient(sPath, tDir, dDst);
+        _lsp = new LuaLspClient(sPath);
         _lsp.NotificationReceived += (m, p) => {
             if (m == "textDocument/publishDiagnostics") UpdateDiagnostics(p);
         };
@@ -149,15 +139,24 @@ internal unsafe class ScriptEditor : Viewport {
             ActiveTab.Diagnostics.Clear();
             _showAutoComplete = _showSig = false;
         };
+        
         _lsp.Start().ContinueWith(_ => {
+            
             if (_lsp is not { IsAlive: true }) return;
-            foreach (var t in _tabs)
-                _lsp.SendNotification("textDocument/didOpen",
-                    new {
-                        textDocument = new {
-                            uri = t.Uri, languageId = "lua", version = t.LspVersion, text = string.Join("\n", t.Lines)
-                        }
-                    });
+            
+            foreach (var tab in _tabs)
+                
+                _lsp.SendNotification("textDocument/didOpen", new {
+                    
+                    textDocument = new {
+                        
+                        uri = tab.Uri,
+                        languageId = "lua",
+                        version = tab.LspVersion,
+                        text = string.Join("\n", tab.Lines)
+                    }
+                });
+            
             RequestSemanticTokens();
         });
     }

@@ -46,9 +46,6 @@ internal class ProjectBrowser : Viewport {
         
         if (!Directory.Exists(_currentPath)) Directory.CreateDirectory(_currentPath);
         
-        // Ensure Icons
-        if (!Directory.Exists(PathUtil.ExeRelative("Temp/Trash"))) Directory.CreateDirectory(PathUtil.ExeRelative("Temp/Trash"));
-        
         // Settings
         GetIO().MouseDoubleClickTime = 0.5f; // Windows standard
     }
@@ -183,6 +180,8 @@ internal class ProjectBrowser : Viewport {
     
     private void DrawDirectoryTree(string rootPath) {
         
+        if (Path.GetFullPath(rootPath).Contains(PathUtil.TempPath)) return;
+        
         if (!Directory.Exists(rootPath)) return;
 
         var name = Path.GetFileName(rootPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
@@ -310,6 +309,8 @@ internal class ProjectBrowser : Viewport {
         var searchActive = !string.IsNullOrWhiteSpace(_searchFilter);
         
         foreach (var entryPath in entriesList) {
+            
+            if (Path.GetFullPath(entryPath).Contains(PathUtil.TempPath)) return;
             
             var isDirectory = Directory.Exists(entryPath);
 
@@ -713,8 +714,7 @@ internal class ProjectBrowser : Viewport {
         if (pathsToDelete.Count == 0) return;
 
         // Ensure trash dir exists
-        var trashDir = PathUtil.ExeRelative("Temp/Trash");
-        Directory.CreateDirectory(trashDir);
+        Directory.CreateDirectory(PathUtil.TempRelative("Trash"));
 
         var backups = new List<(string Original, string Backup, bool IsDir)>();
 
@@ -725,7 +725,7 @@ internal class ProjectBrowser : Viewport {
              
              var isDir = Directory.Exists(path);
              var backupName = Guid.NewGuid().ToString();
-             var backupPath = Path.Combine(trashDir, backupName);
+             var backupPath = Path.Combine(PathUtil.TempRelative("Trash"), backupName);
              
              try {
                  

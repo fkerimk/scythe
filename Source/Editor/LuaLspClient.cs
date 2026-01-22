@@ -3,15 +3,12 @@ using System.Diagnostics;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-internal class LuaLspClient : IDisposable {
+internal class LuaLspClient(string serverPath) : IDisposable {
     
     private Process? _process;
     private Stream? _stream;
     
     private int _requestId = 1;
-    private readonly string _serverPath;
-    private readonly string _workspacePath;
-    private readonly string _workspaceUri;
     
     // Non-BOM UTF8
     private readonly Encoding _utf8NoBom = new UTF8Encoding(false);
@@ -21,33 +18,27 @@ internal class LuaLspClient : IDisposable {
 
     private static readonly string[] TokenTypes = ["namespace", "type", "class", "enum", "interface", "struct", "typeParameter", "parameter", "variable", "property", "enumMember", "event", "function", "method", "macro", "keyword", "modifier", "comment", "string", "number", "regexp", "operator"];
     private static readonly string[] Formats = ["relative"];
+    private static readonly string[] StringArray = ["self", "level", "cam", "renderSettings", "f2", "f3", "mt", "time", "kb", "mouse", "quat", "game", "color" ];
 
     public event Action<string, JToken>? NotificationReceived;
     public event Action<int, JToken>? ResponseReceived;
     public event Action? OnExited;
 
-    public LuaLspClient(string serverPath, string workspacePath, string definitionsPath) {
-        
-        _serverPath = Path.GetFullPath(serverPath);
-        _workspacePath = "d:\\Projects\\scythe"; 
-        _workspaceUri = new Uri(_workspacePath).AbsoluteUri;
-    }
-
     public async Task Start() {
         
-        if (!File.Exists(_serverPath)) {
+        if (!File.Exists(Path.GetFullPath(serverPath))) {
             
             Status = "Error: Exe Not Found";
             return;
         }
 
-        var binDir = Path.GetDirectoryName(_serverPath)!;
+        var binDir = Path.GetDirectoryName(Path.GetFullPath(serverPath))!;
         
         _process = new Process {
             
             StartInfo = new ProcessStartInfo {
                 
-                FileName = _serverPath,
+                FileName = Path.GetFullPath(serverPath),
                 Arguments = $"-E \"{Path.Combine(binDir, "main.lua")}\"", 
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
@@ -60,7 +51,7 @@ internal class LuaLspClient : IDisposable {
 
         _process.EnableRaisingEvents = true;
         
-        _process.Exited += (s, e) => {
+        _process.Exited += (_, _) => {
             
             Status = "Error: Server Exited";
             OnExited?.Invoke();
@@ -77,8 +68,8 @@ internal class LuaLspClient : IDisposable {
         SendRequest("initialize", new {
             
             processId = Environment.ProcessId,
-            rootUri = _workspaceUri,
-            rootPath = _workspacePath,
+            rootUri = new Uri(Config.Mod.Path).AbsoluteUri,
+            rootPath = Config.Mod.Path,
 
             capabilities = new {
                 
@@ -114,19 +105,26 @@ internal class LuaLspClient : IDisposable {
 
         // Library config
         SendNotification("workspace/didChangeConfiguration", new {
+            
             settings = new {
+                
                 Lua = new {
+                    
                     workspace = new {
-                        library = new[] { Path.Combine(_workspacePath, "Resources") },
+                        
+                        library = new[] { PathUtil.ModRelative("Temp") },
                         checkThirdParty = false
                     },
+                    
                     diagnostics = new {
+                        
                         enable = true,
-                        globals = new[] { "self", "level", "cam", "renderSettings", "f2", "f3", "mt", "time", "kb", "mouse", "quat", "game", "color" }
+                        globals = StringArray
                     }
                 }
             }
         });
+        
         Status = "Connected";
     }
 
