@@ -4,8 +4,11 @@ using static Raylib_cs.Raylib;
 
 internal static class Core {
 
-    public static Level? ActiveLevel;
+    public static readonly List<Level> OpenLevels = [];
+    public static int ActiveLevelIndex = -1;
+    public static Level? ActiveLevel => ActiveLevelIndex >= 0 && ActiveLevelIndex < OpenLevels.Count ? OpenLevels[ActiveLevelIndex] : null;
     public static Camera3D? ActiveCamera;
+    public static bool ShouldFocusActiveLevel;
 
     public static readonly RenderSettings RenderSettings = new(false);
 
@@ -35,10 +38,7 @@ internal static class Core {
         Fonts.Init();
         
         // Level & camera
-        ActiveLevel = new Level("Main");
-        ActiveLevel.Root.Transform.UpdateTransform();
-        
-        ActiveCamera = CommandLine.Editor ? new Camera3D() : (ActiveLevel.Root.Children["Camera"].Components["Camera"] as Camera)?.Cam;
+        if (!CommandLine.Editor) OpenLevel("Main");
         
         _shadowMap = LoadShadowmapRenderTexture(ShadowMapResolution, ShadowMapResolution);
         
@@ -82,6 +82,70 @@ internal static class Core {
         Rlgl.DisableFramebuffer();
 
         return target;
+    }
+
+    public static void OpenLevel(string name, string? path = null) {
+        
+        Level? level;
+        
+        if (path == null) {
+            
+            if (PathUtil.BestPath($"Levels/{name}.json", out var foundPath))
+                 level = new Level(name, foundPath);
+            else return;
+        }
+        else level = new Level(name, path);
+
+        var existingIndex = OpenLevels.FindIndex(l => Path.GetFullPath(l.JsonPath).Equals(Path.GetFullPath(level.JsonPath), StringComparison.OrdinalIgnoreCase));
+        
+        if (existingIndex != -1) {
+            
+            SetActiveLevel(existingIndex);
+            ShouldFocusActiveLevel = true;
+            return;
+        }
+
+        OpenLevels.Add(level);
+        SetActiveLevel(OpenLevels.Count - 1);
+        ShouldFocusActiveLevel = true;
+        
+        Load();
+    }
+
+    public static void SetActiveLevel(int index) {
+        
+        if (index < 0 || index >= OpenLevels.Count) return;
+        
+        ActiveLevelIndex = index;
+        
+        if (ActiveLevel == null) return;
+        
+        History.Clear(); // Clear history when switching levels to avoid cross-level undo
+        ActiveLevel.Root.Transform.UpdateTransform();
+        ActiveCamera = CommandLine.Editor ? new Camera3D() : (ActiveLevel.Root.Children["Camera"].Components["Camera"] as Camera)?.Cam;
+        
+        if (CommandLine.Editor) {
+            
+            if (ActiveLevel.EditorCamera != null) {
+                FreeCam.Pos = ActiveLevel.EditorCamera.Position;
+                FreeCam.Rot = ActiveLevel.EditorCamera.Rotation;
+            } else {
+                FreeCam.SetFromTarget(ActiveCamera);
+            }
+        }
+    }
+
+    public static void CloseLevel(int index) {
+        
+        if (index < 0 || index >= OpenLevels.Count) return;
+        
+        OpenLevels.RemoveAt(index);
+        
+        if (ActiveLevelIndex >= OpenLevels.Count)
+            ActiveLevelIndex = OpenLevels.Count - 1;
+        
+        if (ActiveLevelIndex >= 0) SetActiveLevel(ActiveLevelIndex);
+        else ActiveCamera = null;
     }
 
     public static void Load() {

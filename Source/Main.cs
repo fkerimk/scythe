@@ -34,6 +34,8 @@ if (PathUtil.BestPath("Mod.ini", out var modIniPath)) {
     
 else throw new FileNotFoundException("Mod.ini not found");
 
+PathUtil.InitModPaths();
+
 foreach (var arg in args) {
     
     if (!arg.StartsWith("cfg:")) continue;

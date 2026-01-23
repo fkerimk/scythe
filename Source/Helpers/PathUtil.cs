@@ -4,11 +4,18 @@ internal abstract class PathUtil {
     private static string CurrentPath => Environment.CurrentDirectory;
     public static string ExePath => AppContext.BaseDirectory;
     public static string TempPath = Environment.CurrentDirectory;
+    public static string ProjectPath = Environment.CurrentDirectory;
 
     public static void Init() {
         
         LaunchPath = Environment.CurrentDirectory;
         Environment.CurrentDirectory = ExePath;
+    }
+
+    public static void InitModPaths() {
+        
+        TempPath = Path.GetFullPath(ModRelative("Temp"));
+        ProjectPath = Path.GetFullPath(ModRelative("Project"));
     }
     
     private static string CurrentRelative(string path) => Path.GetFullPath(Path.Join(CurrentPath, path));
@@ -18,12 +25,18 @@ internal abstract class PathUtil {
 
     public static string TempRelative(string path) {
 
-        TempPath = Path.GetFullPath(ModRelative("Temp"));
-        
         if (!Directory.Exists(TempPath))
             Directory.CreateDirectory(TempPath);
         
         return Path.Join(TempPath, path);
+    }
+
+    public static string ProjectRelative(string path) {
+
+        if (!Directory.Exists(ProjectPath))
+            Directory.CreateDirectory(ProjectPath);
+        
+        return Path.Join(ProjectPath, path);
     }
 
     public static bool BestPath(string relativePath, out string path, bool isDirectory = false, bool resLock = false) {

@@ -27,6 +27,22 @@ internal static unsafe class Editor {
     public static bool IsScriptEditorFocused => ScriptEditor.IsFocused;
     
     public static void OpenScript(string path) => ScriptEditor.Open(path);
+    public static void OpenLevel(string path) {
+        
+        var name = Path.GetFileNameWithoutExtension(path);
+        Core.OpenLevel(name, path);
+    }
+
+    public static void CreateLevel(string path) {
+        
+        var name = Path.GetFileNameWithoutExtension(path);
+        var level = new Level(name, path, false);
+        
+        Core.OpenLevels.Add(level);
+        Core.SetActiveLevel(Core.OpenLevels.Count - 1);
+        level.Save();
+        Core.Load();
+    }
     
     public static void Show() {
         
@@ -63,8 +79,7 @@ internal static unsafe class Editor {
         // Setup core
         Core.Init();
         
-        if (Core.ActiveLevel?.EditorCamera == null)
-            FreeCam.SetFromTarget(Core.ActiveCamera);
+        EditorRender.Load();
         
         ViewSettings.Load();
         MusicPlayer.Load();
@@ -73,9 +88,32 @@ internal static unsafe class Editor {
         
         while (!WindowShouldClose()) {
 
-            if (Core.ActiveCamera == null) break;
-
             Window.UpdateFps();
+            
+            if (Core.ActiveLevel == null || Core.ActiveCamera == null) {
+                
+                BeginDrawing();
+                ClearBackground(Color.Black);
+                rlImGui.Begin();
+                Style.Push();
+                PushFont(Fonts.ImMontserratRegular);
+                DockSpaceOverViewport(GetMainViewport().ID);
+                
+                MenuBar.Draw();
+                EditorRender.Draw();
+                ProjectBrowser.Draw();
+                ScriptEditor.Draw();
+                
+                PopFont();
+                Style.Pop();
+                rlImGui.End();
+                Notifications.Draw();
+                EndDrawing();
+
+                if (_scheduledQuit) break;
+                continue;
+            }
+
             Core.Load();
 
             // Reload viewport render
@@ -102,7 +140,7 @@ internal static unsafe class Editor {
                 ClearBackground(Color.Blank);
                 ClearScreenBuffers(); // Explicitly clear depth and color buffers
                 
-                BeginMode3D(Core.ActiveCamera.Raylib);
+                BeginMode3D(Core.ActiveCamera!.Raylib);
                 foreach (var obj in LevelBrowser.SelectedObjects) RenderOutline(obj);
                 if (Picking.DragSource != null) RenderOutline(Picking.DragSource);
                 if (Picking.DragTarget != null) RenderOutline(Picking.DragTarget);
@@ -119,7 +157,7 @@ internal static unsafe class Editor {
             FreeCam.Loop(EditorRender);
             
             // Draw objects and skybox
-            BeginMode3D(Core.ActiveCamera.Raylib);
+            BeginMode3D(Core.ActiveCamera!.Raylib);
             Core.Render(false);
             Grid.Draw(Core.ActiveCamera);
             EndMode3D();
@@ -144,11 +182,13 @@ internal static unsafe class Editor {
             // Render editor
             BeginDrawing();
             ClearBackground(Color.Black);
-            Begin();
+            rlImGui.Begin();
             Style.Push();
             PushFont(Fonts.ImMontserratRegular);
+            
             DockSpaceOverViewport(GetMainViewport().ID);
             ImGuiIoPtr.MouseDoubleClickTime = 0.2f;
+            
             MenuBar.Draw();
             EditorRender.Draw();
             LevelBrowser.Draw();
@@ -156,7 +196,9 @@ internal static unsafe class Editor {
             ProjectBrowser.Draw();
             ScriptEditor.Draw();
             MusicPlayer.Draw();
+            
             Picking.Update();
+            
             PopFont();
             Style.Pop();
             rlImGui.End();
@@ -172,6 +214,7 @@ internal static unsafe class Editor {
         MusicPlayer.Save();
         ScriptEditor.Save();
         ProjectBrowser.Save();
+        EditorRender.Save();
         CloseWindow();
 
         Directory.Delete(PathUtil.TempPath, true);

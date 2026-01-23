@@ -194,10 +194,10 @@ internal class Transform(Obj obj) : Component(obj) {
 
         var targetPos = WorldPos;
         var targetRot = WorldRot;
-        var targetScale = WorldScale;
 
         // Force reset if too far (e.g. teleporting or level load)
         if (Vector3.Distance(_visualPos, targetPos) > 10f) {
+            
             _visualPos = targetPos;
             _visualRot = targetRot;
             _visualVel = Vector3.Zero;
@@ -205,6 +205,7 @@ internal class Transform(Obj obj) : Component(obj) {
 
         // Initialize if first frame
         if (_visualPos == Vector3.Zero && targetPos != Vector3.Zero) {
+            
             _visualPos = targetPos;
             _visualRot = targetRot;
         }
@@ -214,6 +215,7 @@ internal class Transform(Obj obj) : Component(obj) {
         var isRotating = Quaternion.Dot(_visualRot, targetRot) < 0.9999f;
         
         if (!Obj.IsSelected && !isMoving && !isRotating) {
+            
             _visualPos = targetPos;
             _visualRot = targetRot;
             return;
@@ -221,6 +223,7 @@ internal class Transform(Obj obj) : Component(obj) {
 
         // Pos Spring logic
         var posDiff = targetPos - _visualPos;
+        
         _visualVel += posDiff * 600f * dt;
         _visualVel *= MathF.Exp(-22f * dt);
         _visualPos += _visualVel * dt;
@@ -516,6 +519,7 @@ internal class Transform(Obj obj) : Component(obj) {
             _activeId = "";
             _activeMove = 0;
             
+            if (Core.ActiveLevel != null) Core.ActiveLevel.IsDirty = true;
             History.StopRecording();
         }
 

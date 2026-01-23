@@ -6,8 +6,9 @@ using Newtonsoft.Json.Linq;
 [JsonObject(MemberSerialization.OptIn)]
 internal class Level {
     
-    private readonly string _name = null!;
-    private string _jsonPath = null!;
+    public string Name { get; set; } = null!;
+    public string JsonPath { get; set; } = null!;
+    public bool IsDirty { get; set; }
     
     [JsonProperty] public readonly Obj Root = null!;
     [JsonProperty] public CameraData? EditorCamera;
@@ -22,32 +23,51 @@ internal class Level {
 
         if (name == null) return;
         
-        _name = name;
+        Name = name;
         
-        if (!PathUtil.BestPath($"Levels/{_name}.json", out _jsonPath))
-            throw new FileNotFoundException($"Could not find level json file {_jsonPath}");
+        if (!PathUtil.BestPath($"Levels/{Name}.json", out var path))
+            throw new FileNotFoundException($"Could not find level json file {Name}");
 
+        JsonPath = path;
         Root = new Obj("Root", null);
 
-        var jsonText = File.ReadAllText(_jsonPath);
-        var rawData = JObject.Parse(jsonText);
+        LoadInternal();
+    }
 
-        if (rawData["Root"]?["Children"] is not JObject children) return;
-        
-        foreach (var property in children.Properties())
-            BuildHierarchy(new KeyValuePair<string, JToken>(property.Name, property.Value), Root);
+    public Level(string name, string path, bool load = true) {
 
-        // Load camera
-        if (CommandLine.Editor && rawData["EditorCamera"] is JObject cameraJson) {
+        Name = name;
+        JsonPath = path;
+        Root = new Obj("Root", null);
+
+        if (load) LoadInternal();
+    }
+
+    private void LoadInternal() {
+
+        SafeExec.Try(() => {
             
-            EditorCamera = cameraJson.ToObject<CameraData>();
-            
-            if (EditorCamera != null) {
+            var jsonText = File.ReadAllText(JsonPath);
+            var rawData = JObject.Parse(jsonText);
+
+            if (rawData["Root"]?["Children"] is JObject children) {
                 
-                FreeCam.Pos = EditorCamera.Position;
-                FreeCam.Rot = EditorCamera.Rotation;
+                foreach (var property in children.Properties())
+                    BuildHierarchy(new KeyValuePair<string, JToken>(property.Name, property.Value), Root);
             }
-        }
+
+            // Load camera
+            if (CommandLine.Editor && rawData["EditorCamera"] is JObject cameraJson) {
+                
+                EditorCamera = cameraJson.ToObject<CameraData>();
+                
+                if (EditorCamera != null) {
+                    
+                    FreeCam.Pos = EditorCamera.Position;
+                    FreeCam.Rot = EditorCamera.Rotation;
+                }
+            }
+        });
     }
 
     public void Save() {
@@ -72,7 +92,8 @@ internal class Level {
         
         var json = JsonConvert.SerializeObject(this, formatting, settings);
 
-        File.WriteAllText(_jsonPath, json);
+        File.WriteAllText(JsonPath, json);
+        IsDirty = false;
     }
     
     private static void BuildHierarchy(KeyValuePair<string, JToken> dataPair, Obj parent) {
@@ -124,6 +145,7 @@ internal class Level {
         History.SetUndoAction(obj.Delete);
         History.SetRedoAction(() => obj.SetParent(parent));
         
+        if (Core.ActiveLevel != null) Core.ActiveLevel.IsDirty = true;
         History.StopRecording();
         return obj;
     }

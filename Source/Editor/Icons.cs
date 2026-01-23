@@ -19,4 +19,7 @@
     public const string FaAsterisk = "*";
     public const string FaPlay = "";
     public const string FaStop = "";
+    public const string FaMap = "";
+    public const string FaFlag = "";
+    public const string FaHouse = "";
 }

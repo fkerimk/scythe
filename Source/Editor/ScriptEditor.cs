@@ -85,7 +85,7 @@ internal unsafe class ScriptEditor : Viewport {
         InitLsp();
     }
 
-    private static string GetPath() => PathUtil.ModRelative("ScriptEditor.json");
+    private static string GetPath() => PathUtil.ProjectRelative("ScriptEditor.json");
 
     public void Load() {
         
@@ -128,43 +128,62 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private class ScriptEditorSettings {
-        public List<string> OpenTabs { get; set; } = [];
-        public int ActiveTabIndex { get; set; } = -1;
+        
+        public List<string> OpenTabs { get; init; } = [];
+        public int ActiveTabIndex { get; init; } = -1;
     }
 
     public void Open(string path) {
-        if (_tabs.FirstOrDefault(tab => tab.FilePath == path) is { } t) _activeTabIndex = _tabs.IndexOf(t);
+        
+        if (_tabs.FirstOrDefault(tab => tab.FilePath == path) is { } t)
+             _activeTabIndex = _tabs.IndexOf(t);
         else NewTab(path);
     }
 
     private void NewTab(string path) {
+        
         var tab = new ScriptTab(path);
+        
         _tabs.Add(tab);
         _activeTabIndex = _tabs.Count - 1;
         _scrollToTab = true;
-        if (_lsp is { IsAlive: true }) {
-            _lsp.SendNotification("textDocument/didOpen",
-                new {
-                    textDocument = new {
-                        uri = tab.Uri, languageId = "lua", version = tab.LspVersion, text = string.Join("\n", tab.Lines)
-                    }
-                });
-            _lspUpdateTimer = 0.1f;
-        }
+
+        if (_lsp is not { IsAlive: true }) return;
+        
+        _lsp.SendNotification("textDocument/didOpen", new {
+            
+            textDocument = new {
+                
+                uri = tab.Uri,
+                languageId = "lua",
+                version = tab.LspVersion,
+                text = string.Join("\n", tab.Lines)
+            }
+        });
+        
+        _lspUpdateTimer = 0.1f;
     }
 
     private void CloseTab(int i) {
+        
         if (i < 0 || i >= _tabs.Count) return;
+        
         if (_lsp is { IsAlive: true })
             _lsp.SendNotification("textDocument/didClose", new { textDocument = new { uri = _tabs[i].Uri } });
+        
         _tabs.RemoveAt(i);
-        if (_activeTabIndex >= _tabs.Count) _activeTabIndex = _tabs.Count - 1;
+        
+        if (_activeTabIndex >= _tabs.Count)
+            _activeTabIndex = _tabs.Count - 1;
     }
 
     private void InitLsp() {
+        
         _lsp?.Dispose();
         _lsp = null;
+        
         if (!LspInstaller.CheckLspFiles()) {
+            
             if (!LspInstaller.IsDone) LspInstaller.Start();
             _restartTimer = 2;
             return;
@@ -172,15 +191,20 @@ internal unsafe class ScriptEditor : Viewport {
 
         var isWin = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
         var plat = isWin ? "Windows" : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "Linux" : "OSX";
-        var sPath = Path.Combine(AppContext.BaseDirectory, $"External/{plat}/LuaLSP/bin",
-            isWin ? "lua-language-server.exe" : "lua-language-server");
+        var sPath = Path.Combine(AppContext.BaseDirectory, $"External/{plat}/LuaLSP/bin", isWin ? "lua-language-server.exe" : "lua-language-server");
+        
         if (!File.Exists(sPath)) return;
 
         _lsp = new LuaLspClient(sPath);
+        
         _lsp.NotificationReceived += (m, p) => {
-            if (m == "textDocument/publishDiagnostics") UpdateDiagnostics(p);
+            
+            if (m == "textDocument/publishDiagnostics")
+                UpdateDiagnostics(p);
         };
+        
         _lsp.ResponseReceived += (id, r) => {
+            
             if (id == _completionRequestId) UpdateAutocomplete(r);
             else if (id == _sigRequestId) UpdateSignatureHelp(r);
             else if (id == _semanticTokensRequestId) UpdateSemanticTokens(r);
@@ -189,7 +213,9 @@ internal unsafe class ScriptEditor : Viewport {
                     ? string.Join("\n", a.Select(x => x["value"]?.ToString() ?? x.ToString()))
                     : (string)(c["value"] ?? c)!;
         };
+        
         _lsp.OnExited += () => {
+            
             _restartTimer = 3;
             ActiveTab.SemanticTokens.Clear();
             ActiveTab.Diagnostics.Clear();
@@ -218,9 +244,12 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private void BeginHistoryAction(string a) {
+        
         if (Raylib.GetTime() - ActiveTab.LastRecordTime < 1.0 && ActiveTab.CurrentHistoryAction == a && History.CanExtend)
             _isExtendingHistory = true;
+        
         else {
+            
             History.StartRecording(ActiveTab, a);
             _isExtendingHistory = false;
         }
@@ -230,43 +259,61 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private void EndHistoryAction() {
-        if (_isExtendingHistory) History.UpdateLastRecord(ActiveTab, ActiveTab.CurrentHistoryAction);
+        
+        if (_isExtendingHistory)
+             History.UpdateLastRecord(ActiveTab, ActiveTab.CurrentHistoryAction);
         else History.StopRecording();
+        
         _isExtendingHistory = false;
     }
 
     private void UpdateAutocomplete(JToken r) {
+        
         _acItems.Clear();
-        foreach (var i in r["items"] ?? r)
+
+        foreach (var i in r["items"] ?? r) {
+            
             _acItems.Add(new CompletionItem {
-                Label = (string)i["label"]!, InsertText = (string)(i["insertText"] ?? i["label"])!,
-                InsertTextFormat = (int)(i["insertTextFormat"] ?? 1), Kind = (int)(i["kind"] ?? 0)
+                
+                Label = (string)i["label"]!,
+                InsertText = (string)(i["insertText"] ?? i["label"])!,
+                InsertTextFormat = (int)(i["insertTextFormat"] ?? 1),
+                Kind = (int)(i["kind"] ?? 0)
             });
+        }
+        
         var pref = GetCurrentWordPrefix();
+        
         if (!string.IsNullOrEmpty(pref))
             _acItems = _acItems.Where(i => i.Label.StartsWith(pref, StringComparison.OrdinalIgnoreCase)).ToList();
+        
         if (_acItems.Count == 1 && _acItems[0].Label.Equals(pref, StringComparison.OrdinalIgnoreCase)) {
+            
             _showAutoComplete = false;
             return;
         }
 
-        _showAutoComplete = _acItems.Any();
+        _showAutoComplete = _acItems.Count != 0;
         _acSelectedIndex = 0;
         _acLine = ActiveTab.CursorLine;
         _acStartChar = ActiveTab.CursorChar;
     }
 
     private void UpdateSignatureHelp(JToken r) {
+        
         if (r["signatures"] is JArray { Count: > 0 } s) {
+            
             _sigText = (string)s[0]["label"]!;
             _sigLine = ActiveTab.CursorLine;
             _sigChar = ActiveTab.CursorChar;
             _showSig = true;
         }
+        
         else _showSig = false;
     }
 
     private string GetCurrentWordPrefix() {
+        
         var l = ActiveTab.Lines[ActiveTab.CursorLine];
         var s = ActiveTab.CursorChar;
         while (s > 0 && (char.IsLetterOrDigit(l[s - 1]) || l[s - 1] == '_')) s--;
@@ -389,20 +436,24 @@ internal unsafe class ScriptEditor : Viewport {
             Image((IntPtr)_rt.Texture.Id, avail, new Vector2(0, 1), new Vector2(1, 0));
             
             if (BeginDragDropTarget()) {
+                
                 if (AcceptDragDropPayload("object").NativePtr != null && LevelBrowser.DragObject is { } o) {
+                    
                     var varName = char.ToLower(o.Name[0]) + o.Name[1..];
-                    InsertSnippetAtMouse(
-                        $"local {varName} = level:find({{\"{string.Join("\", \"", o.GetPathFromRoot())}\"}})", margin,
-                        fSize, lSpace, origin, "drop_object");
+                    
+                    InsertSnippetAtMouse($"local {varName} = level:find({{\"{string.Join("\", \"", o.GetPathFromRoot())}\"}})", margin, fSize, lSpace, origin, "drop_object");
                     LevelBrowser.DragObject = null;
                     SetWindowFocus("Script Editor");
                 }
 
                 if (AcceptDragDropPayload("component").NativePtr != null && LevelBrowser.DragComponent is { } c) {
+                    
                     _showDropChoice = true;
                     _dropChoiceComp = c;
-                    _dropChoicePos = ImGui.GetIO().MousePos;
+                    _dropChoicePos = GetIO().MousePos;
+                    
                     if (GetCursorFromMouse(margin, fSize, lSpace, origin, out var tL, out var tC)) {
+                        
                         _dropChoiceLine = tL;
                         _dropChoiceChar = tC;
                     }
@@ -418,18 +469,19 @@ internal unsafe class ScriptEditor : Viewport {
             HandleDropChoice();
 
             // Handle Picking Drag Drop
-            if (Picking.DragSource != null && Picking.IsDragging && IsHovered && Raylib.IsMouseButtonReleased(MouseButton.Left)) {
+            if (Picking.DragSource != null && Picking.IsDragging && IsHovered && IsMouseButtonReleased(MouseButton.Left)) {
+                
                 var o = Picking.DragSource;
                 var varName = char.ToLower(o.Name[0]) + o.Name[1..];
-                InsertSnippetAtMouse(
-                    $"local {varName} = level:find({{\"{string.Join("\", \"", o.GetPathFromRoot())}\"}})", margin,
-                    fSize, lSpace, origin, "drop_object");
+                
+                InsertSnippetAtMouse($"local {varName} = level:find({{\"{string.Join("\", \"", o.GetPathFromRoot())}\"}})", margin, fSize, lSpace, origin, "drop_object");
                 Picking.DragSource = null;
                 Picking.IsDragging = false;
                 SetWindowFocus("Script Editor");
             }
         }
         else {
+            
             var center = GetCursorScreenPos() + ContentRegion / 2;
             var text = "No Open Files";
             var tSize = MeasureTextEx(Fonts.RlMontserratRegular, text, 24, 1);
@@ -441,6 +493,7 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private void AcceptCompletion(string l) {
+        
         var item = _acItems.FirstOrDefault(i => i.Label == l);
         if (item.Label == null) return;
         
@@ -448,33 +501,45 @@ internal unsafe class ScriptEditor : Viewport {
         
         var line = ActiveTab.Lines[ActiveTab.CursorLine];
         var sW = ActiveTab.CursorChar;
+        
         while (sW > 0 && (char.IsLetterOrDigit(line[sW - 1]) || line[sW - 1] == '_')) sW--;
+        
         var txt = item.InsertText.Replace("\t", "    ");
         var fOff = -1;
+        
         if (item.InsertTextFormat == 2) {
+            
             var m = Regex.Match(txt, @"\$\{\d+:?([^}]*)\}|\$\d+");
             if (m.Success) fOff = m.Index;
             txt = Regex.Replace(txt, @"\$\{\d+:?([^}]*)\}", "$1");
             txt = Regex.Replace(txt, @"\$\d+", "");
-        }
-        else if ((item.Kind == 2 || item.Kind == 3) && !txt.Contains('(')) {
+            
+        } else if ((item.Kind == 2 || item.Kind == 3) && !txt.Contains('(')) {
+            
             txt += "()";
             fOff = txt.Length - 1;
         }
 
         var sLines = txt.Replace("\r", "").Split('\n');
         var suffix = ActiveTab.Lines[ActiveTab.CursorLine][ActiveTab.CursorChar..];
+        
         ActiveTab.Lines[ActiveTab.CursorLine] = ActiveTab.Lines[ActiveTab.CursorLine][..sW] + sLines[0];
+        
         if (sLines.Length > 1) {
+            
             for (var i = 1; i < sLines.Length; i++) ActiveTab.Lines.Insert(ActiveTab.CursorLine + i, sLines[i]);
             ActiveTab.Lines[ActiveTab.CursorLine + sLines.Length - 1] += suffix;
-        }
-        else ActiveTab.Lines[ActiveTab.CursorLine] += suffix;
+            
+        } else ActiveTab.Lines[ActiveTab.CursorLine] += suffix;
 
         if (fOff != -1) {
+            
             var len = 0;
+            
             for (var i = 0; i < sLines.Length; i++) {
+                
                 if (fOff <= len + sLines[i].Length) {
+                    
                     ActiveTab.CursorLine += i;
                     ActiveTab.CursorChar = (i == 0 ? sW : 0) + (fOff - len);
                     break;
@@ -482,68 +547,84 @@ internal unsafe class ScriptEditor : Viewport {
 
                 len += sLines[i].Length + 1;
             }
-        }
-        else {
+            
+        } else {
+            
             ActiveTab.CursorLine += sLines.Length - 1;
             ActiveTab.CursorChar = (sLines.Length == 1 ? sW : 0) + sLines[^1].Length;
         }
 
         _showAutoComplete = false;
+        
         EndHistoryAction();
         OnType(true, false, true, true);
     }
 
     private void OnType(bool major = false, bool backspace = false, bool isEnter = false, bool fromAc = false) {
+        
         ActiveTab.IsDirty = true;
         ActiveTab.FollowCursorTimer = 1;
+        
         _combo++;
         _comboTimer = ComboTimeout;
+        
         if (major || isEnter || backspace) {
+            
             _shakeTime = major ? 0.16f : 0.08f;
             _shakePower = (major ? 7.0f : 3.5f) * (backspace ? 0.6f : 1);
         }
 
         SpawnParticlesAtCursor(major || isEnter);
+        
         _lspUpdateTimer = 0.15f;
         _didChangeTimer = 0.05f;
+        
         if (_lsp is not { IsAlive: true }) return;
+        
         var l = ActiveTab.Lines[ActiveTab.CursorLine];
         var pref = GetCurrentWordPrefix();
         var cB = ActiveTab.CursorChar > 0 ? l[ActiveTab.CursorChar - 1] : ' ';
         var cA = ActiveTab.CursorChar < l.Length ? l[ActiveTab.CursorChar] : ' ';
-        var isT = cB == '.' || cB == ':';
-        var should = !backspace && !isEnter && !fromAc && (char.IsLetterOrDigit(cB) || cB == '_' || isT) &&
-                     !(major && char.IsLetterOrDigit(cA));
+        var isT = cB is '.' or ':';
+        var should = !backspace && !isEnter && !fromAc && (char.IsLetterOrDigit(cB) || cB == '_' || isT) && !(major && char.IsLetterOrDigit(cA));
+        
         if (should && (pref.Length >= 1 || isT)) {
+            
             SyncChanges();
-            _completionRequestId = _lsp.SendRequest("textDocument/completion",
-                new {
-                    textDocument = new { uri = ActiveTab.Uri },
-                    position = new { line = ActiveTab.CursorLine, character = ActiveTab.CursorChar },
-                    context = new { triggerKind = isT ? 2 : 1, triggerCharacter = isT ? cB.ToString() : null }
-                });
-        }
-        else _showAutoComplete = false;
+            
+            _completionRequestId = _lsp.SendRequest("textDocument/completion", new {
+                
+                textDocument = new { uri = ActiveTab.Uri },
+                position = new { line = ActiveTab.CursorLine, character = ActiveTab.CursorChar },
+                context = new { triggerKind = isT ? 2 : 1, triggerCharacter = isT ? cB.ToString() : null }
+            });
+            
+        } else _showAutoComplete = false;
 
         if (cB == '(' || cB == ',') {
+            
             SyncChanges();
-            _sigRequestId = _lsp.SendRequest("textDocument/signatureHelp",
-                new {
-                    textDocument = new { uri = ActiveTab.Uri },
-                    position = new { line = ActiveTab.CursorLine, character = ActiveTab.CursorChar }
-                });
-        }
-        else if (isEnter || (backspace && cB == ' ') || cB == ')') _showSig = false;
+            
+            _sigRequestId = _lsp.SendRequest("textDocument/signatureHelp", new {
+                
+                textDocument = new { uri = ActiveTab.Uri },
+                position = new { line = ActiveTab.CursorLine, character = ActiveTab.CursorChar }
+            });
+            
+        } else if (isEnter || (backspace && cB == ' ') || cB == ')') _showSig = false;
     }
 
     private void SyncChanges() {
+        
         if (_lsp is not { IsAlive: true }) return;
+        
         _didChangeTimer = 0;
-        _lsp.SendNotification("textDocument/didChange",
-            new {
-                textDocument = new { uri = ActiveTab.Uri, version = ActiveTab.LspVersion++ },
-                contentChanges = new[] { new { text = string.Join("\n", ActiveTab.Lines) } }
-            });
+        
+        _lsp.SendNotification("textDocument/didChange", new {
+            
+            textDocument = new { uri = ActiveTab.Uri, version = ActiveTab.LspVersion++ },
+            contentChanges = new[] { new { text = string.Join("\n", ActiveTab.Lines) } }
+        });
     }
 
     private void SaveActiveTab() {
@@ -558,19 +639,25 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private void RequestSemanticTokens() {
+        
         if (_lsp is { IsAlive: true })
             _semanticTokensRequestId = _lsp.SendRequest("textDocument/semanticTokens/full",
                 new { textDocument = new { uri = ActiveTab.Uri } });
     }
 
     private void UpdateSemanticTokens(JToken data) {
+        
         var res = data["data"] ?? data["result"]?["data"];
-        if (res == null) return;
-        var ints = res.ToObject<int[]>();
+        var ints = res?.ToObject<int[]>();
+        
         if (ints == null) return;
+        
         var tokens = new List<SemanticToken>();
+        
         int l = 0, c = 0;
+        
         for (var i = 0; i < ints.Length; i += 5) {
+            
             l += ints[i];
             if (ints[i] > 0) c = 0;
             c += ints[i + 1];
@@ -581,16 +668,23 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private void HandleDropChoice() {
+        
         if (!_showDropChoice || _dropChoiceComp == null) return;
+        
         SetNextWindowPos(_dropChoicePos + new Vector2(10, 10));
         PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(8, 8));
         PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 6));
+        
         if (BeginPopup("DropChoicePopup", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar)) {
+            
             TextDisabled("Reference Type");
             Separator();
+            
             if (Selectable("Level")) ApplyComponentDrop(false);
             if (Selectable("Self")) ApplyComponentDrop(true);
+            
             if (IsKeyPressed(ImGuiKey.Escape)) {
+                
                 _showDropChoice = false;
                 CloseCurrentPopup();
             }
@@ -602,15 +696,21 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private void ApplyComponentDrop(bool useSelf) {
+        
         if (_dropChoiceComp == null) return;
+        
         var comp = _dropChoiceComp;
         var name = comp.GetType().Name;
+        
         string var, snippet;
+        
         if (useSelf) {
+            
             var = char.ToLower(name[0]) + name[1..];
             snippet = $"local {var} = self:findComponent({{\"{name}\"}}) --[[@as {name}]]";
-        }
-        else {
+            
+        } else {
+            
             var path = new List<string>(comp.Obj.GetPathFromRoot()) { name };
             var objP = Regex.Replace(comp.Obj.Name, @"(?:^|[\s_-])(.)", m => m.Groups[1].Value.ToUpper());
             var = char.ToLower(objP[0]) + objP[1..] + name;
@@ -619,25 +719,29 @@ internal unsafe class ScriptEditor : Viewport {
 
         ActiveTab.CursorLine = _dropChoiceLine;
         ActiveTab.CursorChar = _dropChoiceChar;
+        
         BeginHistoryAction("drop_component");
         InsertTextAtCursor(snippet);
         EndHistoryAction();
         OnType(true, false, true);
+        
         _showDropChoice = false;
         _dropChoiceComp = null;
+        
         CloseCurrentPopup();
         SetWindowFocus("Script Editor");
     }
 
     private void InsertSnippetAtMouse(string s, Vector2 m, float f, float l, Vector2 o, string u) {
-        if (GetCursorFromMouse(m, f, l, o, out var tL, out var tC)) {
-            ActiveTab.CursorLine = tL;
-            ActiveTab.CursorChar = tC;
-            BeginHistoryAction(u);
-            InsertTextAtCursor(s);
-            EndHistoryAction();
-            OnType(true, false, true);
-        }
+        
+        if (!GetCursorFromMouse(m, f, l, o, out var tL, out var tC)) return;
+        
+        ActiveTab.CursorLine = tL;
+        ActiveTab.CursorChar = tC;
+        BeginHistoryAction(u);
+        InsertTextAtCursor(s);
+        EndHistoryAction();
+        OnType(true, false, true);
     }
 
     #endregion
@@ -645,128 +749,145 @@ internal unsafe class ScriptEditor : Viewport {
     #region Input
 
     private void UpdateCursorFromMouse(Vector2 m, float f, float l, Vector2 o) {
+        
         ActiveTab.FollowCursorTimer = 1.0f;
-        var wM = ImGui.GetIO().MousePos - o + ActiveTab.CameraPos;
+        var wM = GetIO().MousePos - o + ActiveTab.CameraPos;
         ActiveTab.CursorLine = Math.Clamp((int)((wM.Y - m.Y) / l), 0, ActiveTab.Lines.Count - 1);
         var line = ActiveTab.Lines[ActiveTab.CursorLine];
         var bC = 0;
         var minD = float.MaxValue;
+        
         for (var i = 0; i <= line.Length; i++) {
+            
             var d = Math.Abs(wM.X - (m.X + MeasureTextEx(EditorFont, line[..i], f, 1).X));
-            if (d < minD) {
-                minD = d;
-                bC = i;
-            }
+
+            if (!(d < minD)) continue;
+            
+            minD = d;
+            bC = i;
         }
 
         ActiveTab.CursorChar = bC;
     }
 
     private void HandleInput() {
+        
         if (IsKeyPressed(KeyboardKey.Escape) && (LevelBrowser.DragObject != null || _isDraggingSelection)) {
+            
             LevelBrowser.DragObject = LevelBrowser.DragTarget = null;
             LevelBrowser.DragComponent = null;
             LevelBrowser.IsDragCancelled = true;
             _isDraggingSelection = _isLeftClickPotentialDrag = false;
         }
 
-        if (!ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) return;
+        if (!IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) return;
         var dt = GetFrameTime();
         var shift = IsKeyDown(KeyboardKey.LeftShift) || IsKeyDown(KeyboardKey.RightShift);
         var ctrl = IsKeyDown(KeyboardKey.LeftControl) || IsKeyDown(KeyboardKey.RightControl);
 
-        if (ctrl && IsKeyPressed(KeyboardKey.Z)) {
-            if (shift) History.Redo();
-            else History.Undo();
-            _didChangeTimer = 0.05f;
-            _lspUpdateTimer = 0.1f;
-            return;
-        }
-
-        if (ctrl && IsKeyPressed(KeyboardKey.S)) {
-            SaveActiveTab();
-            return;
-        }
-
-        if (ctrl && IsKeyPressed(KeyboardKey.Y)) {
-            History.Redo();
-            _didChangeTimer = 0.05f;
-            _lspUpdateTimer = 0.1f;
-            return;
-        }
-
-        if (ctrl && IsKeyPressed(KeyboardKey.A)) {
-            ActiveTab.SelectionStartLine = ActiveTab.SelectionStartChar = 0;
-            ActiveTab.CursorLine = ActiveTab.Lines.Count - 1;
-            ActiveTab.CursorChar = ActiveTab.Lines.Last().Length;
-            _showAutoComplete = false;
-            return;
-        }
-
-        if (ctrl && IsKeyPressed(KeyboardKey.C)) {
-            if (HasSelection()) ImGui.SetClipboardText(GetSelectionText());
-            return;
-        }
-
-        if (ctrl && IsKeyPressed(KeyboardKey.X)) {
-            BeginHistoryAction("cut");
-            if (HasSelection()) {
-                ImGui.SetClipboardText(GetSelectionText());
-                DeleteSelection();
+        switch (ctrl) {
+            
+            case true when IsKeyPressed(KeyboardKey.Z): {
+                
+                if (shift) History.Redo();
+                else History.Undo();
+                _didChangeTimer = 0.05f;
+                _lspUpdateTimer = 0.1f;
+                return;
             }
-            else {
-                ImGui.SetClipboardText(ActiveTab.Lines[ActiveTab.CursorLine] + "\n");
-                if (ActiveTab.Lines.Count > 1) ActiveTab.Lines.RemoveAt(ActiveTab.CursorLine);
-                else ActiveTab.Lines[0] = "";
-                if (ActiveTab.CursorLine >= ActiveTab.Lines.Count) ActiveTab.CursorLine = ActiveTab.Lines.Count - 1;
-                ActiveTab.CursorChar = 0;
-                OnType(true, true, true);
+            
+            case true when IsKeyPressed(KeyboardKey.S): SaveActiveTab(); return;
+            
+            case true when IsKeyPressed(KeyboardKey.Y):
+                History.Redo();
+                _didChangeTimer = 0.05f;
+                _lspUpdateTimer = 0.1f;
+                return;
+            
+            case true when IsKeyPressed(KeyboardKey.A):
+                ActiveTab.SelectionStartLine = ActiveTab.SelectionStartChar = 0;
+                ActiveTab.CursorLine = ActiveTab.Lines.Count - 1;
+                ActiveTab.CursorChar = ActiveTab.Lines.Last().Length;
+                _showAutoComplete = false;
+                return;
+            
+            case true when IsKeyPressed(KeyboardKey.C): {
+                
+                if (HasSelection()) ImGui.SetClipboardText(GetSelectionText());
+                return;
             }
+            
+            case true when IsKeyPressed(KeyboardKey.X): {
+                
+                BeginHistoryAction("cut");
+                
+                if (HasSelection()) {
+                    
+                    ImGui.SetClipboardText(GetSelectionText());
+                    DeleteSelection();
+                    
+                } else {
+                    
+                    ImGui.SetClipboardText(ActiveTab.Lines[ActiveTab.CursorLine] + "\n");
+                    if (ActiveTab.Lines.Count > 1) ActiveTab.Lines.RemoveAt(ActiveTab.CursorLine);
+                    else ActiveTab.Lines[0] = "";
+                    if (ActiveTab.CursorLine >= ActiveTab.Lines.Count) ActiveTab.CursorLine = ActiveTab.Lines.Count - 1;
+                    ActiveTab.CursorChar = 0;
+                    OnType(true, true, true);
+                }
 
-            EndHistoryAction();
-            return;
-        }
-
-        if (ctrl && IsKeyPressed(KeyboardKey.V)) {
-            BeginHistoryAction("paste");
-            if (HasSelection()) DeleteSelection();
-            var txt = ImGui.GetClipboardText();
-            InsertTextAtCursor(txt);
-            if (txt.Length > 0) OnType(txt.Length > 1, false, true);
-            EndHistoryAction();
-            return;
-        }
-
-        if (ctrl && IsKeyPressed(KeyboardKey.D)) {
-            BeginHistoryAction("duplicate");
-            var lS = 26 * ActiveTab.Zoom;
-            if (HasSelection()) {
-                var (sL, _, eL, eC) = GetSelectionRange();
-                var txt = GetSelectionText();
-                ActiveTab.CursorLine = eL;
-                ActiveTab.CursorChar = eC;
-                InsertTextAtCursor("\n" + txt);
-                var c = eL - sL + 1;
-                for (var i = eL + 1; i <= eL + c; i++) ActiveTab.LineYOffsets[i] = -lS * c;
+                EndHistoryAction();
+                return;
             }
-            else {
-                ActiveTab.Lines.Insert(ActiveTab.CursorLine + 1, ActiveTab.Lines[ActiveTab.CursorLine]);
-                ActiveTab.LineYOffsets[ActiveTab.CursorLine + 1] = -lS;
-                ActiveTab.CursorLine++;
+            
+            case true when IsKeyPressed(KeyboardKey.V): {
+                
+                BeginHistoryAction("paste");
+                if (HasSelection()) DeleteSelection();
+                var txt = ImGui.GetClipboardText();
+                InsertTextAtCursor(txt);
+                if (txt.Length > 0) OnType(txt.Length > 1, false, true);
+                EndHistoryAction();
+                return;
             }
+            
+            case true when IsKeyPressed(KeyboardKey.D): {
+                
+                BeginHistoryAction("duplicate");
+                var lS = 26 * ActiveTab.Zoom;
+                
+                if (HasSelection()) {
+                    
+                    var (sL, _, eL, eC) = GetSelectionRange();
+                    var txt = GetSelectionText();
+                    ActiveTab.CursorLine = eL;
+                    ActiveTab.CursorChar = eC;
+                    InsertTextAtCursor("\n" + txt);
+                    var c = eL - sL + 1;
+                    for (var i = eL + 1; i <= eL + c; i++) ActiveTab.LineYOffsets[i] = -lS * c;
+                    
+                }  else {
+                    
+                    ActiveTab.Lines.Insert(ActiveTab.CursorLine + 1, ActiveTab.Lines[ActiveTab.CursorLine]);
+                    ActiveTab.LineYOffsets[ActiveTab.CursorLine + 1] = -lS;
+                    ActiveTab.CursorLine++;
+                }
 
-            EndHistoryAction();
-            _didChangeTimer = 0.05f;
-            _lspUpdateTimer = 0.1f;
-            return;
+                EndHistoryAction();
+                _didChangeTimer = 0.05f;
+                _lspUpdateTimer = 0.1f;
+                return;
+            }
         }
 
         if (IsKeyDown(KeyboardKey.LeftAlt) || IsKeyDown(KeyboardKey.RightAlt)) {
+            
             var lS = 26 * ActiveTab.Zoom;
+            
             if (IsKeyPressed(KeyboardKey.Up) && ActiveTab.CursorLine > 0) {
+                
                 BeginHistoryAction("swap");
-                (ActiveTab.Lines[ActiveTab.CursorLine], ActiveTab.Lines[ActiveTab.CursorLine - 1]) = (
-                    ActiveTab.Lines[ActiveTab.CursorLine - 1], ActiveTab.Lines[ActiveTab.CursorLine]);
+                (ActiveTab.Lines[ActiveTab.CursorLine], ActiveTab.Lines[ActiveTab.CursorLine - 1]) = (ActiveTab.Lines[ActiveTab.CursorLine - 1], ActiveTab.Lines[ActiveTab.CursorLine]);
                 ActiveTab.LineYOffsets[ActiveTab.CursorLine] = -lS;
                 ActiveTab.LineYOffsets[ActiveTab.CursorLine - 1] = lS;
                 ActiveTab.CursorLine--;
@@ -776,9 +897,9 @@ internal unsafe class ScriptEditor : Viewport {
             }
 
             if (IsKeyPressed(KeyboardKey.Down) && ActiveTab.CursorLine < ActiveTab.Lines.Count - 1) {
+                
                 BeginHistoryAction("swap");
-                (ActiveTab.Lines[ActiveTab.CursorLine], ActiveTab.Lines[ActiveTab.CursorLine + 1]) = (
-                    ActiveTab.Lines[ActiveTab.CursorLine + 1], ActiveTab.Lines[ActiveTab.CursorLine]);
+                (ActiveTab.Lines[ActiveTab.CursorLine], ActiveTab.Lines[ActiveTab.CursorLine + 1]) = (ActiveTab.Lines[ActiveTab.CursorLine + 1], ActiveTab.Lines[ActiveTab.CursorLine]);
                 ActiveTab.LineYOffsets[ActiveTab.CursorLine] = lS;
                 ActiveTab.LineYOffsets[ActiveTab.CursorLine + 1] = -lS;
                 ActiveTab.CursorLine++;
@@ -788,40 +909,50 @@ internal unsafe class ScriptEditor : Viewport {
             }
         }
 
-        if (ctrl && IsKeyPressed(KeyboardKey.RightBracket)) {
-            HandleTab(false);
-            return;
-        }
-
-        if (ctrl && IsKeyPressed(KeyboardKey.LeftBracket)) {
-            HandleTab(true);
-            return;
+        switch (ctrl) {
+            
+            case true when IsKeyPressed(KeyboardKey.RightBracket):
+                HandleTab(false);
+                return;
+            
+            case true when IsKeyPressed(KeyboardKey.LeftBracket):
+                HandleTab(true);
+                return;
         }
 
         KeyboardKey[] keys = [
+            
             KeyboardKey.Backspace, KeyboardKey.Delete, KeyboardKey.Enter, KeyboardKey.KpEnter, KeyboardKey.Left, KeyboardKey.Right,
             KeyboardKey.Up, KeyboardKey.Down, KeyboardKey.Escape, KeyboardKey.Tab, KeyboardKey.Home, KeyboardKey.End
         ];
+        
         var hit = false;
-        foreach (var k in keys)
-            if (IsKeyPressed(k)) {
-                if (shift && !HasSelection()) {
-                    ActiveTab.SelectionStartLine = ActiveTab.CursorLine;
-                    ActiveTab.SelectionStartChar = ActiveTab.CursorChar;
-                }
-
-                PerformAction(k, shift);
-                _lastRepeatedKey = k;
-                _repeatTimer = 0;
-                hit = true;
-                break;
-            }
-
-        if (!hit && IsKeyPressed((KeyboardKey)13)) {
+        
+        foreach (var k in keys) {
+            
+            if (!IsKeyPressed(k)) continue;
+            
             if (shift && !HasSelection()) {
+                
                 ActiveTab.SelectionStartLine = ActiveTab.CursorLine;
                 ActiveTab.SelectionStartChar = ActiveTab.CursorChar;
             }
+
+            PerformAction(k, shift);
+            _lastRepeatedKey = k;
+            _repeatTimer = 0;
+            hit = true;
+            break;
+        }
+
+        if (!hit && IsKeyPressed((KeyboardKey)13)) {
+            
+            if (shift && !HasSelection()) {
+                
+                ActiveTab.SelectionStartLine = ActiveTab.CursorLine;
+                ActiveTab.SelectionStartChar = ActiveTab.CursorChar;
+            }
+            
             PerformAction(KeyboardKey.Enter, shift);
             _lastRepeatedKey = KeyboardKey.Enter;
             _repeatTimer = 0;
@@ -829,53 +960,70 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         if (!hit && _lastRepeatedKey != KeyboardKey.Null) {
+            
             if (IsKeyDown(_lastRepeatedKey)) {
+                
                 _repeatTimer += dt;
-                if (_repeatTimer > RepeatInitialDelay) {
-                    if (_repeatTimer > RepeatInitialDelay + RepeatRate) {
-                        PerformAction(_lastRepeatedKey, shift);
-                        _repeatTimer = RepeatInitialDelay;
-                    }
+                
+                if (_repeatTimer is > RepeatInitialDelay and > RepeatInitialDelay + RepeatRate) {
+                        
+                    PerformAction(_lastRepeatedKey, shift);
+                    _repeatTimer = RepeatInitialDelay;
                 }
-            }
-            else {
+                
+            } else {
+                
                 _lastRepeatedKey = KeyboardKey.Null;
                 _repeatTimer = 0;
             }
         }
 
-        var io = ImGui.GetIO();
+        var io = GetIO();
+        
         for (var n = 0; n < io.InputQueueCharacters.Size; n++) {
+            
             var c = (char)io.InputQueueCharacters[n];
             if (c < 32) continue;
+            
             BeginHistoryAction("type");
             if (HasSelection()) DeleteSelection();
             var add = c.ToString();
-            if (ActiveTab.CursorChar < ActiveTab.Lines[ActiveTab.CursorLine].Length &&
+            
+            if (
+                ActiveTab.CursorChar < ActiveTab.Lines[ActiveTab.CursorLine].Length &&
                 ActiveTab.Lines[ActiveTab.CursorLine][ActiveTab.CursorChar] == c &&
-                (c == ')' || c == '}' || c == ']' || c == '"' || c == '\'')) {
+                c is ')' or '}' or ']' or '"' or '\''
+            ) {
                 ActiveTab.CursorChar++;
                 OnType();
                 EndHistoryAction();
                 continue;
             }
 
-            if (c == '(') add = "()";
-            else if (c == '{') add = "{}";
-            else if (c == '[') add = "[]";
-            else if (c == '"') add = "\"\"";
-            else if (c == '\'') add = "''";
-            ActiveTab.Lines[ActiveTab.CursorLine] =
-                ActiveTab.Lines[ActiveTab.CursorLine].Insert(ActiveTab.CursorChar, add);
+            add = c switch {
+                
+                '(' => "()",
+                '{' => "{}",
+                '[' => "[]",
+                '"' => "\"\"",
+                '\'' => "''",
+                _ => add
+            };
+            
+            ActiveTab.Lines[ActiveTab.CursorLine] = ActiveTab.Lines[ActiveTab.CursorLine].Insert(ActiveTab.CursorChar, add);
             ActiveTab.CursorChar++;
+            
             OnType();
             EndHistoryAction();
         }
     }
 
     private void PerformAction(KeyboardKey k, bool s) {
+        
         ActiveTab.FollowCursorTimer = 1.0f;
+        
         if (k == KeyboardKey.Escape) {
+            
             _showAutoComplete = _showSig = false;
             _acSelectedIndex = -1;
             _hoverTimer = 0;
@@ -886,32 +1034,44 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         if (_showAutoComplete && _acItems.Count > 0 && !HasSelection()) {
-            if (k == KeyboardKey.Down) {
-                _acSelectedIndex = (_acSelectedIndex + 1) % _acItems.Count;
-                return;
-            }
-
-            if (k == KeyboardKey.Up) {
-                _acSelectedIndex = (_acSelectedIndex - 1 + _acItems.Count) % _acItems.Count;
-                return;
-            }
-
-            if ((k == KeyboardKey.Enter || k == KeyboardKey.Tab) && _acSelectedIndex != -1) {
-                AcceptCompletion(_acItems[_acSelectedIndex].Label);
-                return;
+            
+            switch (k) {
+                
+                case KeyboardKey.Down:
+                    _acSelectedIndex = (_acSelectedIndex + 1) % _acItems.Count;
+                    return;
+                
+                case KeyboardKey.Up:
+                    _acSelectedIndex = (_acSelectedIndex - 1 + _acItems.Count) % _acItems.Count;
+                    return;
+                
+                case KeyboardKey.Enter or KeyboardKey.Tab when _acSelectedIndex != -1:
+                    AcceptCompletion(_acItems[_acSelectedIndex].Label);
+                    return;
             }
         }
 
         if (k == KeyboardKey.Left || k == KeyboardKey.Right || k == KeyboardKey.Up || k == KeyboardKey.Down)
             _showAutoComplete = false;
-        if (!s && k != KeyboardKey.Backspace && k != KeyboardKey.Delete && k != KeyboardKey.Enter &&
-            k != KeyboardKey.KpEnter && k != KeyboardKey.Tab && HasSelection()) {
+        
+        if (
+            !s &&
+            k != KeyboardKey.Backspace &&
+            k != KeyboardKey.Delete &&
+            k != KeyboardKey.Enter &&
+            k != KeyboardKey.KpEnter &&
+            k != KeyboardKey.Tab
+            && HasSelection()
+        ) {
             var (sL, sC, eL, eC) = GetSelectionRange();
+            
             if (k == KeyboardKey.Left || k == KeyboardKey.Up) {
+                
                 ActiveTab.CursorLine = sL;
                 ActiveTab.CursorChar = sC;
-            }
-            else {
+                
+            } else {
+                
                 ActiveTab.CursorLine = eL;
                 ActiveTab.CursorChar = eC;
             }
@@ -921,11 +1081,15 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         switch (k) {
+            
             case KeyboardKey.Backspace:
+                
                 BeginHistoryAction("backspace");
-                if (HasSelection()) DeleteSelection();
-                else {
+                
+                if (HasSelection()) DeleteSelection(); else {
+                    
                     if (IsKeyDown(KeyboardKey.LeftControl) || IsKeyDown(KeyboardKey.RightControl)) {
+                        
                         var oL = ActiveTab.CursorLine;
                         var oC = ActiveTab.CursorChar;
                         MoveCursorWordLeft();
@@ -934,31 +1098,37 @@ internal unsafe class ScriptEditor : Viewport {
                         ActiveTab.CursorLine = oL;
                         ActiveTab.CursorChar = oC;
                         DeleteSelection();
-                    }
-                    else HandleBackspace();
+                        
+                    } else HandleBackspace();
                 }
 
                 EndHistoryAction();
                 break;
+            
             case KeyboardKey.Delete:
+                
                 BeginHistoryAction("delete");
-                if (HasSelection()) DeleteSelection();
-                else {
+                
+                if (HasSelection()) DeleteSelection(); else {
+                    
                     if (IsKeyDown(KeyboardKey.LeftControl) || IsKeyDown(KeyboardKey.RightControl)) {
+                        
                         var oL = ActiveTab.CursorLine;
                         var oC = ActiveTab.CursorChar;
                         MoveCursorWordRight();
                         ActiveTab.SelectionStartLine = oL;
                         ActiveTab.SelectionStartChar = oC;
                         DeleteSelection();
-                    }
-                    else {
+                        
+                    } else {
+                        
                         if (ActiveTab.CursorChar < ActiveTab.Lines[ActiveTab.CursorLine].Length) {
-                            ActiveTab.Lines[ActiveTab.CursorLine] =
-                                ActiveTab.Lines[ActiveTab.CursorLine].Remove(ActiveTab.CursorChar, 1);
+                            
+                            ActiveTab.Lines[ActiveTab.CursorLine] = ActiveTab.Lines[ActiveTab.CursorLine].Remove(ActiveTab.CursorChar, 1);
                             OnType(false, true);
-                        }
-                        else if (ActiveTab.CursorLine < ActiveTab.Lines.Count - 1) {
+                            
+                        } else if (ActiveTab.CursorLine < ActiveTab.Lines.Count - 1) {
+                            
                             ActiveTab.Lines[ActiveTab.CursorLine] += ActiveTab.Lines[ActiveTab.CursorLine + 1];
                             ActiveTab.Lines.RemoveAt(ActiveTab.CursorLine + 1);
                             OnType(true, true);
@@ -968,6 +1138,7 @@ internal unsafe class ScriptEditor : Viewport {
 
                 EndHistoryAction();
                 break;
+            
             case KeyboardKey.Enter:
             case KeyboardKey.KpEnter:
                 BeginHistoryAction("enter");
@@ -975,34 +1146,41 @@ internal unsafe class ScriptEditor : Viewport {
                 HandleEnter();
                 EndHistoryAction();
                 break;
+            
             case KeyboardKey.Tab:
                 BeginHistoryAction("tab");
                 _showAutoComplete = false;
                 HandleTab(IsKeyDown(KeyboardKey.LeftShift) || IsKeyDown(KeyboardKey.RightShift));
                 EndHistoryAction();
                 break;
+            
             case KeyboardKey.Left:
                 if (IsKeyDown(KeyboardKey.LeftControl) || IsKeyDown(KeyboardKey.RightControl)) MoveCursorWordLeft();
                 else MoveCursorLeft();
                 break;
+            
             case KeyboardKey.Right:
                 if (IsKeyDown(KeyboardKey.LeftControl) || IsKeyDown(KeyboardKey.RightControl)) MoveCursorWordRight();
                 else MoveCursorRight();
                 break;
+            
             case KeyboardKey.Up: MoveCursorUp(); break;
             case KeyboardKey.Down: MoveCursorDown(); break;
             case KeyboardKey.Home:
-                if (IsKeyDown(KeyboardKey.LeftControl) || IsKeyDown(KeyboardKey.RightControl)) {
-                    ActiveTab.CursorLine = ActiveTab.CursorChar = 0;
-                }
+                if (IsKeyDown(KeyboardKey.LeftControl) || IsKeyDown(KeyboardKey.RightControl)) 
+                     ActiveTab.CursorLine = ActiveTab.CursorChar = 0;
                 else ActiveTab.CursorChar = 0;
 
                 break;
+            
             case KeyboardKey.End:
+                
                 if (IsKeyDown(KeyboardKey.LeftControl) || IsKeyDown(KeyboardKey.RightControl)) {
+                    
                     ActiveTab.CursorLine = ActiveTab.Lines.Count - 1;
                     ActiveTab.CursorChar = ActiveTab.Lines[ActiveTab.CursorLine].Length;
-                }
+                } 
+                
                 else ActiveTab.CursorChar = ActiveTab.Lines[ActiveTab.CursorLine].Length;
 
                 break;
@@ -1014,11 +1192,17 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private void HandleTab(bool s) {
+        
         if (HasSelection()) {
+            
             var (sL, _, eL, eC) = GetSelectionRange();
+            
             if (eL > sL && eC == 0) eL--;
+            
             for (var i = sL; i <= eL; i++) {
+                
                 if (s) {
+                    
                     if (ActiveTab.Lines[i].StartsWith("    ")) {
                         ActiveTab.Lines[i] = ActiveTab.Lines[i][4..];
                         if (i == ActiveTab.CursorLine) ActiveTab.CursorChar = Math.Max(0, ActiveTab.CursorChar - 4);
@@ -1305,8 +1489,8 @@ internal unsafe class ScriptEditor : Viewport {
         var f = 20 * ActiveTab.Zoom;
         var l = 26 * ActiveTab.Zoom;
         var m = new Vector2(60, 40) * ActiveTab.Zoom;
-        var wM = ImGui.GetIO().MousePos - o + ActiveTab.CameraPos;
-        if (ImGui.IsMouseDoubleClicked(ImGuiMouseButton.Left)) {
+        var wM = GetIO().MousePos - o + ActiveTab.CameraPos;
+        if (IsMouseDoubleClicked(ImGuiMouseButton.Left)) {
             UpdateCursorFromMouse(m, f, l, o);
             SelectWordAtCursor();
             ActiveTab.IsSelecting = false;
@@ -1332,7 +1516,7 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         if (IsMouseButtonDown(MouseButton.Left)) {
-            if (_isLeftClickPotentialDrag && Vector2.Distance(ImGui.GetIO().MouseDelta, Vector2.Zero) > 0.1f) {
+            if (_isLeftClickPotentialDrag && Vector2.Distance(GetIO().MouseDelta, Vector2.Zero) > 0.1f) {
                 _isDraggingSelection = true;
                 _isLeftClickPotentialDrag = false;
                 _dragText = GetSelectionText();
@@ -1386,7 +1570,7 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         if (_isLeftClickPotentialDrag && IsMouseButtonDown(MouseButton.Left) &&
-            Vector2.Distance(ImGui.GetIO().MouseDelta, Vector2.Zero) > 0.1f) {
+            Vector2.Distance(GetIO().MouseDelta, Vector2.Zero) > 0.1f) {
             _isDraggingSelection = true;
             _dragText = GetSelectionText();
             _isLeftClickPotentialDrag = false;
@@ -1399,7 +1583,7 @@ internal unsafe class ScriptEditor : Viewport {
 
     private void DrawEditorContent(Vector2 m, float fS, float lS, Vector2 sO) {
         if (_comboTimer > 0 && (_comboTimer -= GetFrameTime()) <= 0) _combo = 0;
-        var hM = ImGui.GetIO().MousePos;
+        var hM = GetIO().MousePos;
         if (Vector2.Distance(hM, _lastMousePos) > 5) {
             _hoverTimer = 0;
             _tooltipText = "";
@@ -1491,7 +1675,7 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private void DrawDragSelectionGhost(Vector2 m, float fS, float lS, Vector2 bP, Vector2 sO) {
-        var dP = Raylib.GetMousePosition() - sO;
+        var dP = GetMousePosition() - sO;
         var lines = _dragText.Replace("\r", "").Split('\n');
         var gM = 20.0f;
         var gW = lines.Select(l => MeasureTextEx(EditorFont, l, fS, 1).X).Max() + gM * 2;
@@ -1518,7 +1702,7 @@ internal unsafe class ScriptEditor : Viewport {
         var txt = comp
             ? $"level:findComponent({{\"{string.Join("\", \"", obj.GetPathFromRoot().Append(LevelBrowser.DragComponent?.GetType().Name ?? ""))}\"}})"
             : $"level:find({{\"{string.Join("\", \"", obj.GetPathFromRoot())}\"}})";
-        var dP = Raylib.GetMousePosition() - sO;
+        var dP = GetMousePosition() - sO;
         var gP = dP + new Vector2(25, 10);
         var gS = MeasureTextEx(EditorFont, txt, fS, 1);
         var gPa = 12.0f;
@@ -1770,7 +1954,7 @@ internal unsafe class ScriptEditor : Viewport {
 
     private void HandleCameraInput() {
         if (!IsHovered) return;
-        if (IsMouseButtonDown(MouseButton.Middle)) ActiveTab.ViewPos -= Raylib.GetMouseDelta();
+        if (IsMouseButtonDown(MouseButton.Middle)) ActiveTab.ViewPos -= GetMouseDelta();
         var w = GetMouseWheelMove();
         if (w == 0) return;
         if (IsKeyDown(KeyboardKey.LeftControl) || IsKeyDown(KeyboardKey.RightControl))
@@ -1804,14 +1988,14 @@ internal unsafe class ScriptEditor : Viewport {
         if (_acSelectedIndex >= _acScrollIndex + mV) _acScrollIndex = _acSelectedIndex - mV + 1;
         DrawRectangleRounded(new Rectangle(pP.X, pP.Y, w, h), 0.15f, 8, new Color(20, 20, 30, 245));
         DrawRectangleRoundedLines(new Rectangle(pP.X, pP.Y, w, h), 0.15f, 8, new Color(80, 80, 100, 150));
-        var mR = ImGui.GetIO().MousePos - sO;
+        var mR = GetIO().MousePos - sO;
         for (var i = _acScrollIndex; i < Math.Min(_acScrollIndex + mV, _acItems.Count); i++) {
             var item = _acItems[i];
             var iY = pP.Y + 5 * ActiveTab.Zoom + (i - _acScrollIndex) * iH;
             var iR = new Rectangle(pP.X + 5 * ActiveTab.Zoom, iY, w - 10 * ActiveTab.Zoom, iH);
             var hov = CheckCollisionPointRec(mR, iR);
             var sel = i == _acSelectedIndex;
-            if (hov && Vector2.Distance(ImGui.GetIO().MouseDelta, Vector2.Zero) > 0.1f) _acSelectedIndex = i;
+            if (hov && Vector2.Distance(GetIO().MouseDelta, Vector2.Zero) > 0.1f) _acSelectedIndex = i;
             if (hov && IsMouseButtonPressed(MouseButton.Left)) {
                 AcceptCompletion(item.Label);
                 return;
@@ -1924,7 +2108,7 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private bool GetCursorFromMouse(Vector2 m, float f, float l, Vector2 sO, out int line, out int chars) {
-        var wM = ImGui.GetIO().MousePos - sO + ActiveTab.CameraPos;
+        var wM = GetIO().MousePos - sO + ActiveTab.CameraPos;
         line = Math.Clamp((int)((wM.Y - m.Y) / l), 0, ActiveTab.Lines.Count - 1);
         var lT = ActiveTab.Lines[line];
         var minD = float.MaxValue;

@@ -109,6 +109,8 @@ internal class ObjectBrowser : Viewport {
                     
                     targetObj.Components[compName] = component; // Do
                     
+                    if (Core.ActiveLevel != null) Core.ActiveLevel.IsDirty = true;
+
                     History.SetUndoAction(() => {
                         
                         if (!targetObj.Components.TryGetValue(compName, out var c)) return;
@@ -252,6 +254,8 @@ internal class ObjectBrowser : Viewport {
                     component.UnloadAndQuit();
                     targetObj.Components.Remove(compName); // Do
                     
+                    if (Core.ActiveLevel != null) Core.ActiveLevel.IsDirty = true;
+
                     History.SetUndoAction(() => {
                         
                         if (Activator.CreateInstance(component.GetType(), targetObj) is not Component newComponent) return;
@@ -267,8 +271,8 @@ internal class ObjectBrowser : Viewport {
                     
                     History.SetRedoAction(() => {
                         
-                        if (!targetObj.Components.TryGetValue(compName, out var c)) return;
-                        c.UnloadAndQuit();
+                        if (!targetObj.Components.TryGetValue(compName, out var unloadComponent)) return;
+                        unloadComponent.UnloadAndQuit();
                         targetObj.Components.Remove(compName);
                     });
                     
@@ -277,6 +281,7 @@ internal class ObjectBrowser : Viewport {
             }
 
             if (treeOpen) {
+                
                 Spacing();
             
                 PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8, 8));
@@ -501,6 +506,8 @@ internal class ObjectBrowser : Viewport {
                 if (t is Component comp && (prop.Name == "Path" || prop.GetCustomAttribute<FilePathAttribute>() != null)) 
                     comp.UnloadAndQuit();
             }
+
+            if (Core.ActiveLevel != null) Core.ActiveLevel.IsDirty = true;
         }
 
         if (IsItemDeactivatedAfterEdit()) History.StopRecording();

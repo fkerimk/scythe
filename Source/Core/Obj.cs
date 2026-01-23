@@ -102,6 +102,7 @@ internal class Obj {
         
         Delete();
         
+        if (Core.ActiveLevel != null) Core.ActiveLevel.IsDirty = true;
         History.StopRecording();
     }
     
@@ -141,6 +142,7 @@ internal class Obj {
         History.SetUndoAction(() => SetParent(oldParent));
         History.SetRedoAction(() => SetParent(obj, true));
         
+        if (Core.ActiveLevel != null) Core.ActiveLevel.IsDirty = true;
         History.StopRecording();
     }
     
@@ -171,13 +173,18 @@ internal class Obj {
     }
 
     public string[] GetPathFromRoot() {
+        
         var path = new List<string>();
         var current = this;
-        while (current != null && current.Parent != null) {
+        
+        while (current is { Parent: not null }) {
+            
             path.Add(current.Name);
             current = current.Parent;
         }
+        
         path.Reverse();
+        
         return path.ToArray();
     }
     

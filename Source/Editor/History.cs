@@ -11,6 +11,13 @@ internal class HistoryStack {
     public bool CanRedo => _currentIndex < _records.Count - 1;
     public bool CanExtend => _currentIndex == _records.Count - 1;
 
+    public void Clear() {
+        
+        _records.Clear();
+        _currentIndex = -1;
+        _activeRecord = null;
+    }
+
     public void StartRecording(object reference, string? description = null) {
         
         _activeRecord ??= new Record(description);
@@ -106,6 +113,8 @@ internal static class History {
     public static bool CanUndo => Global.CanUndo;
     public static bool CanRedo => Global.CanRedo;
     
+    public static void Clear() => Global.Clear();
+
     public static void StartRecording(object reference, string? description = null) => Global.StartRecording(reference, description);
     public static void StopRecording() => Global.StopRecording();
     public static void Undo() => Global.Undo();

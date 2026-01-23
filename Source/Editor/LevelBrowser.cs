@@ -7,6 +7,7 @@ internal class LevelBrowser : Viewport {
     public LevelBrowser() : base("Level") {
         
         Obj.OnDelete += obj => {
+            
             if (SelectedObject == obj || (SelectedObject != null && IsAncestorOf(obj, SelectedObject))) 
                 SelectObject(null);
         };
@@ -450,8 +451,11 @@ internal class LevelBrowser : Viewport {
         var newName = _renameBuf;
         
         _scheduledRenameAction = () => {
+            
             History.StartRecording(targetObj, $"Rename {targetObj.Name}");
             targetObj.Name = newName;
+            
+            if (Core.ActiveLevel != null) Core.ActiveLevel.IsDirty = true;
             History.StopRecording();
         };
         

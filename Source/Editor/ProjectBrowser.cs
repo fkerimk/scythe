@@ -51,7 +51,7 @@ internal class ProjectBrowser : Viewport {
         GetIO().MouseDoubleClickTime = 0.5f; // Windows standard
     }
 
-    private static string GetPath() => PathUtil.ModRelative("ProjectBrowser.json");
+    private static string GetPath() => PathUtil.ProjectRelative("ProjectBrowser.json");
 
     public void Load() {
         
@@ -215,7 +215,8 @@ internal class ProjectBrowser : Viewport {
     
     private void DrawDirectoryTree(string rootPath) {
         
-        if (Path.GetFullPath(rootPath).Contains(PathUtil.TempPath)) return;
+        var full = Path.GetFullPath(rootPath);
+        if (full.Contains(PathUtil.TempPath) || (!string.IsNullOrEmpty(PathUtil.ProjectPath) && full.Contains(PathUtil.ProjectPath))) return;
         
         if (!Directory.Exists(rootPath)) return;
 
@@ -232,13 +233,33 @@ internal class ProjectBrowser : Viewport {
 
         if (!hasSubDirs) flags |= ImGuiTreeNodeFlags.Leaf;
 
-        var isNodeOpen = TreeNodeEx(rootPath, flags, name);
+        // Draw the node skeleton (Arrow + Selection Highlight)
+        var isNodeOpen = TreeNodeEx("###" + rootPath, flags);
         
-        // Drop Target (Tree)
-        HandleDropTarget(rootPath);
-
+        // Handle Interaction
         if (IsItemClicked() && !IsItemToggledOpen())
             _currentPath = rootPath;
+            
+        HandleDropTarget(rootPath);
+
+        // Draw Icon and Text on top of the node
+        SameLine();
+        SetCursorPosX(GetCursorPosX() - 10f); // Pull closer to arrow
+
+        var icon = Icons.FaFolder;
+        var folderColor = new Vector4(1f, 0.8f, 0.2f, 1f);
+
+        if (full.Equals(Path.GetFullPath(Config.Mod.Path), StringComparison.OrdinalIgnoreCase)) icon = Icons.FaHouse;
+        else if (full.Equals(Path.GetFullPath(PathUtil.ModRelative("Levels")), StringComparison.OrdinalIgnoreCase)) icon = Icons.FaMap;
+        else if (full.Equals(Path.GetFullPath(PathUtil.ModRelative("Scripts")), StringComparison.OrdinalIgnoreCase)) icon = Icons.FaCode;
+
+        PushFont(Fonts.ImFontAwesomeNormal);
+        TextColored(folderColor, icon);
+        PopFont();
+
+        SameLine();
+        SetCursorPosX(GetCursorPosX() - 4f); // Pull closer to icon
+        Text(name);
 
         if (!isNodeOpen) return;
         
@@ -291,16 +312,31 @@ internal class ProjectBrowser : Viewport {
         // Background Context Menu
         if (BeginPopupContextItem("GridCMS", ImGuiPopupFlags.MouseButtonRight)) {
             
-            if (MenuItem("New Text File")) CreateNewFile("Text", ".txt");
+            var isInsideScripts = Path.GetFullPath(_currentPath).StartsWith(Path.GetFullPath(PathUtil.ModRelative("Scripts")), StringComparison.OrdinalIgnoreCase);
+            var isInsideLevels = Path.GetFullPath(_currentPath).StartsWith(Path.GetFullPath(PathUtil.ModRelative("Levels")), StringComparison.OrdinalIgnoreCase);
+
+            if (isInsideScripts) {
+                if (MenuItem("New Script")) CreateNewFile("Script", ".lua", name =>
+                $"""
+                print("{name} is working, yay!")
+                
+                function loop()
+                    -- loop is called once per frame
+                end
+                """);
+            }
             
-            if (MenuItem("New Script")) CreateNewFile("Script", ".lua", name =>
-            $"""
-            print("{name} is working, yay!")
-            
-            function loop()
-                -- loop is called once per frame
-            end
-            """);
+            if (isInsideLevels) {
+                if (MenuItem("New Level")) CreateNewFile("NewLevel", ".json", name =>
+                $$"""
+                {
+                  "Root": {
+                     "Name": "{{name}}",
+                     "Children": {}
+                  }
+                }
+                """);
+            }
             
             EndPopup();
         }
@@ -345,7 +381,8 @@ internal class ProjectBrowser : Viewport {
         
         foreach (var entryPath in entriesList) {
             
-            if (Path.GetFullPath(entryPath).Contains(PathUtil.TempPath)) continue;
+            var full = Path.GetFullPath(entryPath);
+            if (full.Contains(PathUtil.TempPath) || (!string.IsNullOrEmpty(PathUtil.ProjectPath) && full.Contains(PathUtil.ProjectPath))) continue;
             
             var isDirectory = Directory.Exists(entryPath);
 
@@ -402,7 +439,12 @@ internal class ProjectBrowser : Viewport {
         var displayName = name;
         var ext = Path.GetExtension(path).ToLower();
 
-        if (ext == ".lua") displayName = displayName[..^4];
+        var isInsideLevels = Path.GetFullPath(path).StartsWith(Path.GetFullPath(PathUtil.ModRelative("Levels")), StringComparison.OrdinalIgnoreCase);
+        var isInsideScripts = Path.GetFullPath(path).StartsWith(Path.GetFullPath(PathUtil.ModRelative("Scripts")), StringComparison.OrdinalIgnoreCase);
+
+        if (isInsideLevels && ext == ".json") displayName = Path.GetFileNameWithoutExtension(name);
+        if (isInsideScripts && ext == ".lua") displayName = Path.GetFileNameWithoutExtension(name);
+        
         if (displayName.Length > 24) displayName = displayName[..24] + "...";
 
         PushID(path);
@@ -452,14 +494,22 @@ internal class ProjectBrowser : Viewport {
              
         } else {
             
-            var icon = isDirectory switch {
+            var icon = Icons.FaFolder;
+            var folderColor = new Vector4(1f, 0.8f, 0.2f, 1f);
+
+            if (isDirectory) {
                 
-                true => Icons.FaFolder,
+                var full = Path.GetFullPath(path);
+                if (full.Equals(Path.GetFullPath(Config.Mod.Path), StringComparison.OrdinalIgnoreCase)) icon = Icons.FaHouse;
+                else if (full.Equals(Path.GetFullPath(PathUtil.ModRelative("Levels")), StringComparison.OrdinalIgnoreCase)) icon = Icons.FaMap;
+                else if (full.Equals(Path.GetFullPath(PathUtil.ModRelative("Scripts")), StringComparison.OrdinalIgnoreCase)) icon = Icons.FaCode;
                 
-                false when ext is ".lua" => Icons.FaFileCode,
+            } else {
                 
-                _ => Icons.FaFile    
-            };
+                 if (isInsideScripts && ext == ".lua") icon = Icons.FaFileCode;
+                 else if (isInsideLevels && ext == ".json") icon = Icons.FaFlag;
+                 else icon = Icons.FaFile;
+            }
 
             var iconSize = CalcTextSize(icon);
             
@@ -467,7 +517,7 @@ internal class ProjectBrowser : Viewport {
             if (iconOffset < 0) iconOffset = 0;
             SetCursorPosX(groupStartX + iconOffset);
             
-            if (isDirectory) PushStyleColor(ImGuiCol.Text, new Vector4(1f, 0.8f, 0.2f, 1f));
+            if (isDirectory) PushStyleColor(ImGuiCol.Text, folderColor);
             Text(icon);
             if (isDirectory) PopStyleColor();
         }
@@ -609,6 +659,13 @@ internal class ProjectBrowser : Viewport {
                 
                  if (Path.GetExtension(path).Equals(".lua", StringComparison.OrdinalIgnoreCase)) {
                       Editor.OpenScript(path);
+                 }
+                 else if (Path.GetExtension(path).Equals(".json", StringComparison.OrdinalIgnoreCase)) {
+                      
+                      var levelsPath = PathUtil.ModRelative("Levels");
+                      if (Path.GetFullPath(path).StartsWith(Path.GetFullPath(levelsPath), StringComparison.OrdinalIgnoreCase)) {
+                          Editor.OpenLevel(path);
+                      }
                  }
             }
         }
@@ -839,12 +896,16 @@ internal class ProjectBrowser : Viewport {
 
     private void CreateNewFile(string name, string extension, Func<string, string>? content = null) {
 
-        name = Generators.AvailableName(name, Directory.GetFiles(_currentPath).Select(Path.GetFileNameWithoutExtension));
+        name = Generators.AvailableName(name, Directory.GetFileSystemEntries(_currentPath).Select(Path.GetFileNameWithoutExtension));
         
         var fileName = name + extension;
         var fullPath = Path.Combine(_currentPath, fileName);
         
         File.WriteAllText(fullPath, content?.Invoke(name) ?? "");
+        
+        _selectedPaths.Clear();
+        _selectedPaths.Add(fullPath);
+        StartRename(fullPath);
     }
     
     // Rename Helpers
