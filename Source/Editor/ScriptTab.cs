@@ -2,11 +2,11 @@
 
 internal class ScriptTab {
 
-    public string? FilePath;
-    public string Title, Uri;
+    public readonly string? FilePath;
+    public readonly string Title, Uri;
         
     [RecordHistory]
-    public List<string> Lines { get; set; } = [""];
+    public List<string> Lines { get; private set; } = [""];
     
     [RecordHistory]
     public int CursorLine { get; set; }
@@ -49,12 +49,11 @@ internal class ScriptTab {
             
             Uri = new Uri(absPath).AbsoluteUri;
             
-            try {
+            SafeExec.Try(() => {
                 
                 Lines = File.ReadAllLines(path).ToList();
                 if (Lines.Count == 0) Lines.Add("");
-                
-            } catch { /**/ }
+            });
             
         } else {
             

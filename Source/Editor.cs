@@ -103,7 +103,7 @@ internal static unsafe class Editor {
                 ClearScreenBuffers(); // Explicitly clear depth and color buffers
                 
                 BeginMode3D(Core.ActiveCamera.Raylib);
-                if (LevelBrowser.SelectedObject != null) RenderOutline(LevelBrowser.SelectedObject);
+                foreach (var obj in LevelBrowser.SelectedObjects) RenderOutline(obj);
                 if (Picking.DragSource != null) RenderOutline(Picking.DragSource);
                 if (Picking.DragTarget != null) RenderOutline(Picking.DragTarget);
                 EndMode3D();

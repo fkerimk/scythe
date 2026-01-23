@@ -14,7 +14,7 @@ internal class HistoryStack {
     public void StartRecording(object reference, string? description = null) {
         
         _activeRecord ??= new Record(description);
-        
+
         if (_activeRecord.Objects.All(o => o.Reference != reference))
             _activeRecord.Objects.Add(new ObjectRecord(reference));
     }

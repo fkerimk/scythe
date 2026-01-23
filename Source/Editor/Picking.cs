@@ -34,6 +34,7 @@ internal static class Picking {
             DragSource = null;
             DragTarget = null;
             IsDragging = false;
+            
             return;
         }
 
@@ -43,6 +44,7 @@ internal static class Picking {
             if (Raylib.GetMouseDelta().Length() > 2.0f) IsDragging = true;
             
             if (IsDragging) {
+                
                 DragTarget = GetObjectAtMouse();
                 if (DragTarget != null && (DragTarget == DragSource || IsChildOf(DragTarget, DragSource!))) DragTarget = null;
             }
@@ -67,11 +69,13 @@ internal static class Picking {
                     
                 } else {
                     // Just a click, select it
-                    LevelBrowser.SelectObject(DragSource);
+                    var multi = Raylib.IsKeyDown(KeyboardKey.LeftControl) || Raylib.IsKeyDown(KeyboardKey.RightControl);
+                    LevelBrowser.SelectObject(DragSource, multi);
                 }
             } else {
                 // Clicked air
-                 LevelBrowser.SelectObject(null);
+                 var multi = Raylib.IsKeyDown(KeyboardKey.LeftControl) || Raylib.IsKeyDown(KeyboardKey.RightControl);
+                 LevelBrowser.SelectObject(null, multi);
             }
 
             DragSource = null;

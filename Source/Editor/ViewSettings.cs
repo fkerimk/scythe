@@ -33,8 +33,8 @@ internal static class ViewSettings {
         var path = GetPath();
         if (!File.Exists(path)) return;
 
-        try {
-            
+        SafeExec.Try(() => {
+          
             var json = File.ReadAllText(path);
             var settings = JsonConvert.DeserializeObject<Dictionary<string, bool>>(json);
             if (settings == null) return;
@@ -44,10 +44,6 @@ internal static class ViewSettings {
                 if (settings.TryGetValue(field.Name, out var isOpen))
                     viewport.IsOpen = isOpen;
             }
-            
-        } catch {
-            
-            // ignored
-        }
+        });
     }
 }

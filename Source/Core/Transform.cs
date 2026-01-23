@@ -272,7 +272,8 @@ internal class Transform(Obj obj) : Component(obj) {
         
         if (!CommandLine.Editor || Core.ActiveCamera == null) return;
 
-        if (!Obj.IsSelected) return;
+        // Only draw gizmo for the "main" selected object to avoid clutter
+        if (Obj != LevelBrowser.SelectedObject) return;
         
         if (_canUseShortcuts && _activeMove == 0 && Editor.EditorRender.IsHovered) {
         
@@ -354,10 +355,6 @@ internal class Transform(Obj obj) : Component(obj) {
 
         if (isActive) {
 
-            var newPos = Pos;
-            var newRot = Rot;
-            var newScale = Scale;
-
             switch (_mode) {
                 
                 case 0: { // Position
@@ -372,15 +369,13 @@ internal class Transform(Obj obj) : Component(obj) {
                         delta.Z = MathF.Round(delta.Z / MoveSnap) * MoveSnap;
                     }
 
-                    var newWorldPos = _activeWorldPos - delta;
-
-                    if (Obj.Parent != null) {
-
-                        var inverseParentMatrix = Raymath.MatrixInvert(Obj.Parent.WorldMatrix);
-                        newPos = Raymath.Vector3Transform(newWorldPos, inverseParentMatrix);
-                    }
+                    var diff = delta - (_activeWorldPos - worldPos);
                     
-                    else newPos = newWorldPos;
+                    foreach (var target in LevelBrowser.SelectedObjects) {
+                        
+                        var newWorldPos = target.Transform.WorldPos - diff;
+                        target.Transform.WorldPos = newWorldPos;
+                    }
                     
                     _activeMove = Vector3.Dot(delta, _activeNormal);
                     break;
@@ -396,27 +391,30 @@ internal class Transform(Obj obj) : Component(obj) {
                         var angleDeg = angleRad * (180f / MathF.PI);
 
                         if (!IsKeyDown(KeyboardKey.LeftShift)) angleDeg = MathF.Round(angleDeg / 22.5f) * 22.5f;
+                        
+                        var deltaAngle = angleDeg - _activeMove;
                         _activeMove = angleDeg;
 
-                        var deltaRot = Quaternion.CreateFromAxisAngle(_activeLocalAxis, _activeMove.DegToRad());
+                        var deltaRot = Quaternion.CreateFromAxisAngle(_activeLocalAxis, deltaAngle.DegToRad());
 
-                        if (_isWorldSpace) {
+                        foreach (var target in LevelBrowser.SelectedObjects) {
+                            
+                            if (_isWorldSpace) {
 
-                            if (Obj.Parent != null) {
+                                if (target.Parent != null) {
 
-                                var parentRot = Quaternion.CreateFromRotationMatrix(Obj.Parent.WorldRotMatrix);
-                                var localDeltaInParentSpace = Quaternion.Inverse(parentRot) * deltaRot * parentRot;
+                                    var parentRot = target.Parent.Transform.WorldRot;
+                                    var localDeltaInParentSpace = Quaternion.Inverse(parentRot) * deltaRot * parentRot;
+                                    target.Transform.Rot = localDeltaInParentSpace * target.Transform.Rot;
+                                    
+                                } else target.Transform.Rot = deltaRot * target.Transform.Rot;
+                                
+                            } else target.Transform.Rot *= deltaRot;
 
-                                newRot = localDeltaInParentSpace * _activeRot;
-                            }
-
-                            else newRot = deltaRot * _activeRot;
+                            // Preserve hemisphere
+                            if (Quaternion.Dot(target.Transform.Rot, _activeRot) < 0) 
+                                target.Transform.Rot = Quaternion.Negate(target.Transform.Rot);
                         }
-
-                        else newRot = _activeRot * deltaRot;
-
-                        // Preserve hemisphere to prevent sudden Euler flips
-                        if (Quaternion.Dot(newRot, _activeRot) < 0) newRot = Quaternion.Negate(newRot);
                     }
                     
                     break;
@@ -429,24 +427,28 @@ internal class Transform(Obj obj) : Component(obj) {
                     var move = -Vector3.Dot(delta, _activeNormal);
 
                     if (!IsKeyDown(KeyboardKey.LeftShift)) move = MathF.Round(move / MoveSnap) * MoveSnap;
+                    
+                    var diff = move - _activeMove;
+                    
                     _activeMove = move;
 
-                    newScale = _activeScale;
-                    
-                    switch (id) {
+                    foreach (var target in LevelBrowser.SelectedObjects) {
                         
-                        case "x": newScale.X += move; break;
-                        case "y": newScale.Y += move; break;
-                        case "z": newScale.Z += move; break;
+                        var s = target.Transform.Scale;
+                        
+                        switch (id) {
+                            
+                            case "x": s.X += diff; break;
+                            case "y": s.Y += diff; break;
+                            case "z": s.Z += diff; break;
+                        }
+                        
+                        target.Transform.Scale = s;
                     }
                     
                     break;
                 }
             }
-            
-            Pos = newPos;
-            Rot = newRot;
-            Scale = newScale;
         }
         
         const float
@@ -500,8 +502,11 @@ internal class Transform(Obj obj) : Component(obj) {
                 _activeInitialVector = Vector3.Normalize(_activeInitialPoint - _activeWorldPos);
             
             else _activeInitialPoint = GetClosestPointLineRay(_activeWorldPos, _activeNormal, ray);
+
+            _activeMove = 0; // Reset active move delta tracking
             
-            History.StartRecording(this, "Transform");
+            foreach (var target in LevelBrowser.SelectedObjects)
+                History.StartRecording(target.Transform, "Transform");
         }
         
         if (isHovered) IsHovered = true;

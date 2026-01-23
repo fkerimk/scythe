@@ -70,30 +70,48 @@ internal unsafe class ScriptEditor : Viewport {
     private HistoryStack History => ActiveTab.History;
 
     public ScriptEditor() : base("Script Editor") {
+        
         WindowFlags |= ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse;
+        
+        CustomStyle = new CustomStyle {
+
+            WindowPadding = Vector2.Zero,
+            CellPadding = Vector2.Zero,
+            SeparatorTextPadding = Vector2.Zero
+        };
+        
         _rt = LoadRenderTexture(1, 1);
-        CustomStyle = new CustomStyle
-            { WindowPadding = Vector2.Zero, CellPadding = Vector2.Zero, SeparatorTextPadding = Vector2.Zero };
+        
         InitLsp();
     }
 
-    private string GetPath() => PathUtil.ModRelative("ScriptEditor.json");
+    private static string GetPath() => PathUtil.ModRelative("ScriptEditor.json");
 
     public void Load() {
+        
         var path = GetPath();
+        
         if (!File.Exists(path)) return;
-        try {
+        
+        SafeExec.Try(() => {
+            
             var settings = JsonConvert.DeserializeObject<ScriptEditorSettings>(File.ReadAllText(path));
+            
             if (settings == null) return;
+            
             foreach (var relTabPath in settings.OpenTabs) {
+                
                 var normalized = relTabPath.Replace('\\', '/');
                 var absPath = PathUtil.ModRelative(normalized);
+                
                 if (File.Exists(absPath)) NewTab(absPath);
             }
+            
             if (settings.ActiveTabIndex >= 0 && settings.ActiveTabIndex < _tabs.Count)
                 _activeTabIndex = settings.ActiveTabIndex;
+            
             else if (_tabs.Count > 0) _activeTabIndex = 0;
-        } catch { /**/ }
+        });
     }
 
     public void Save() {
@@ -371,16 +389,16 @@ internal unsafe class ScriptEditor : Viewport {
             Image((IntPtr)_rt.Texture.Id, avail, new Vector2(0, 1), new Vector2(1, 0));
             
             if (BeginDragDropTarget()) {
-                if (AcceptDragDropPayload("object").NativePtr != null && LevelBrowser._dragObject is { } o) {
+                if (AcceptDragDropPayload("object").NativePtr != null && LevelBrowser.DragObject is { } o) {
                     var varName = char.ToLower(o.Name[0]) + o.Name[1..];
                     InsertSnippetAtMouse(
                         $"local {varName} = level:find({{\"{string.Join("\", \"", o.GetPathFromRoot())}\"}})", margin,
                         fSize, lSpace, origin, "drop_object");
-                    LevelBrowser._dragObject = null;
+                    LevelBrowser.DragObject = null;
                     SetWindowFocus("Script Editor");
                 }
 
-                if (AcceptDragDropPayload("component").NativePtr != null && LevelBrowser._dragComponent is { } c) {
+                if (AcceptDragDropPayload("component").NativePtr != null && LevelBrowser.DragComponent is { } c) {
                     _showDropChoice = true;
                     _dropChoiceComp = c;
                     _dropChoicePos = ImGui.GetIO().MousePos;
@@ -390,7 +408,7 @@ internal unsafe class ScriptEditor : Viewport {
                     }
 
                     OpenPopup("DropChoicePopup");
-                    LevelBrowser._dragComponent = null;
+                    LevelBrowser.DragComponent = null;
                     SetWindowFocus("Script Editor");
                 }
 
@@ -529,15 +547,14 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private void SaveActiveTab() {
-        if (ActiveTab.FilePath != null) {
-            try {
-                File.WriteAllText(ActiveTab.FilePath, string.Join("\n", ActiveTab.Lines));
-                ActiveTab.IsDirty = false;
-            }
-            catch {
-                /**/
-            }
-        }
+        
+        if (ActiveTab.FilePath == null) return;
+        
+        SafeExec.Try(() => {
+                
+            File.WriteAllText(ActiveTab.FilePath, string.Join("\n", ActiveTab.Lines));
+            ActiveTab.IsDirty = false;
+        });
     }
 
     private void RequestSemanticTokens() {
@@ -646,10 +663,10 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private void HandleInput() {
-        if (IsKeyPressed(KeyboardKey.Escape) && (LevelBrowser._dragObject != null || _isDraggingSelection)) {
-            LevelBrowser._dragObject = LevelBrowser._dragTarget = null;
-            LevelBrowser._dragComponent = null;
-            LevelBrowser._isDragCancelled = true;
+        if (IsKeyPressed(KeyboardKey.Escape) && (LevelBrowser.DragObject != null || _isDraggingSelection)) {
+            LevelBrowser.DragObject = LevelBrowser.DragTarget = null;
+            LevelBrowser.DragComponent = null;
+            LevelBrowser.IsDragCancelled = true;
             _isDraggingSelection = _isLeftClickPotentialDrag = false;
         }
 
@@ -864,7 +881,7 @@ internal unsafe class ScriptEditor : Viewport {
             _hoverTimer = 0;
             _tooltipText = "";
             _isDraggingSelection = _isLeftClickPotentialDrag = false;
-            LevelBrowser._dragObject = LevelBrowser._dragTarget = null;
+            LevelBrowser.DragObject = LevelBrowser.DragTarget = null;
             return;
         }
 
@@ -1462,8 +1479,8 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         if (_isDraggingSelection) DrawDragSelectionGhost(m, fS, lS, bP, sO);
-        if (LevelBrowser._dragObject != null) DrawLevelDragGhost(m, fS, lS, bP, sO, LevelBrowser._dragObject, false);
-        if (LevelBrowser._dragComponent != null) DrawLevelDragGhost(m, fS, lS, bP, sO, LevelBrowser._dragComponent.Obj, true);
+        if (LevelBrowser.DragObject != null) DrawLevelDragGhost(m, fS, lS, bP, sO, LevelBrowser.DragObject, false);
+        if (LevelBrowser.DragComponent != null) DrawLevelDragGhost(m, fS, lS, bP, sO, LevelBrowser.DragComponent.Obj, true);
         if (Picking.DragSource != null && Picking.IsDragging) DrawLevelDragGhost(m, fS, lS, bP, sO, Picking.DragSource, false);
         if (_showSig) DrawSignatureHelp(m, fS, lS);
         if (_showAutoComplete) DrawAutocompletePopup(m, fS, lS, sO);
@@ -1499,7 +1516,7 @@ internal unsafe class ScriptEditor : Viewport {
 
     private void DrawLevelDragGhost(Vector2 m, float fS, float lS, Vector2 bP, Vector2 sO, Obj obj, bool comp) {
         var txt = comp
-            ? $"level:findComponent({{\"{string.Join("\", \"", obj.GetPathFromRoot().Append(LevelBrowser._dragComponent?.GetType().Name ?? ""))}\"}})"
+            ? $"level:findComponent({{\"{string.Join("\", \"", obj.GetPathFromRoot().Append(LevelBrowser.DragComponent?.GetType().Name ?? ""))}\"}})"
             : $"level:find({{\"{string.Join("\", \"", obj.GetPathFromRoot())}\"}})";
         var dP = Raylib.GetMousePosition() - sO;
         var gP = dP + new Vector2(25, 10);

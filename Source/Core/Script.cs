@@ -108,7 +108,7 @@ internal class Script(Obj obj) : Component(obj) {
 
         var code = File.ReadAllText(scriptPath);
 
-        SafeLuaCall(() => LuaScript.DoString(code));
+        SafeExec.LuaCall(() => LuaScript.DoString(code));
         LuaLoop = LuaScript.Globals.Get("loop");
 
         return true;
@@ -117,27 +117,6 @@ internal class Script(Obj obj) : Component(obj) {
     public override void Logic() {
         
         if (CommandLine.Editor || LuaLoop == null || LuaLoop.IsNil()) return;
-
-        SafeLuaCall(() => LuaScript.Call(LuaLoop, Raylib.GetFrameTime()));
-    }
-
-    public static void SafeLuaCall(Action action) {
-        
-        try { action.Invoke(); } catch (InterpreterException ex) {
-
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.Write($"[LUA] ");
-            Console.ForegroundColor = ConsoleColor.DarkBlue;
-            Console.WriteLine($"{ex.DecoratedMessage}");
-            Console.ResetColor();
-        }
-        catch (Exception ex) {
-            
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write($"[SCYTHE] ");
-            Console.ForegroundColor = ConsoleColor.DarkRed;
-            Console.WriteLine($"{ex.Message}");
-            Console.ResetColor();
-        }
+        SafeExec.LuaCall(() => LuaScript.Call(LuaLoop, Raylib.GetFrameTime()));
     }
 }

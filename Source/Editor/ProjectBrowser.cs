@@ -2,8 +2,8 @@
 using System.Collections.Concurrent;
 using ImGuiNET;
 using Raylib_cs;
-using static ImGuiNET.ImGui;
 using Newtonsoft.Json;
+using static ImGuiNET.ImGui;
 
 internal class ProjectBrowser : Viewport {
 
@@ -51,32 +51,40 @@ internal class ProjectBrowser : Viewport {
         GetIO().MouseDoubleClickTime = 0.5f; // Windows standard
     }
 
-    private string GetPath() => PathUtil.ModRelative("ProjectBrowser.json");
+    private static string GetPath() => PathUtil.ModRelative("ProjectBrowser.json");
 
     public void Load() {
+        
         var path = GetPath();
+        
         if (!File.Exists(path)) return;
-        try {
+        
+        SafeExec.Try(() => {
+            
             var settings = JsonConvert.DeserializeObject<ProjectBrowserSettings>(File.ReadAllText(path));
             if (settings == null) return;
+            
             var absPath = PathUtil.ModRelative(settings.CurrentPath);
+            
             if (Directory.Exists(absPath))
                 _currentPath = absPath;
-        } catch { /**/ }
+        });
     }
 
     public void Save() {
+        
         var path = GetPath();
         var dir = Path.GetDirectoryName(path);
+        
         if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+        
         var relPath = Path.GetRelativePath(Config.Mod.Path, _currentPath);
         var settings = new ProjectBrowserSettings { CurrentPath = relPath };
+        
         File.WriteAllText(path, JsonConvert.SerializeObject(settings, Formatting.Indented));
     }
 
-    private class ProjectBrowserSettings {
-        public string CurrentPath { get; set; } = "";
-    }
+    private class ProjectBrowserSettings { public string CurrentPath { get; init; } = ""; }
 
     protected override void OnDraw() {
         
@@ -190,7 +198,7 @@ internal class ProjectBrowser : Viewport {
         
         if (string.IsNullOrWhiteSpace(_searchFilter)) return;
         
-        try {
+        SafeExec.Try(() => {
             
             var allFiles = Directory.EnumerateFileSystemEntries(_currentPath, "*", SearchOption.AllDirectories);
             
@@ -202,8 +210,7 @@ internal class ProjectBrowser : Viewport {
                 
                 if (_cachedSearchResults.Count > 500) break; // Limit
             }
-            
-        } catch { /**/ }
+        });
     }
     
     private void DrawDirectoryTree(string rootPath) {
@@ -220,8 +227,8 @@ internal class ProjectBrowser : Viewport {
         if (rootPath == Config.Mod.Path) flags |= ImGuiTreeNodeFlags.DefaultOpen;
 
         var hasSubDirs = false;
-        try { hasSubDirs = Directory.EnumerateDirectories(rootPath).Any(); }
-        catch { /**/ }
+        
+        SafeExec.Try(() => hasSubDirs = Directory.EnumerateDirectories(rootPath).Any());
 
         if (!hasSubDirs) flags |= ImGuiTreeNodeFlags.Leaf;
 
@@ -724,12 +731,11 @@ internal class ProjectBrowser : Viewport {
             
             foreach (var (s, d) in items) {
                 
-                try {
+                SafeExec.Try(() => {
                     
                     if (Directory.Exists(s)) Directory.Move(s, d);
                     else if (File.Exists(s)) File.Move(s, d);
-                    
-                } catch (Exception e) { Console.WriteLine($"Move error: {e.Message}"); }
+                });
             }
         }
     }
@@ -755,16 +761,13 @@ internal class ProjectBrowser : Viewport {
              var backupName = Guid.NewGuid().ToString();
              var backupPath = Path.Combine(PathUtil.TempRelative("Trash"), backupName);
              
-             try {
+             SafeExec.Try(() => {
                  
                  if (isDir) CopyDirectory(path, backupPath);
                  else File.Copy(path, backupPath);
                  
                  backups.Add((path, backupPath, isDir));
-                 
-             }
-             
-             catch (Exception e) { Console.WriteLine($"Backup failed for {path}: {e.Message}"); }
+             });
         }
 
         // Perform & Record
@@ -784,16 +787,15 @@ internal class ProjectBrowser : Viewport {
             
             foreach (var b in backups) {
                 
-                try {
+                SafeExec.Try(() => {
                     
-                    if (b.IsDir && !Directory.Exists(b.Original))
-                        if (Directory.Exists(b.Backup)) CopyDirectory(b.Backup, b.Original);
+                    if (!b.IsDir || Directory.Exists(b.Original)) return;
+                    
+                    if (Directory.Exists(b.Backup)) CopyDirectory(b.Backup, b.Original);
                         
                     else if (!b.IsDir && !File.Exists(b.Original))
                         if (File.Exists(b.Backup)) File.Copy(b.Backup, b.Original);
-                }
-                
-                catch { /**/ }
+                });
             }
         }
         
@@ -826,20 +828,19 @@ internal class ProjectBrowser : Viewport {
     }
 
     private static void RecyclePath(string path) {
-        
-        try {
-            
+
+        SafeExec.Try(() => {
+
             // Generic fallback: Permanent Delete
             if (Directory.Exists(path)) Directory.Delete(path, true);
             else File.Delete(path);
-        }
-        
-        catch (Exception e) { Console.WriteLine($"Error deleting {path}: {e.Message}"); }
+        });
     }
 
     private void CreateNewFile(string name, string extension, Func<string, string>? content = null) {
 
         name = Generators.AvailableName(name, Directory.GetFiles(_currentPath).Select(Path.GetFileNameWithoutExtension));
+        
         var fileName = name + extension;
         var fullPath = Path.Combine(_currentPath, fileName);
         
@@ -932,12 +933,11 @@ internal class ProjectBrowser : Viewport {
         // Action
         void DoMove(string s, string d) {
             
-            try {
+            SafeExec.Try(() => {
                 
                 if (Directory.Exists(s)) Directory.Move(s, d);
                 else if (File.Exists(s)) File.Move(s, d);
-                
-            } catch { /**/ }
+            });
         }
     }
 

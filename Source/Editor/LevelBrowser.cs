@@ -16,17 +16,18 @@ internal class LevelBrowser : Viewport {
     private float? _savedScroll;
 
     internal static Obj?
-        _dragObject,
-        _dragTarget;
+        DragObject,
+        DragTarget;
 
-    internal static Component? _dragComponent;
+    internal static Component? DragComponent;
 
-    internal static bool _isDragCancelled;
+    internal static bool IsDragCancelled;
     
     private static Obj?
         _scheduledDeleteObject;
     
-    public static Obj? SelectedObject { get; private set; }
+    public static List<Obj> SelectedObjects { get; } = [];
+    public static Obj? SelectedObject => SelectedObjects.Count > 0 ? SelectedObjects[0] : null;
 
     private int _rowCount;
     private readonly float[] _lastRowY = new float[128];
@@ -41,7 +42,7 @@ internal class LevelBrowser : Viewport {
 
         if (Core.ActiveLevel == null) return;
         
-        if (ImGui.IsMouseReleased(ImGuiMouseButton.Left)) _isDragCancelled = false;
+        if (IsMouseReleased(ImGuiMouseButton.Left)) IsDragCancelled = false;
 
         _rowCount = 0;
         Array.Clear(_lastRowY, 0, _lastRowY.Length);
@@ -56,12 +57,12 @@ internal class LevelBrowser : Viewport {
         }
 
         // drag object
-        if (_dragObject != null && _dragTarget != null) {
+        if (DragObject != null && DragTarget != null) {
 
-            _dragObject.RecordedSetParent(_dragTarget);
+            DragObject.RecordedSetParent(DragTarget);
             
-            _dragObject = null;
-            _dragTarget = null;
+            DragObject = null;
+            DragTarget = null;
         }
 
         // Delete object
@@ -69,7 +70,7 @@ internal class LevelBrowser : Viewport {
 
             if (_scheduledDeleteObject != Core.ActiveLevel.Root) {
 
-                if (SelectedObject != null && (SelectedObject == _scheduledDeleteObject || IsAncestorOf(_scheduledDeleteObject, SelectedObject)))
+                if (SelectedObjects.Contains(_scheduledDeleteObject))
                     SelectObject(null);
 
                 _scheduledDeleteObject.RecordedDelete();
@@ -94,9 +95,10 @@ internal class LevelBrowser : Viewport {
         EndChild();
     }
 
-    private static bool IsAncestorOf(Obj ancestor, Obj target) {
+    private static bool IsAncestorOf(Obj ancestor, Obj? target) {
 
         if (target == null) return false;
+        
         var current = target.Parent;
 
         while (current != null) {
@@ -146,15 +148,13 @@ internal class LevelBrowser : Viewport {
         }
         _lastRowY[indent] = centerY;
 
-        if (SelectedObject != null && IsAncestorOf(obj, SelectedObject)) {
-            
+        if (SelectedObjects.Any(s => IsAncestorOf(obj, s)))
             SetNextItemOpen(true);
-        }
         
         // tree node
         var id = "##" + obj.GetHashCode();
         var isOpen = GetStateStorage().GetInt(GetID(id), 1) != 0;
-        var isSelected = SelectedObject == obj;
+        var isSelected = SelectedObjects.Contains(obj);
         
         var arrowColor = isOpen ?
             Colors.GuiTreeEnabled :
@@ -174,12 +174,15 @@ internal class LevelBrowser : Viewport {
         PopStyleColor();
         PopStyleColor();
         
+        // Selection Handling
+        var multi = IsKeyDown(ImGuiKey.LeftCtrl) || IsKeyDown(ImGuiKey.RightCtrl);
+        
         // Right click - context
         if (IsItemHovered() && IsMouseReleased(ImGuiMouseButton.Right))
             OpenPopupOnItemClick("context##" + obj.GetHashCode());
         
         // Left click - select
-        else if (IsItemHovered() && IsMouseReleased(ImGuiMouseButton.Left)) SelectObject(obj);
+        else if (IsItemHovered() && IsMouseReleased(ImGuiMouseButton.Left)) SelectObject(obj, multi);
         
         // Object context
   
@@ -303,12 +306,12 @@ internal class LevelBrowser : Viewport {
         }
 
         // start drag
-        if (!_isDragCancelled && BeginDragDropSource()) {
+        if (!IsDragCancelled && BeginDragDropSource()) {
             
-            _dragObject = obj;
+            DragObject = obj;
             
             SetDragDropPayload("object", IntPtr.Zero, 0);
-            Text($"Moving {_dragObject.Name}");
+            Text($"Moving {DragObject.Name}");
             EndDragDropSource();
         }
 
@@ -317,9 +320,9 @@ internal class LevelBrowser : Viewport {
             
             AcceptDragDropPayload("object");
             
-            if (_dragObject != null && IsMouseReleased(ImGuiMouseButton.Left)) {
+            if (DragObject != null && IsMouseReleased(ImGuiMouseButton.Left)) {
                 
-                _dragTarget = obj;
+                DragTarget = obj;
                 _savedScroll = GetScrollY();
             }
             
@@ -379,11 +382,28 @@ internal class LevelBrowser : Viewport {
         return true;
     }
 
-    public static void SelectObject(Obj? obj) {
+    public static void SelectObject(Obj? obj, bool multiSelect = false) {
         
-        SelectedObject?.IsSelected = false;
-        SelectedObject = obj;
-        if (obj != null) obj.IsSelected = true;
+        if (!multiSelect) {
+            
+            foreach (var s in SelectedObjects) s.IsSelected = false;
+            SelectedObjects.Clear();
+        }
+
+        if (obj == null) return;
+
+        if (SelectedObjects.Contains(obj)) {
+            
+            if (!multiSelect) return;
+            
+            obj.IsSelected = false;
+            SelectedObjects.Remove(obj);
+            
+        } else {
+            
+            obj.IsSelected = true;
+            SelectedObjects.Add(obj);
+        }
     }
 
     public static void DeleteSelectedObject() {

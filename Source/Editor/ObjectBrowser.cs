@@ -12,7 +12,7 @@ internal class ObjectBrowser : Viewport {
     
     private string[] _foundFiles = [];
     private string _searchFilter = "";
-    private object? _pickerTarget;
+    private List<object>? _pickerTargets;
     private PropertyInfo? _pickerProp;
     private bool _shouldOpenPicker;
 
@@ -30,130 +30,166 @@ internal class ObjectBrowser : Viewport {
         
         _propIndex = 0;
 
-        if (LevelBrowser.SelectedObject == null) return;
+        if (LevelBrowser.SelectedObjects.Count == 0) return;
         if (Core.ActiveLevel == null) return;
 
-        if (LevelBrowser.SelectedObject.Parent != null) {
+        var targets = LevelBrowser.SelectedObjects;
 
-            PushStyleColor(ImGuiCol.Text, Colors.GuiTextDisabled.ToVector4());
-            Text(LevelBrowser.SelectedObject.Parent.Name);
-            PopStyleColor();
-            SameLine();
+        if (targets.Count == 1) {
+            
+            if (targets[0].Parent != null) {
+                
+                PushStyleColor(ImGuiCol.Text, Colors.GuiTextDisabled.ToVector4());
+                Text(targets[0].Parent?.Name);
+                PopStyleColor();
+                SameLine();
+            }
+            
+        } else {
+            
+             PushStyleColor(ImGuiCol.Text, Colors.GuiTextDisabled.ToVector4());
+             Text($"{targets.Count} objects selected");
+             PopStyleColor();
         }
 
         Separator();
         Spacing();
 
-        DrawProperties(LevelBrowser.SelectedObject, false, null);
-        DrawProperties(LevelBrowser.SelectedObject.Transform, true, "Transform");
+        // 1. Draw Obj properties (e.g. Name)
+        DrawProperties(targets.Cast<object>().ToList(), false, null);
 
-        var components = LevelBrowser.SelectedObject.Components.Values.OrderBy(c => c.GetType().Name, new NaturalStringComparer());
+        // 2. Draw Transform properties
+        var transforms = targets.Select(object (t) => t.Transform).ToList();
+        DrawProperties(transforms, true, "Transform");
 
-        foreach (var component in components)
-            DrawProperties(component, true, component.GetType().Name);
-
-        Spacing();
-        Separator();
-        Spacing();
-
-        if (Button("Add Component", new Vector2(GetContentRegionAvail().X, 0))) 
-            OpenPopup("AddComponentPopup");
-
-        SetNextWindowPos(new Vector2(GetItemRectMin().X, GetItemRectMax().Y + 5.0f));
-        SetNextWindowSize(new Vector2(GetItemRectSize().X, 0));
-
-        if (BeginPopup("AddComponentPopup")) {
+        // 3. Draw Common Components
+        var firstObj = targets[0];
         
-            foreach (var type in _addComponentTypes) {
-                    
-                if (!Selectable(type.Name)) continue;
+        var commonCompNames = firstObj.Components.Keys
+            .Where(k => targets.All(t => t.Components.ContainsKey(k)))
+            .OrderBy(k => k, new NaturalStringComparer());
 
-                if (LevelBrowser.SelectedObject.Components.ContainsKey(type.Name)) {
-
-                    Notifications.Show($"Component {type.Name} already exists!", 1.5f);
-                    break;
-                }
-
-                if (Activator.CreateInstance(type, LevelBrowser.SelectedObject) is not Component component) continue;
-                
-                // History
-                var targetObj = LevelBrowser.SelectedObject;
-                var compName = type.Name;
-                
-                History.StartRecording(targetObj, $"Add Component {compName}");
-                
-                targetObj.Components[compName] = component; // Do
-                
-                History.SetUndoAction(() => {
-                    
-                    if (!targetObj.Components.TryGetValue(compName, out var c)) return;
-                    
-                    c.UnloadAndQuit();
-                    targetObj.Components.Remove(compName);
-                });
-                
-                History.SetRedoAction(() => {
-                    
-                    if (Activator.CreateInstance(type, targetObj) is not Component newComponent) return;
-                    
-                    foreach (var p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
-                        
-                        if (!p.CanWrite || !p.CanRead || p.Name == "IsLoaded") continue;
-                        try { p.SetValue(newComponent, p.GetValue(component)); } catch { /**/ }
-                    }
-                    
-                    targetObj.Components[compName] = newComponent;
-                });
-                
-                History.StopRecording();
-
-                if (component is Animation animation &&  LevelBrowser.SelectedObject.Components.TryGetValue("Model", out var model))
-                    animation.Path = (model as Model)!.Path;
-            }
+        foreach (var compName in commonCompNames) {
             
-            EndPopup();
+            var compInstances = targets.Select(t => (object)t.Components[compName]).ToList();
+            DrawProperties(compInstances, true, compName);
+        }
+
+        if (targets.Count == 1) {
+            
+            Spacing();
+            Separator();
+            Spacing();
+
+            if (Button("Add Component", new Vector2(GetContentRegionAvail().X, 0))) 
+                OpenPopup("AddComponentPopup");
+
+            SetNextWindowPos(new Vector2(GetItemRectMin().X, GetItemRectMax().Y + 5.0f));
+            SetNextWindowSize(new Vector2(GetItemRectSize().X, 0));
+
+            if (BeginPopup("AddComponentPopup")) {
+            
+                foreach (var type in _addComponentTypes) {
+                        
+                    if (!Selectable(type.Name)) continue;
+
+                    if (LevelBrowser.SelectedObject!.Components.ContainsKey(type.Name)) {
+
+                        Notifications.Show($"Component {type.Name} already exists!", 1.5f);
+                        break;
+                    }
+
+                    if (Activator.CreateInstance(type, LevelBrowser.SelectedObject) is not Component component) continue;
+                    
+                    // History
+                    var targetObj = LevelBrowser.SelectedObject;
+                    var compName = type.Name;
+                    
+                    History.StartRecording(targetObj, $"Add Component {compName}");
+                    
+                    targetObj.Components[compName] = component; // Do
+                    
+                    History.SetUndoAction(() => {
+                        
+                        if (!targetObj.Components.TryGetValue(compName, out var c)) return;
+                        
+                        c.UnloadAndQuit();
+                        targetObj.Components.Remove(compName);
+                    });
+                    
+                    History.SetRedoAction(() => {
+                        
+                        if (Activator.CreateInstance(type, targetObj) is not Component newComponent) return;
+                        
+                        foreach (var p in type.GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
+                            
+                            if (!p.CanWrite || !p.CanRead || p.Name == "IsLoaded") continue;
+                            SafeExec.Try(() => p.SetValue(newComponent, p.GetValue(component)));
+                        }
+                        
+                        targetObj.Components[compName] = newComponent;
+                    });
+                    
+                    History.StopRecording();
+
+                    if (component is Animation animation &&  LevelBrowser.SelectedObject.Components.TryGetValue("Model", out var model))
+                        animation.Path = (model as Model)!.Path;
+                }
+                
+                EndPopup();
+            }
         }
 
         DrawFilePicker();
     }
 
     private void DrawFilePicker() {
+        
         if (_shouldOpenPicker) {
+            
             OpenPopup("File Picker");
             _shouldOpenPicker = false;
         }
 
-        if (BeginPopup("File Picker")) {
-            SetNextItemWidth(300);
-            if (InputTextWithHint("##filter", "Search...", ref _searchFilter, 128)) {
-                // Filter is handled by just checking contains below
-            }
+        if (!BeginPopup("File Picker")) return;
+        
+        SetNextItemWidth(300);
+        InputTextWithHint("##filter", "Search...", ref _searchFilter, 128);
+        
+        BeginChild("##files", new Vector2(300, 400));
+        
+        foreach (var file in _foundFiles) {
+            
+            if (!string.IsNullOrEmpty(_searchFilter) && !file.Contains(_searchFilter, StringComparison.OrdinalIgnoreCase))
+                continue;
 
-            BeginChild("##files", new Vector2(300, 400));
-            foreach (var file in _foundFiles) {
-                if (!string.IsNullOrEmpty(_searchFilter) && !file.Contains(_searchFilter, StringComparison.OrdinalIgnoreCase))
-                    continue;
+            if (!Selectable(file)) continue;
+            
+            if (_pickerTargets != null && _pickerProp != null) {
+                        
+                foreach (var target in _pickerTargets) History.StartRecording(target, _pickerProp.Name);
 
-                if (Selectable(file)) {
-                    if (_pickerTarget != null && _pickerProp != null) {
-                        History.StartRecording(_pickerTarget, _pickerProp.Name);
-                        _pickerProp.SetValue(_pickerTarget, file);
-                        History.StopRecording();
-
-                        if (_pickerTarget is Component comp) comp.UnloadAndQuit();
-                    }
-                    CloseCurrentPopup();
+                foreach (var target in _pickerTargets) {
+                            
+                    _pickerProp.SetValue(target, file);
+                    if (target is Component comp) comp.UnloadAndQuit();
                 }
+                        
+                History.StopRecording();
             }
-            EndChild();
-
-            EndPopup();
+            
+            CloseCurrentPopup();
         }
+        
+        EndChild();
+
+        EndPopup();
     }
 
-    private void DrawProperties(object obj, bool separator, string? title) {
+    private void DrawProperties(List<object> targets, bool separator, string? title) {
         
-        PushID(obj.GetHashCode());
+        var first = targets[0];
+        PushID(first.GetHashCode());
         
         if (separator && !string.IsNullOrEmpty(title)) {
             
@@ -170,9 +206,10 @@ internal class ObjectBrowser : Viewport {
             
             var treeOpen = TreeNodeEx($"##{title}_header", ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.SpanFullWidth);
             
-            // Drag Source (Attached to the header row)
-            if (obj is Component comp && BeginDragDropSource()) {
-                LevelBrowser._dragComponent = comp;
+            // Drag Source (Only for single selection)
+            if (targets is [Component comp] && BeginDragDropSource()) {
+                
+                LevelBrowser.DragComponent = comp;
                 SetDragDropPayload("component", IntPtr.Zero, 0);
                 Text($"Reference {title}");
                 EndDragDropSource();
@@ -186,7 +223,7 @@ internal class ObjectBrowser : Viewport {
             SetCursorPosX(GetCursorPosX() - 7.5f); // Tighter arrow space
             SetCursorPosY(GetCursorPosY() + 3f);
             
-            if (obj is Component c) {
+            if (first is Component c) {
 
                 PushFont(Fonts.ImFontAwesomeSmall);
                 TextColored(c.LabelColor.ToVector4(), c.LabelIcon);
@@ -194,11 +231,11 @@ internal class ObjectBrowser : Viewport {
                 SameLine();
             }
             
-            ImGui.PushFont(Fonts.ImMontserratRegular);
+            PushFont(Fonts.ImMontserratRegular);
             Text(title);
-            ImGui.PopFont();
+            PopFont();
 
-            if (obj is Component component and not Transform) {
+            if (targets.Count == 1 && first is Component component and not Transform) {
                 
                 var buttonSize = CalcTextSize("X").X + GetStyle().FramePadding.X * 2.0f;
                 var targetX = GetCursorPosX() + GetContentRegionAvail().X - buttonSize - 5;
@@ -222,7 +259,7 @@ internal class ObjectBrowser : Viewport {
                         foreach (var p in component.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)) {
                             
                             if (!p.CanWrite || !p.CanRead || p.Name == "IsLoaded") continue;
-                            try { p.SetValue(newComponent, p.GetValue(component)); } catch { /**/ }
+                            SafeExec.Try(() => p.SetValue(newComponent, p.GetValue(component)));
                         }
                             
                         targetObj.Components[compName] = newComponent;
@@ -247,18 +284,19 @@ internal class ObjectBrowser : Viewport {
                 Columns(2, "##props", false);
                 SetColumnWidth(0, GetWindowWidth() * 0.3f); 
 
-                foreach (var prop in obj.GetType().GetProperties()) {
+                foreach (var prop in first.GetType().GetProperties()) {
                     
                     var headAttr = prop.GetCustomAttribute<HeaderAttribute>();
+                    
                     if (headAttr != null) {
                         Columns(1);
                         Spacing();
-                        ImGui.PushFont(Fonts.ImMontserratRegular);
-                        var headerCp = ImGui.GetCursorPos();
+                        PushFont(Fonts.ImMontserratRegular);
+                        var headerCp = GetCursorPos();
                         TextColored(Colors.Primary.ToVector4(), headAttr.Title);
-                        ImGui.SetCursorPos(headerCp + new Vector2(0.3f, 0));
+                        SetCursorPos(headerCp + new Vector2(0.3f, 0));
                         TextColored(Colors.Primary.ToVector4(), headAttr.Title);
-                        ImGui.PopFont();
+                        PopFont();
                         Separator();
                         Spacing();
                         Columns(2, "##props", false);
@@ -269,15 +307,15 @@ internal class ObjectBrowser : Viewport {
                     if (labelAttr == null) continue;
 
                     AlignTextToFramePadding();
-                    ImGui.PushFont(Fonts.ImMontserratRegular);
-                    var labelCp = ImGui.GetCursorPos();
+                    PushFont(Fonts.ImMontserratRegular);
+                    var labelCp = GetCursorPos();
                     Text(labelAttr.Value);
-                    ImGui.SetCursorPos(labelCp + new Vector2(0.3f, 0));
+                    SetCursorPos(labelCp + new Vector2(0.3f, 0));
                     Text(labelAttr.Value);
-                    ImGui.PopFont();
+                    PopFont();
                     NextColumn();
                     
-                    DrawProperty(obj, prop);
+                    DrawProperty(targets, prop);
                     NextColumn();
                 }
                     
@@ -287,28 +325,30 @@ internal class ObjectBrowser : Viewport {
                 TreePop();
                 Spacing();
             }
-        } 
-        else {
+            
+        } else {
              // Non-separated properties (e.g. main object)
              PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8, 8));
              Columns(2, "##props", false);
              SetColumnWidth(0, GetWindowWidth() * 0.3f); 
 
-             foreach (var prop in obj.GetType().GetProperties()) {
+             foreach (var prop in first.GetType().GetProperties()) {
+                 
                 var labelAttr = prop.GetCustomAttribute<LabelAttribute>();
                 if (labelAttr == null) continue;
 
                 AlignTextToFramePadding();
-                ImGui.PushFont(Fonts.ImMontserratRegular);
-                var labelAltCp = ImGui.GetCursorPos();
+                PushFont(Fonts.ImMontserratRegular);
+                var labelAltCp = GetCursorPos();
                 Text(labelAttr.Value);
-                ImGui.SetCursorPos(labelAltCp + new Vector2(0.3f, 0));
+                SetCursorPos(labelAltCp + new Vector2(0.3f, 0));
                 Text(labelAttr.Value);
-                ImGui.PopFont();
+                PopFont();
                 NextColumn();
-                DrawProperty(obj, prop);
+                DrawProperty(targets, prop);
                 NextColumn();
              }
+             
              Columns(1);
              PopStyleVar();
         }
@@ -316,136 +356,156 @@ internal class ObjectBrowser : Viewport {
         PopID();
     }
 
-    private void DrawProperty(object target, PropertyInfo prop) {
+    private void DrawProperty(List<object> targets, PropertyInfo prop) {
 
         var id = $"##prop{_propIndex}";
-        var value = prop.GetValue(target);
+        var values = targets.Select(prop.GetValue).ToList();
+        var first = values[0];
+        var allSame = values.All(v => Equals(v, first));
             
-        if (value != null) {
+        var changed = false;
+        object? newValue = null;
+        
+        PushItemWidth(-1);
+
+        if (prop.PropertyType == typeof(string)) {
+
+            var castValue = allSame ? (string)first! : "-";
+            var filePathAttr = prop.GetCustomAttribute<FilePathAttribute>();
+
+            if (filePathAttr != null) {
                 
-            var changed = false;
-            object? newValue = null;
-            
-            PushItemWidth(-1);
+                PushFont(Fonts.ImFontAwesomeSmall);
+                var pressed = Button($"{Icons.FaSearch}##{id}");
+                PopFont();
 
-            if (prop.PropertyType == typeof(string)) {
-
-                var castValue = (string)value;
-                var filePathAttr = prop.GetCustomAttribute<FilePathAttribute>();
-
-                if (filePathAttr != null) {
+                if (pressed) {
                     
-                    PushFont(Fonts.ImFontAwesomeSmall);
-                    var pressed = Button($"{Icons.FaSearch}##{id}");
-                    PopFont();
-
-                    if (pressed) {
+                    var baseDir = PathUtil.ModRelative(filePathAttr.Category);
+                    
+                    if (Directory.Exists(baseDir)) {
                         
-                        var baseDir = PathUtil.ModRelative(filePathAttr.Category);
-                        
-                        if (Directory.Exists(baseDir)) {
-                            
-                            _foundFiles = Directory.GetFiles(baseDir, $"*{filePathAttr.Extension}", SearchOption.AllDirectories)
-                                .Select(f => Path.GetRelativePath(baseDir, f).Replace('\\', '/'))
-                                .Select(f => f.Substring(0, f.Length - filePathAttr.Extension.Length))
-                                .ToArray();
+                        _foundFiles = Directory.GetFiles(baseDir, $"*{filePathAttr.Extension}", SearchOption.AllDirectories)
+                            .Select(f => Path.GetRelativePath(baseDir, f).Replace('\\', '/'))
+                            .Select(f => f.Substring(0, f.Length - filePathAttr.Extension.Length))
+                            .ToArray();
 
-                            if (_foundFiles.Length == 0)
-                                Notifications.Show($"There is no {filePathAttr.Extension} file in {filePathAttr.Category}");
+                        if (_foundFiles.Length == 0)
+                            Notifications.Show($"There is no {filePathAttr.Extension} file in {filePathAttr.Category}");
+                        
+                        else {
                             
-                            else {
-                                
-                                _pickerTarget = target;
-                                _pickerProp = prop;
-                                _searchFilter = "";
-                                _shouldOpenPicker = true;
-                            }
+                            _pickerTargets = targets; 
+                            _pickerProp = prop;
+                            _searchFilter = "";
+                            _shouldOpenPicker = true;
                         }
-                        
-                        else Notifications.Show($"Folder not found: {filePathAttr.Category}");
                     }
-                    SameLine();
-                }
-
-                if (InputTextWithHint(id, "object", ref castValue, 512)) {
                     
-                    newValue = castValue;
-                    changed = true;
+                    else Notifications.Show($"Folder not found: {filePathAttr.Category}");
                 }
+                
+                SameLine();
             }
-            
-            else if (prop.PropertyType == typeof(Vector3)) {
 
-                var castValue = (Vector3)value;
-                var convertedValue = castValue;
+            if (InputTextWithHint(id, allSame ? "" : "Mixed", ref castValue, 512)) {
                 
-                if (InputFloat3(id, ref convertedValue)) {
-                    
-                    newValue = convertedValue;
-                    changed = true;
-                }
+                newValue = castValue;
+                changed = true;
             }
-            
-            else if (prop.PropertyType == typeof(Color)) {
-
-                var castValue = (Color)value;
-                var convertedValue = castValue.ToVector4();
-                
-                if (ColorEdit4(id, ref convertedValue, ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.AlphaBar)) {
-                    
-                    newValue = convertedValue.ToColor();
-                    changed = true;
-                }
-            }
-            
-            else if (prop.PropertyType == typeof(int)) {
-
-                var castValue = (int)value;
-                
-                if (InputInt(id, ref castValue)) {
-                    
-                    newValue = castValue;
-                    changed = true;
-                }
-            }
-            
-            else if (prop.PropertyType == typeof(bool)) {
-
-                var castValue = (bool)value;
-                
-                if (Checkbox(id, ref castValue)) {
-                    
-                    newValue = castValue;
-                    changed = true;
-                }
-            }
-            
-            else if (prop.PropertyType == typeof(float)) {
-
-                var castValue = (float)value;
-                
-                if (InputFloat(id, ref castValue)) {
-                    
-                    newValue = castValue;
-                    changed = true;
-                }
-            }
-            
-            if (IsItemActivated()) History.StartRecording(target, prop.Name);
-            
-            if (changed && newValue != null) {
-                
-                prop.SetValue(target, newValue);
-                
-                if (target is Component comp && (prop.Name == "Path" || prop.GetCustomAttribute<FilePathAttribute>() != null)) 
-                    comp.UnloadAndQuit();
-            }
-            
-            if (IsItemDeactivatedAfterEdit()) History.StopRecording();
-
-            PopItemWidth();
         }
         
+        else if (prop.PropertyType == typeof(Vector3)) {
+
+            var castValue = allSame ? (Vector3)first! : new Vector3(0);
+            var result = castValue;
+            
+            if (InputFloat3(id, ref result)) {
+
+                foreach (var t in targets) {
+                    
+                    var current = (Vector3)prop.GetValue(t)!;
+                    
+                    if (Math.Abs(result.X - castValue.X) > 0.001f) current.X = result.X;
+                    if (Math.Abs(result.Y - castValue.Y) > 0.001f) current.Y = result.Y;
+                    if (Math.Abs(result.Z - castValue.Z) > 0.001f) current.Z = result.Z;
+                    
+                    prop.SetValue(t, current);
+                    
+                    if (t is Component comp && (prop.Name == "Path" || prop.GetCustomAttribute<FilePathAttribute>() != null)) 
+                        comp.UnloadAndQuit();
+                }
+                
+                changed = true; // Still flag for item checks
+            }
+        }
+        
+        else if (prop.PropertyType == typeof(Color)) {
+
+            var castValue = allSame ? (Color)first! : new Color(255, 255, 255, 255);
+            var result = castValue.ToVector4();
+            
+            if (ColorEdit4(id, ref result, ImGuiColorEditFlags.NoInputs | ImGuiColorEditFlags.AlphaBar)) {
+                
+                newValue = result.ToColor();
+                changed = true;
+            }
+        }
+        
+        else if (prop.PropertyType == typeof(int)) {
+
+            var castValue = allSame ? (int)first! : 0;
+            var result = castValue;
+            
+            if (InputInt(id, ref result)) {
+                
+                newValue = result;
+                changed = true;
+            }
+        }
+        
+        else if (prop.PropertyType == typeof(bool)) {
+
+            var castValue = allSame && (bool)first!;
+            var result = castValue;
+            
+            if (Checkbox(id, ref result)) {
+                
+                newValue = result;
+                changed = true;
+            }
+        }
+        
+        else if (prop.PropertyType == typeof(float)) {
+
+            var castValue = allSame ? (float)first! : 0;
+            var result = castValue;
+            
+            if (InputFloat(id, ref result)) {
+                
+                newValue = result;
+                changed = true;
+            }
+        }
+        
+        if (IsItemActivated())
+            foreach (var t in targets)
+                History.StartRecording(t, prop.Name);
+
+        if (changed && newValue != null) {
+            
+            foreach (var t in targets) {
+                
+                prop.SetValue(t, newValue);
+                
+                if (t is Component comp && (prop.Name == "Path" || prop.GetCustomAttribute<FilePathAttribute>() != null)) 
+                    comp.UnloadAndQuit();
+            }
+        }
+
+        if (IsItemDeactivatedAfterEdit()) History.StopRecording();
+        
+        PopItemWidth();
         _propIndex++;
     }
 }

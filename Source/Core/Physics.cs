@@ -18,9 +18,15 @@ internal static class Physics {
     public static void Update() {
         
         var dt = GetFrameTime();
-        if (dt <= 0) return;
-        if (dt > 0.25f) dt = 0.25f; // Cap dt to avoid "spiral of death"
         
+        switch (dt) {
+            
+            case <= 0: return;
+            case > 0.25f:
+                dt = 0.25f; // Cap dt to avoid "spiral of death"
+                break;
+        }
+
         _accumulator += dt;
         
         while (_accumulator >= TimeStep) {
