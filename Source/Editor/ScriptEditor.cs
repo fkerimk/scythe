@@ -398,6 +398,18 @@ internal unsafe class ScriptEditor : Viewport {
             }
 
             HandleDropChoice();
+
+            // Handle Picking Drag Drop
+            if (Picking.DragSource != null && Picking.IsDragging && IsHovered && Raylib.IsMouseButtonReleased(MouseButton.Left)) {
+                var o = Picking.DragSource;
+                var varName = char.ToLower(o.Name[0]) + o.Name[1..];
+                InsertSnippetAtMouse(
+                    $"local {varName} = level:find({{\"{string.Join("\", \"", o.GetPathFromRoot())}\"}})", margin,
+                    fSize, lSpace, origin, "drop_object");
+                Picking.DragSource = null;
+                Picking.IsDragging = false;
+                SetWindowFocus("Script Editor");
+            }
         }
         else {
             var center = GetCursorScreenPos() + ContentRegion / 2;
@@ -1450,8 +1462,9 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         if (_isDraggingSelection) DrawDragSelectionGhost(m, fS, lS, bP, sO);
-        if (LevelBrowser._dragObject != null) DrawLevelDragGhost(m, fS, lS, bP, sO, false);
-        if (LevelBrowser._dragComponent != null) DrawLevelDragGhost(m, fS, lS, bP, sO, true);
+        if (LevelBrowser._dragObject != null) DrawLevelDragGhost(m, fS, lS, bP, sO, LevelBrowser._dragObject, false);
+        if (LevelBrowser._dragComponent != null) DrawLevelDragGhost(m, fS, lS, bP, sO, LevelBrowser._dragComponent.Obj, true);
+        if (Picking.DragSource != null && Picking.IsDragging) DrawLevelDragGhost(m, fS, lS, bP, sO, Picking.DragSource, false);
         if (_showSig) DrawSignatureHelp(m, fS, lS);
         if (_showAutoComplete) DrawAutocompletePopup(m, fS, lS, sO);
         DrawTooltip(hM - sO);
@@ -1484,10 +1497,10 @@ internal unsafe class ScriptEditor : Viewport {
         }
     }
 
-    private void DrawLevelDragGhost(Vector2 m, float fS, float lS, Vector2 bP, Vector2 sO, bool comp) {
+    private void DrawLevelDragGhost(Vector2 m, float fS, float lS, Vector2 bP, Vector2 sO, Obj obj, bool comp) {
         var txt = comp
-            ? $"level:findComponent({{\"{string.Join("\", \"", LevelBrowser._dragComponent!.Obj.GetPathFromRoot().Append(LevelBrowser._dragComponent.GetType().Name))}\"}})"
-            : $"level:find({{\"{string.Join("\", \"", LevelBrowser._dragObject!.GetPathFromRoot())}\"}})";
+            ? $"level:findComponent({{\"{string.Join("\", \"", obj.GetPathFromRoot().Append(LevelBrowser._dragComponent?.GetType().Name ?? ""))}\"}})"
+            : $"level:find({{\"{string.Join("\", \"", obj.GetPathFromRoot())}\"}})";
         var dP = Raylib.GetMousePosition() - sO;
         var gP = dP + new Vector2(25, 10);
         var gS = MeasureTextEx(EditorFont, txt, fS, 1);

@@ -2,49 +2,141 @@ using Raylib_cs;
 
 internal static class Picking {
 
-    public static unsafe void Update() {
+    public static Obj? DragSource;
+    public static Obj? DragTarget;
+    public static bool IsDragging;
+    private static bool _wasGizmoInteracting;
+
+    public static void Update() {
 
         if (Core.ActiveCamera == null || Core.ActiveLevel == null) return;
         
-        // Ensure viewport interaction is valid and prevent picking when clicking UI
-        if (!Editor.EditorRender.IsHovered) return;
-        if (!Raylib.IsMouseButtonPressed(MouseButton.Left)) return;
+        if (!Editor.EditorRender.IsHovered && !IsDragging) { DragSource = null; DragTarget = null; return; }
 
-        // Prevent picking if gizmo is interacting
-        if (LevelBrowser.SelectedObject?.Transform.IsHovered == true || LevelBrowser.SelectedObject?.Transform.IsDragging == true) return;
+        // Start Drag
+        if (Raylib.IsMouseButtonPressed(MouseButton.Left)) {
+            
+            // If we are clicking on gizmo, flag it and don't start a drag/pick
+            if (LevelBrowser.SelectedObject?.Transform.IsHovered == true) {
+                
+                _wasGizmoInteracting = true;
+                return;
+            }
+
+            _wasGizmoInteracting = false;
+            DragSource = GetObjectAtMouse();
+            IsDragging = false;
+        }
+
+        // Cancel Drag
+        if (Raylib.IsKeyPressed(KeyboardKey.Escape)) {
+            
+            DragSource = null;
+            DragTarget = null;
+            IsDragging = false;
+            return;
+        }
+
+        // Handle Dragging
+        if (DragSource != null && Raylib.IsMouseButtonDown(MouseButton.Left)) {
+            
+            if (Raylib.GetMouseDelta().Length() > 2.0f) IsDragging = true;
+            
+            if (IsDragging) {
+                DragTarget = GetObjectAtMouse();
+                if (DragTarget != null && (DragTarget == DragSource || IsChildOf(DragTarget, DragSource!))) DragTarget = null;
+            }
+        }
+
+        // End Drag / Parent
+        if (Raylib.IsMouseButtonReleased(MouseButton.Left)) {
+
+            // If we were just using gizmos, don't do anything else (prevents deselection)
+            if (_wasGizmoInteracting) {
+                
+                _wasGizmoInteracting = false;
+                return;
+            }
+
+            if (DragSource != null) {
+
+                if (IsDragging) {
+                    
+                    if (DragTarget != null)
+                        DragSource.RecordedSetParent(DragTarget);
+                    
+                } else {
+                    // Just a click, select it
+                    LevelBrowser.SelectObject(DragSource);
+                }
+            } else {
+                // Clicked air
+                 LevelBrowser.SelectObject(null);
+            }
+
+            DragSource = null;
+            DragTarget = null;
+            IsDragging = false;
+        }
+    }
+
+    public static void Render2D() {
+        
+        if (!IsDragging || DragSource == null) return;
+
+        var mousePos = Editor.EditorRender.RelativeMouse;
+
+        var text = (DragTarget != null) 
+            ? $"Set parent to: {DragTarget.Name}" 
+            : $"Dragging: {DragSource.Name}";
+
+        var color = (DragTarget != null) ? Color.Green : Color.Yellow;
+
+        Raylib.DrawTextEx(Fonts.RlMontserratRegular, text, new System.Numerics.Vector2(mousePos.X + 22, mousePos.Y - 18), 20, 1, Color.Black);
+        Raylib.DrawTextEx(Fonts.RlMontserratRegular, text, new System.Numerics.Vector2(mousePos.X + 20, mousePos.Y - 20), 20, 1, color);
+    }
+
+    private static bool IsChildOf(Obj child, Obj potentialParent) {
+        
+        var curr = child.Parent;
+        
+        while (curr != null) {
+            
+            if (curr == potentialParent) return true;
+            curr = curr.Parent;
+        }
+        
+        return false;
+    }
+
+    private static unsafe Obj? GetObjectAtMouse() {
+        
+        if (Core.ActiveCamera == null || Core.ActiveLevel == null) return null;
 
         var ray = Raylib.GetScreenToWorldRay(EditorRender.RelativeMouse3D, Core.ActiveCamera.Raylib);
-        
         Obj? closestObj = null;
         var minDistance = float.MaxValue;
 
-        // Start recursive search from the root of the active level
         CheckObj(Core.ActiveLevel.Root);
-
-        // Apply selection: closest hit object or null (deselect) if clicking on skybox/nothing
-        LevelBrowser.SelectObject(closestObj);
-        
-        return;
+        return closestObj;
 
         void CheckObj(Obj obj) {
-
+            
             foreach (var component in obj.Components.Values) {
-
-                // Only perform collision check if the model is loaded
+                
                 if (component is not Model { IsLoaded: true } model) continue;
                 
                 for (var i = 0; i < model.Asset.RlModel.MeshCount; i++) {
-                        
+                    
                     var collision = Raylib.GetRayCollisionMesh(ray, model.Asset.RlModel.Meshes[i], obj.WorldMatrix);
-
+                    
                     if (!collision.Hit || !(collision.Distance < minDistance)) continue;
                     
                     minDistance = collision.Distance;
                     closestObj = obj;
                 }
             }
-
-            // Traverse children recursively
+            
             foreach (var child in obj.Children.Values)
                 CheckObj(child);
         }

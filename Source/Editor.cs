@@ -96,14 +96,16 @@ internal static unsafe class Editor {
             Core.ShadowPass();
 
             // Outline Mask Pass
-            if (LevelBrowser.SelectedObject != null) {
+            if (LevelBrowser.SelectedObject != null || Picking.DragSource != null || Picking.DragTarget != null) {
             
                 BeginTextureMode(EditorRender.OutlineRt);
                 ClearBackground(Color.Blank);
                 ClearScreenBuffers(); // Explicitly clear depth and color buffers
                 
                 BeginMode3D(Core.ActiveCamera.Raylib);
-                RenderOutline(LevelBrowser.SelectedObject);
+                if (LevelBrowser.SelectedObject != null) RenderOutline(LevelBrowser.SelectedObject);
+                if (Picking.DragSource != null) RenderOutline(Picking.DragSource);
+                if (Picking.DragTarget != null) RenderOutline(Picking.DragTarget);
                 EndMode3D();
                 
                 EndTextureMode();
@@ -123,7 +125,7 @@ internal static unsafe class Editor {
             EndMode3D();
             
             // Render Outline Post
-            if (LevelBrowser.SelectedObject != null) {
+            if (LevelBrowser.SelectedObject != null || Picking.IsDragging) {
                  
                 BeginShaderMode(Shaders.OutlinePost);
                 SetShaderValue(Shaders.OutlinePost, Shaders.OutlineTextureSize, new Vector2(EditorRender.TexSize.X, EditorRender.TexSize.Y), ShaderUniformDataType.Vec2);
@@ -135,6 +137,7 @@ internal static unsafe class Editor {
             
             // Draw 2D UI for components
             Core.Render(true);
+            Picking.Render2D();
             Window.DrawFps();
             EndTextureMode();
 
@@ -148,12 +151,12 @@ internal static unsafe class Editor {
             ImGuiIoPtr.MouseDoubleClickTime = 0.2f;
             MenuBar.Draw();
             EditorRender.Draw();
-            Picking.Update();
             LevelBrowser.Draw();
             ObjectBrowser.Draw();
             ProjectBrowser.Draw();
             ScriptEditor.Draw();
             MusicPlayer.Draw();
+            Picking.Update();
             PopFont();
             Style.Pop();
             rlImGui.End();

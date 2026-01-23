@@ -230,14 +230,15 @@ internal class Transform(Obj obj) : Component(obj) {
 
         // Building Matrix (Follows UpdateTransform logic: Scale * Rotation * Translation)
         
-        // 1. Base Scale
-        var mScale = Raymath.MatrixScale(targetScale.X, targetScale.Y, targetScale.Z);
+        // SCALE FIX: We extract the clean scale matrix directly from WorldMatrix to avoid "skew" distortion
+        var mWorldTransInv = Raymath.MatrixInvert(Raymath.MatrixTranslate(targetPos.X, targetPos.Y, targetPos.Z));
+        var mWorldRotInv = Raymath.MatrixInvert(Obj.WorldRotMatrix);
+        var mScaleWorld = Raymath.MatrixMultiply(Raymath.MatrixMultiply(Obj.WorldMatrix, mWorldTransInv), mWorldRotInv);
         
-        // 2. Base Rotation (Must transpose System.Numerics matrices for Raylib)
-        var mRot = Matrix4x4.Transpose(Matrix4x4.CreateFromQuaternion(_visualRot));
+        var mRotVisual = Matrix4x4.Transpose(Matrix4x4.CreateFromQuaternion(_visualRot));
         
-        // Combine Scale * Rotation
-        var baseMatrix = Raymath.MatrixMultiply(mScale, mRot);
+        // Combine Scale * Rotation (Pose kept 100% same, just scale is now undistorted)
+        var baseMatrix = Raymath.MatrixMultiply(mScaleWorld, mRotVisual);
 
         // 3. Squash & Stretch (Aligned with velocity)
         var speed = _visualVel.Length();
