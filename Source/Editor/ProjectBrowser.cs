@@ -1,7 +1,5 @@
 ﻿using System.Numerics;
-using System.Collections.Concurrent;
 using ImGuiNET;
-using Raylib_cs;
 using Newtonsoft.Json;
 using static ImGuiNET.ImGui;
 
@@ -14,11 +12,6 @@ internal class ProjectBrowser : Viewport {
     private const float
         ThumbnailSize = 64f,
         Padding = 16f;
-
-    // Thumbnails
-    private readonly Dictionary<string, Texture2D> _thumbnailCache = new();
-    private readonly HashSet<string> _failedThumbnails = [], _pendingThumbnails = [];
-    private readonly ConcurrentQueue<(string Path, Image Image)> _imageQueue = new();
 
     // Selection & Drag Logic
     private HashSet<string> _selectedPaths = [];
@@ -40,6 +33,8 @@ internal class ProjectBrowser : Viewport {
     // Search
     private string _lastSearch = "";
     private readonly List<string> _cachedSearchResults = [];
+    
+    public string? SelectedFile => _selectedPaths.Count == 1 ? _selectedPaths.First() : null;
 
     public ProjectBrowser() : base("Project") {
         
@@ -87,21 +82,6 @@ internal class ProjectBrowser : Viewport {
     private class ProjectBrowserSettings { public string CurrentPath { get; init; } = ""; }
 
     protected override void OnDraw() {
-        
-        // Process Loaded Thumbnails
-        while (_imageQueue.TryDequeue(out var item)) {
-            
-             var tex = Raylib.LoadTextureFromImage(item.Image);
-             Raylib.UnloadImage(item.Image); // Free CPU memory
-             
-             if (tex.Id != 0) {
-                 
-                 Raylib.SetTextureFilter(tex, TextureFilter.Bilinear);
-                 _thumbnailCache[item.Path] = tex;
-             }
-             
-             _pendingThumbnails.Remove(item.Path);
-        }
         
         // Top Bar: Navigation -> Path -> Spacer -> Search (Right)
         PushFont(Fonts.ImFontAwesomeNormal);
@@ -337,6 +317,20 @@ internal class ProjectBrowser : Viewport {
                 }
                 """);
             }
+
+            var isInsideModels = Path.GetFullPath(_currentPath).StartsWith(Path.GetFullPath(PathUtil.ModRelative("Models")), StringComparison.OrdinalIgnoreCase);
+            if (isInsideModels) {
+                if (MenuItem("New Material")) CreateNewFile("Material", ".material.json", _ =>
+                $$"""
+                {
+                  "Shader": "Pbr",
+                  "Textures": {},
+                  "Floats": {},
+                  "Colors": {},
+                  "Vectors": {}
+                }
+                """);
+            }
             
             EndPopup();
         }
@@ -384,6 +378,12 @@ internal class ProjectBrowser : Viewport {
             var full = Path.GetFullPath(entryPath);
             if (full.Contains(PathUtil.TempPath) || (!string.IsNullOrEmpty(PathUtil.ProjectPath) && full.Contains(PathUtil.ProjectPath))) continue;
             
+            // Skip meta files (e.g. Pistol.fbx.json)
+            if (full.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) {
+                 var assetPath = full.Substring(0, full.Length - 5);
+                 if (File.Exists(assetPath)) continue;
+            }
+
             var isDirectory = Directory.Exists(entryPath);
 
             if (DrawGridItem(entryPath, isDirectory, boxRect, out var doubleClicked)) {
@@ -444,6 +444,7 @@ internal class ProjectBrowser : Viewport {
 
         if (isInsideLevels && ext == ".json") displayName = Path.GetFileNameWithoutExtension(name);
         if (isInsideScripts && ext == ".lua") displayName = Path.GetFileNameWithoutExtension(name);
+        if (path.EndsWith(".material.json", StringComparison.OrdinalIgnoreCase)) displayName = name.Substring(0, name.Length - ".material.json".Length);
         
         if (displayName.Length > 24) displayName = displayName[..24] + "...";
 
@@ -469,11 +470,12 @@ internal class ProjectBrowser : Viewport {
         var maxDim = Math.Max(standardIconSize.X, standardIconSize.Y);
         
         // Thumbnail or Icon
-        var texId = GetThumbnail(path);
+        var textureAsset = AssetManager.Get<TextureAsset>(path);
+        var texId = (textureAsset != null && textureAsset.Thumbnail.HasValue) ? (IntPtr)textureAsset.Thumbnail.Value.Id : IntPtr.Zero;
         
         if (texId != IntPtr.Zero) {
             
-             var tex = _thumbnailCache[path];
+             var tex = textureAsset!.Thumbnail!.Value;
              float w = tex.Width;
              float h = tex.Height;
              
@@ -490,7 +492,7 @@ internal class ProjectBrowser : Viewport {
              if (imgOffsetX < 0) imgOffsetX = 0;
              
              SetCursorPosX(groupStartX + imgOffsetX);
-             Image((IntPtr)tex.Id, new Vector2(drawW, drawH));
+             Image(texId, new Vector2(drawW, drawH));
              
         } else {
             
@@ -508,6 +510,7 @@ internal class ProjectBrowser : Viewport {
                 
                  if (isInsideScripts && ext == ".lua") icon = Icons.FaFileCode;
                  else if (isInsideLevels && ext == ".json") icon = Icons.FaFlag;
+                 else if (path.EndsWith(".material.json", StringComparison.OrdinalIgnoreCase)) icon = Icons.FaFileImage;
                  else icon = Icons.FaFile;
             }
 
@@ -997,69 +1000,21 @@ internal class ProjectBrowser : Viewport {
             SafeExec.Try(() => {
                 
                 if (Directory.Exists(s)) Directory.Move(s, d);
-                else if (File.Exists(s)) File.Move(s, d);
+                else if (File.Exists(s)) {
+                    File.Move(s, d);
+                    
+                    // Also move associated .json meta if it exists (e.g. .fbx.json)
+                    var oldMeta = s + ".json";
+                    var newMeta = d + ".json";
+                    if (File.Exists(oldMeta)) File.Move(oldMeta, newMeta);
+                }
             });
         }
     }
 
     private void CancelRename() => _renamingPath = null;
 
-    // Thumbnails
-    private IntPtr GetThumbnail(string path) {
-        
-        if (_failedThumbnails.Contains(path)) return IntPtr.Zero;
-        if (_thumbnailCache.TryGetValue(path, out var tex)) return (IntPtr)tex.Id;
-        if (_pendingThumbnails.Contains(path)) return IntPtr.Zero;
 
-        // Check for Image Extension
-        var ext = Path.GetExtension(path).ToLower();
-        var imgExtensions = new HashSet<string> { ".png", ".jpg", ".jpeg", ".bmp", ".tga", ".gif", ".psd", ".hdr", ".qoi" };
-         
-        if (imgExtensions.Contains(ext)) {
-            
-            _pendingThumbnails.Add(path);
-            
-            Task.Run(() => {
-                
-                unsafe {
-                    
-                    if (!File.Exists(path)) return;
-                    
-                    var img = Raylib.LoadImage(path);
-
-                    if (img.Data == null) return;
-                    
-                    const int maxDim = 256;
-                    var w = img.Width;
-                    var h = img.Height;
-                        
-                    if (w > maxDim || h > maxDim) {
-                            
-                        if (w > h) {
-                                
-                            h = (int)((float)h / w * maxDim);
-                            w = maxDim;
-                                
-                        } else {
-                                
-                            w = (int)((float)w / h * maxDim);
-                            h = maxDim;
-                        }
-                            
-                        Raylib.ImageResize(ref img, w, h);
-                    }
-                        
-                    _imageQueue.Enqueue((path, img));
-                }
-            });
-            
-            return IntPtr.Zero;
-        }
-
-        _failedThumbnails.Add(path);
-        
-        return IntPtr.Zero;
-    }
 
     // Helper struct for Rect
     public readonly struct Rect(float x, float y, float w, float h) {

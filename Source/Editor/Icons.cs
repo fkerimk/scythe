@@ -22,4 +22,6 @@
     public const string FaMap = "";
     public const string FaFlag = "";
     public const string FaHouse = "";
+    public const string FaFileImage = "";
+    public const string FaXMark = "";
 }

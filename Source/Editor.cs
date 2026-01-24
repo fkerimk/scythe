@@ -94,7 +94,7 @@ internal static unsafe class Editor {
                 
                 BeginDrawing();
                 ClearBackground(Color.Black);
-                rlImGui.Begin();
+                Begin();
                 Style.Push();
                 PushFont(Fonts.ImMontserratRegular);
                 DockSpaceOverViewport(GetMainViewport().ID);
@@ -140,7 +140,7 @@ internal static unsafe class Editor {
                 ClearBackground(Color.Blank);
                 ClearScreenBuffers(); // Explicitly clear depth and color buffers
                 
-                BeginMode3D(Core.ActiveCamera!.Raylib);
+                BeginMode3D(Core.ActiveCamera.Raylib);
                 foreach (var obj in LevelBrowser.SelectedObjects) RenderOutline(obj);
                 if (Picking.DragSource != null) RenderOutline(Picking.DragSource);
                 if (Picking.DragTarget != null) RenderOutline(Picking.DragTarget);
@@ -157,7 +157,7 @@ internal static unsafe class Editor {
             FreeCam.Loop(EditorRender);
             
             // Draw objects and skybox
-            BeginMode3D(Core.ActiveCamera!.Raylib);
+            BeginMode3D(Core.ActiveCamera.Raylib);
             Core.Render(false);
             Grid.Draw(Core.ActiveCamera);
             EndMode3D();
@@ -165,12 +165,15 @@ internal static unsafe class Editor {
             // Render Outline Post
             if (LevelBrowser.SelectedObject != null || Picking.IsDragging) {
                  
-                BeginShaderMode(Shaders.OutlinePost);
-                SetShaderValue(Shaders.OutlinePost, Shaders.OutlineTextureSize, new Vector2(EditorRender.TexSize.X, EditorRender.TexSize.Y), ShaderUniformDataType.Vec2);
-                SetShaderValue(Shaders.OutlinePost, Shaders.OutlineWidth, 2.0f, ShaderUniformDataType.Float);
-                SetShaderValue(Shaders.OutlinePost, Shaders.OutlineColor, ColorNormalize(Colors.Primary), ShaderUniformDataType.Vec4);
-                DrawTextureRec(EditorRender.OutlineRt.Texture, new Rectangle(0, 0, EditorRender.TexSize.X, -EditorRender.TexSize.Y), Vector2.Zero, Color.White);
-                EndShaderMode();
+                var outlinePost = AssetManager.Get<ShaderAsset>("outline_post");
+                if (outlinePost != null) {
+                    BeginShaderMode(outlinePost.Shader);
+                    SetShaderValue(outlinePost.Shader, outlinePost.GetLoc("textureSize"), new Vector2(EditorRender.TexSize.X, EditorRender.TexSize.Y), ShaderUniformDataType.Vec2);
+                    SetShaderValue(outlinePost.Shader, outlinePost.GetLoc("outlineSize"), 2.0f, ShaderUniformDataType.Float);
+                    SetShaderValue(outlinePost.Shader, outlinePost.GetLoc("outlineColor"), ColorNormalize(Colors.Primary), ShaderUniformDataType.Vec4);
+                    DrawTextureRec(EditorRender.OutlineRt.Texture, new Rectangle(0, 0, EditorRender.TexSize.X, -EditorRender.TexSize.Y), Vector2.Zero, Color.White);
+                    EndShaderMode();
+                }
             }
             
             // Draw 2D UI for components
@@ -182,7 +185,7 @@ internal static unsafe class Editor {
             // Render editor
             BeginDrawing();
             ClearBackground(Color.Black);
-            rlImGui.Begin();
+            Begin();
             Style.Push();
             PushFont(Fonts.ImMontserratRegular);
             
@@ -231,20 +234,30 @@ internal static unsafe class Editor {
             if (component is not Model { IsLoaded: true } model) continue;
             
             // Override shaders
-            var originalShaders = new Shader[model.Asset.RlModel.MaterialCount];
+            var modelAsset = model.AssetRef;
+            var outlineMask = AssetManager.Get<ShaderAsset>("outline_mask");
             
-            for (var i = 0; i < model.Asset.RlModel.MaterialCount; i++) {
+            if (outlineMask != null) {
                 
-                originalShaders[i] = model.Asset.RlModel.Materials[i].Shader;
-                model.Asset.RlModel.Materials[i].Shader = Shaders.OutlineMask;
-            } 
-               
-            // Draw
-            model.Draw();
-               
-            // Restore
-            for (var i = 0; i < model.Asset.RlModel.MaterialCount; i++)
-                model.Asset.RlModel.Materials[i].Shader = originalShaders[i];
+                // Track original shaders by Material index to handle shared materials correctly
+                var originalShaders = new Dictionary<int, Shader>();
+
+                for (var i = 0; i < modelAsset.Materials.Length; i++) {
+                    originalShaders[i] = modelAsset.Materials[i].Shader;
+                    modelAsset.Materials[i].Shader = outlineMask.Shader;
+                } 
+                    
+                model.Draw();
+                    
+                // Restore
+                for (var i = 0; i < modelAsset.Materials.Length; i++) {
+                    if (originalShaders.TryGetValue(i, out var shader)) {
+                        modelAsset.Materials[i].Shader = shader;
+                    }
+                }
+            } else {
+                model.Draw();
+            }
         }
         
         foreach (var child in obj.Children.Values) RenderOutline(child);

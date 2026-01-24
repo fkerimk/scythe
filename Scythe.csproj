@@ -25,6 +25,8 @@
 
     <ItemGroup>
         
+        <PackageReference Include="AssimpNet" Version="4.1.0" />
+        
         <PackageReference Include="Raylib-cs" Version="7.0.2" />
         <PackageReference Include="rlImgui-cs" Version="3.2.0" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />

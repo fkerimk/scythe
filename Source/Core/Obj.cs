@@ -111,9 +111,9 @@ internal class Obj {
         
         if (obj == null || obj == this || Parent == null) return;
 
-        Vector3 wp = Vector3.Zero;
-        Quaternion wr = Quaternion.Identity;
-        Vector3 ws = Vector3.One;
+        var wp = Vector3.Zero;
+        var wr = Quaternion.Identity;
+        var ws = Vector3.One;
 
         if (keepWorld) DecomposeWorldMatrix(out wp, out wr, out ws);
 

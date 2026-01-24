@@ -36,7 +36,7 @@ internal static class Config {
         public static int PbrMra = 1;
         public static int PbrEmissive = 1;
         public static bool GenTangents = true;
-        public static string RaylibLogLevel = "Error";
+        public static string RaylibLogLevel = "Warning";
     }
     
     public static class Level {

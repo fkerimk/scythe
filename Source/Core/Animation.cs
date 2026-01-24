@@ -1,29 +1,28 @@
-﻿using Newtonsoft.Json;
+﻿using System.Numerics;
+using Newtonsoft.Json;
 using Raylib_cs;
 
-internal unsafe class Animation(Obj obj) : Component(obj) {
+internal class Animation(Obj obj) : Component(obj) {
     
     public override string LabelIcon => Icons.FaPlayCircle;
     public override Color LabelColor => Colors.GuiTypeAnimation;
 
-    [RecordHistory] [JsonProperty] [Label("Path")] [FilePath("Models", ".iqm")] public string Path { get; set; } = "";
+    [RecordHistory] [JsonProperty] [Label("Path")] [FindAsset("AnimationAsset")] public string Path { get; set; } = "";
     
     [RecordHistory] [JsonProperty] [Label("Track")] public int Track { get; set {
 
         if (!IsLoaded) return;
-        if (Asset.AnimationCount == -1) field = value;
-        else if (Asset.AnimationCount == 0 || value < 0) field = 0;
-        else if (value >= Asset.AnimationCount) field = Asset.AnimationCount - 1;
+        
+        if (_asset.Animations.Count == 0 || value < 0) field = 0;
+        
+        else if (value >= _asset.Animations.Count) field = _asset.Animations.Count - 1;
         else field = value;
     } }
 
     [RecordHistory] [JsonProperty] [Label("Is Playing")] public bool IsPlaying { get; set {
 
-        if (!field && value) {
-
-            _frame = 0;
+        if (!field && value)
             _frameRaw = 0;
-        }
 
         field = value;
         
@@ -31,37 +30,56 @@ internal unsafe class Animation(Obj obj) : Component(obj) {
 
     [RecordHistory] [JsonProperty] [Label("Looping")] public bool Looping { get; set; } = true;
 
-    private int _frame;
     private float _frameRaw;
     
-    private AnimationAsset Asset = null!;
+    private AnimationAsset _asset = null!;
+    private Dictionary<string, AnimationChannel>? _channelMap;
+    private int _lastTrack = -1;
 
     public override bool Load() {
         
-        if (!PathUtil.BestPath($"Models/{Path}.iqm", out var animationPath)) return false;
-        if (!AssetManager.Load(animationPath, out Asset!)) return false;
+        _asset = AssetManager.Get<AnimationAsset>(Path)!;
         
-        Track = (int)Raymath.Clamp(Track, 0, Asset.AnimationCount);
+        if (!_asset.IsLoaded) return false;
+        
+        Track = (int)Raymath.Clamp(Track, 0, _asset.Animations.Count - 1);
         
         return true;
     }
 
     public override void Logic() {
         
-        if (Asset.AnimationCount == -1 || !IsPlaying || !Obj.Components.TryGetValue("Model", out var component) || component is not Model { IsLoaded: true } model) return;
+        if (!_asset.IsLoaded || _asset.Animations.Count == 0) return;
+        if (!IsPlaying || !Obj.Components.TryGetValue("Model", out var component) || component is not Model { IsLoaded: true } model) return;
         
-        _frame = (int)MathF.Floor(_frameRaw);
+        var modelAsset = model.AssetRef;
+        
+        if (!modelAsset.IsLoaded) return;
+
+        if (Track != _lastTrack) {
             
-        if (_frame >= Asset.Animations[Track].FrameCount) {
-
-            _frame = 0;
-            _frameRaw = 0;
-
-            IsPlaying = Looping;
+            _channelMap = _asset.Animations[Track].Channels.ToDictionary(c => c.NodeName);
+            _lastTrack = Track;
         }
+
+        var clip = _asset.Animations[Track];
         
-        Raylib.UpdateModelAnimation(model.RlModel, Asset.Animations[Track], _frame);
+        _frameRaw += Raylib.GetFrameTime() * (float)clip.TicksPerSecond;
+        
+        if (_frameRaw >= clip.Duration) {
             
-        _frameRaw += Raylib.GetFrameTime() * 60;
+            if (Looping) _frameRaw = (float)(_frameRaw % clip.Duration);
+            
+            else {
+                
+                _frameRaw = (float)clip.Duration;
+                IsPlaying = false;
+            }
+        }
+
+        AssimpLoader.UpdateAnimation(modelAsset.RootNode, clip, _frameRaw, Matrix4x4.Identity, modelAsset.GlobalInverse, model.Bones, _channelMap!);
+
+        foreach (var mesh in model.Meshes)
+            AssimpLoader.SkinMesh(mesh, model.Bones);
     }
 }

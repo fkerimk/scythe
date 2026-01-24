@@ -37,7 +37,7 @@ void main() {
     // fragment position based on model transformations
     frag_pos = vec3(matModel*vec4(vertex_pos, 1.0));
 
-    frag_tex_pos = vertex_tex_pos*2.0;
+    frag_tex_pos = vertex_tex_pos;
     frag_normal = normalize(normalMatrix*vertex_normal);
     vec3 fragTangent = normalize(normalMatrix*vertex_tangent.xyz);
     fragTangent = normalize(fragTangent - dot(fragTangent, frag_normal)*frag_normal);

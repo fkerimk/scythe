@@ -46,7 +46,7 @@ internal static class Picking {
             if (IsDragging) {
                 
                 DragTarget = GetObjectAtMouse();
-                if (DragTarget != null && (DragTarget == DragSource || IsChildOf(DragTarget, DragSource!))) DragTarget = null;
+                if (DragTarget != null && (DragTarget == DragSource || IsChildOf(DragTarget, DragSource))) DragTarget = null;
             }
         }
 
@@ -113,7 +113,7 @@ internal static class Picking {
         return false;
     }
 
-    private static unsafe Obj? GetObjectAtMouse() {
+    private static Obj? GetObjectAtMouse() {
         
         if (Core.ActiveCamera == null || Core.ActiveLevel == null) return null;
 
@@ -130,9 +130,9 @@ internal static class Picking {
                 
                 if (component is not Model { IsLoaded: true } model) continue;
                 
-                for (var i = 0; i < model.Asset.RlModel.MeshCount; i++) {
+                foreach (var mesh in model.Meshes) {
                     
-                    var collision = Raylib.GetRayCollisionMesh(ray, model.Asset.RlModel.Meshes[i], obj.WorldMatrix);
+                    var collision = Raylib.GetRayCollisionMesh(ray, mesh.RlMesh, obj.WorldMatrix);
                     
                     if (!collision.Hit || !(collision.Distance < minDistance)) continue;
                     

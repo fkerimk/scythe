@@ -1263,7 +1263,7 @@ internal unsafe class ScriptEditor : Viewport {
         while (i > 0 && char.IsWhiteSpace(l[i - 1])) i--;
 
         if (i > 0) {
-            bool isWord = char.IsLetterOrDigit(l[i - 1]) || l[i - 1] == '_';
+            var isWord = char.IsLetterOrDigit(l[i - 1]) || l[i - 1] == '_';
             if (isWord) {
                 // 2. Skip word characters backwards
                 while (i > 0 && (char.IsLetterOrDigit(l[i - 1]) || l[i - 1] == '_')) i--;
@@ -1294,7 +1294,7 @@ internal unsafe class ScriptEditor : Viewport {
         while (i < l.Length && char.IsWhiteSpace(l[i])) i++;
 
         if (i < l.Length) {
-            bool isWord = char.IsLetterOrDigit(l[i]) || l[i] == '_';
+            var isWord = char.IsLetterOrDigit(l[i]) || l[i] == '_';
             if (isWord) {
                 // 2. Skip word characters forwards
                 while (i < l.Length && (char.IsLetterOrDigit(l[i]) || l[i] == '_')) i++;

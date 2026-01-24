@@ -88,13 +88,13 @@ internal class EditorRender() : Viewport("Render (Editor)") {
 
         if (ImGui.BeginTabBar("##LevelTabs", ImGuiTabBarFlags.AutoSelectNewTabs | ImGuiTabBarFlags.Reorderable)) {
 
-            for (int i = 0; i < Core.OpenLevels.Count; i++) {
+            for (var i = 0; i < Core.OpenLevels.Count; i++) {
 
                 var level = Core.OpenLevels[i];
                 var label = $"{level.Name}{(level.IsDirty ? " *" : "")}###level_{level.GetHashCode()}";
                 
-                bool open = true;
-                bool isSelected = (Core.ActiveLevelIndex == i);
+                var open = true;
+                var isSelected = (Core.ActiveLevelIndex == i);
                 var flags = ImGuiTabItemFlags.None;
                 
                 if (Core.ShouldFocusActiveLevel && isSelected) {

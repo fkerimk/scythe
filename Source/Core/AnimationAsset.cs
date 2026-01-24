@@ -1,20 +1,23 @@
-﻿using Raylib_cs;
-using static Raylib_cs.Raylib;
-
-internal unsafe class AnimationAsset : Asset {
+﻿internal class AnimationAsset : Asset {
     
-    public ModelAnimation* Animations;
-    public int AnimationCount = -1;
+    public List<AnimationClip> Animations = [];
     
     public override bool Load() {
         
-        if (Path.GetExtension(File) != ".iqm" || !System.IO.File.Exists(File)) return false;
+        if (!System.IO.File.Exists(File)) return false;
         
-        Animations = LoadModelAnimations(File, ref AnimationCount);
+        try {
+            
+            var data = AssimpLoader.Load(File);
+            Animations = data.Animations;
+        }
+        
+        catch { return false; }
+
         IsLoaded = true;
         
         return true;
     }
 
-    public override void Unload() => UnloadModelAnimations(Animations, AnimationCount);
+    public override void Unload() => Animations.Clear();
 }

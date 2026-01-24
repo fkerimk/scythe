@@ -18,7 +18,8 @@ internal class RenderSettings {
         get; set {
 
             field = value;
-            SetShaderValue(Shaders.Pbr, GetShaderLocation(Shaders.Pbr, "ambient_intensity"), value, ShaderUniformDataType.Float);
+            var pbr = AssetManager.Get<ShaderAsset>("pbr");
+            if (pbr != null) SetShaderValue(pbr.Shader, pbr.GetLoc("ambient_intensity"), value, ShaderUniformDataType.Float);
         }
     }
     public static Color AmbientColor {
@@ -26,7 +27,8 @@ internal class RenderSettings {
         get; set {
 
             field = value;
-            SetShaderValue(Shaders.Pbr, GetShaderLocation(Shaders.Pbr, "ambient_color"), value.ToVector4(), ShaderUniformDataType.Vec3);
+            var pbr = AssetManager.Get<ShaderAsset>("pbr");
+            if (pbr != null) SetShaderValue(pbr.Shader, pbr.GetLoc("ambient_color"), value.ToVector4(), ShaderUniformDataType.Vec3);
         }
     }
 

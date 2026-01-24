@@ -9,9 +9,12 @@ internal static class Grid {
         
         var gridPos = new Vector3((int)camera.Position.X, 0, (int)camera.Position.Z);
             
-        Raylib.BeginShaderMode(Shaders.Grid);
-        Raylib.SetShaderValue(Shaders.Grid, Shaders.GridCameraPos, camera.Position, ShaderUniformDataType.Vec3);
-        Raylib.SetShaderValue(Shaders.Grid, Shaders.GridFadeRadius, 50.0f, ShaderUniformDataType.Float);
+        var grid = AssetManager.Get<ShaderAsset>("grid");
+        if (grid == null) return;
+            
+        Raylib.BeginShaderMode(grid.Shader);
+        Raylib.SetShaderValue(grid.Shader, grid.GetLoc("cameraPos"), camera.Position, ShaderUniformDataType.Vec3);
+        Raylib.SetShaderValue(grid.Shader, grid.GetLoc("fadeRadius"), 50.0f, ShaderUniformDataType.Float);
 
         Rlgl.PushMatrix();
         Rlgl.Translatef(gridPos.X, gridPos.Y, gridPos.Z);

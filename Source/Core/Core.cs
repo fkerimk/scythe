@@ -22,21 +22,27 @@ internal static class Core {
     private static Texture2D _skyboxTexture;
     
     public static unsafe void Init() {
-
-        // Shaders
-        Shaders.Init();
-
+        
         // Physics
         Physics.Init();
 
-        SetShaderValue(Shaders.Pbr, GetShaderLocation(Shaders.Pbr, "use_tex_albedo"  ), CommandLine.Editor ? Config.Editor.PbrAlbedo   : Config.Runtime.PbrAlbedo , ShaderUniformDataType.Int);
-        SetShaderValue(Shaders.Pbr, GetShaderLocation(Shaders.Pbr, "use_tex_normal"  ), CommandLine.Editor ? Config.Editor.PbrNormal   : Config.Runtime.PbrNormal, ShaderUniformDataType.Int);
-        SetShaderValue(Shaders.Pbr, GetShaderLocation(Shaders.Pbr, "use_tex_mra"     ), CommandLine.Editor ? Config.Editor.PbrMra      : Config.Runtime.PbrMra, ShaderUniformDataType.Int);
-        SetShaderValue(Shaders.Pbr, GetShaderLocation(Shaders.Pbr, "use_tex_emissive"), CommandLine.Editor ? Config.Editor.PbrEmissive : Config.Runtime.PbrEmissive, ShaderUniformDataType.Int);
-
         // Fonts
         Fonts.Init();
+
+        // Assets
+        AssetManager.Init();
         
+        // Setup Global PBR Uniforms
+        var pbr = AssetManager.Get<ShaderAsset>("pbr");
+        
+        if (pbr != null) {
+            
+            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_albedo"), CommandLine.Editor ? Config.Editor.PbrAlbedo : Config.Runtime.PbrAlbedo, ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_normal"), CommandLine.Editor ? Config.Editor.PbrNormal : Config.Runtime.PbrNormal, ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_mra"), CommandLine.Editor ? Config.Editor.PbrMra : Config.Runtime.PbrMra, ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_emissive"), CommandLine.Editor ? Config.Editor.PbrEmissive : Config.Runtime.PbrEmissive, ShaderUniformDataType.Int);
+        }
+
         // Level & camera
         if (!CommandLine.Editor) OpenLevel("Main");
         
@@ -45,7 +51,9 @@ internal static class Core {
         // Skybox
         var cube = GenMeshCube(1.0f, 1.0f, 1.0f);
         _skyboxModel = LoadModelFromMesh(cube);
-        _skyboxModel.Materials[0].Shader = Shaders.Skybox;
+        
+        var skybox = AssetManager.Get<ShaderAsset>("skybox");
+        if (skybox != null) _skyboxModel.Materials[0].Shader = skybox.Shader;
         
         if (PathUtil.BestPath("Models/Skybox.png", out var skyboxPath)) {
             
@@ -94,6 +102,7 @@ internal static class Core {
                  level = new Level(name, foundPath);
             else return;
         }
+        
         else level = new Level(name, path);
 
         var existingIndex = OpenLevels.FindIndex(l => Path.GetFullPath(l.JsonPath).Equals(Path.GetFullPath(level.JsonPath), StringComparison.OrdinalIgnoreCase));
@@ -127,11 +136,12 @@ internal static class Core {
         if (CommandLine.Editor) {
             
             if (ActiveLevel.EditorCamera != null) {
+                
                 FreeCam.Pos = ActiveLevel.EditorCamera.Position;
                 FreeCam.Rot = ActiveLevel.EditorCamera.Rotation;
-            } else {
-                FreeCam.SetFromTarget(ActiveCamera);
             }
+            
+            else FreeCam.SetFromTarget(ActiveCamera);
         }
     }
 
@@ -169,14 +179,18 @@ internal static class Core {
         }
     }
 
-    public static unsafe void Logic() {
+    public static void Logic() {
+        
+        AssetManager.Update();
         
         if (ActiveLevel == null) return;
         
         Lights.Clear();
         TransparentRenderQueue.Clear();
         
-        SetShaderValue(Shaders.Pbr, Shaders.Pbr.Locs[(int)ShaderLocationIndex.VectorView], ActiveCamera?.Position ?? Vector3.Zero, ShaderUniformDataType.Vec3);
+        var pbr = AssetManager.Get<ShaderAsset>("pbr");
+        if (pbr != null)
+            SetShaderValue(pbr.Shader, pbr.GetLoc("view_pos"), ActiveCamera?.Position ?? Vector3.Zero, ShaderUniformDataType.Vec3);
         
         if (!CommandLine.Editor) Physics.Update();
         
@@ -230,8 +244,11 @@ internal static class Core {
     public static void ShadowPass() {
         
         if (ActiveLevel == null) return;
+        
+        var pbr = AssetManager.Get<ShaderAsset>("pbr");
+        if (pbr == null) return;
 
-        SetShaderValue(Shaders.Pbr, Shaders.PbrLightCount, Lights.Count, ShaderUniformDataType.Int);
+        SetShaderValue(pbr.Shader, pbr.GetLoc("light_count"), Lights.Count, ShaderUniformDataType.Int);
             
         var shadowLight = Lights.FirstOrDefault(l => l is { Enabled: true, Shadows: true });
 
@@ -264,27 +281,30 @@ internal static class Core {
             var lightVp = Raymath.MatrixMultiply(lightView, lightProj);
 
             // Draw objects for shadow depth
-            BeginShaderMode(Shaders.Depth);
-            RenderHierarchy(ActiveLevel.Root, false, true);
-            EndShaderMode();
+            var depth = AssetManager.Get<ShaderAsset>("depth");
+            if (depth != null) {
+                BeginShaderMode(depth.Shader);
+                RenderHierarchy(ActiveLevel.Root, false, true);
+                EndShaderMode();
+            }
 
             EndMode3D();
             EndTextureMode();
             
-            SetShaderValueMatrix(Shaders.Pbr, Shaders.PbrLightVp, lightVp);
-            SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, shadowLightIndex, ShaderUniformDataType.Int);
-            SetShaderValue(Shaders.Pbr, Shaders.PbrShadowStrength, shadowLight.ShadowStrength, ShaderUniformDataType.Float);
-            SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMapResolution, ShadowMapResolution, ShaderUniformDataType.Int);
+            SetShaderValueMatrix(pbr.Shader, pbr.GetLoc("lightVP"), lightVp);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_light_index"), shadowLightIndex, ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_strength"), shadowLight.ShadowStrength, ShaderUniformDataType.Float);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_map_resolution"), ShadowMapResolution, ShaderUniformDataType.Int);
 
             const int shadowMapSlot = 10;
             Rlgl.ActiveTextureSlot(shadowMapSlot);
             Rlgl.EnableTexture(_shadowMap.Depth.Id);
-            SetShaderValue(Shaders.Pbr, Shaders.PbrShadowMap, shadowMapSlot, ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("shadowMap"), shadowMapSlot, ShaderUniformDataType.Int);
             Rlgl.ActiveTextureSlot(0);
             
         }
         
-        else SetShaderValue(Shaders.Pbr, Shaders.PbrShadowLightIndex, -1, ShaderUniformDataType.Int);
+        else SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_light_index"), -1, ShaderUniformDataType.Int);
 
         for (var i = 0; i < Lights.Count; i++) Lights[i].Update(i);
     }
@@ -316,7 +336,10 @@ internal static class Core {
                 
                 foreach (var call in TransparentRenderQueue) {
                     
-                    SetShaderValue(Shaders.Pbr, Shaders.PbrAlphaCutoff, 0.0f, ShaderUniformDataType.Float);
+                    var pbr = AssetManager.Get<ShaderAsset>("pbr");
+                    if (pbr != null)
+                        SetShaderValue(pbr.Shader, pbr.GetLoc("alpha_cutoff"), 0.0f, ShaderUniformDataType.Float);
+                        
                     call.Model.Draw();
                 }
                 
@@ -329,7 +352,6 @@ internal static class Core {
     private static void RenderHierarchy(Obj obj, bool is2D, bool isShadowPass) {
         
         // Ensure components drawing. Transform is updated in Logic
-        
         if (isShadowPass) {
             
             foreach (var component in obj.Components.Values) {
@@ -374,8 +396,8 @@ internal static class Core {
         
         CloseAudioDevice();
         
-        Shaders.Quit();
         Fonts.UnloadRlFonts();
+        AssetManager.UnloadAll();
 
         if (ActiveLevel == null) return;
         

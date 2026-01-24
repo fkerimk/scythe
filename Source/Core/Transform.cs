@@ -286,7 +286,8 @@ internal class Transform(Obj obj) : Component(obj) {
             if (IsKeyPressed(KeyboardKey.X)) _isWorldSpace = !_isWorldSpace;
         }
         
-        BeginShaderMode(Shaders.Transform);
+        var transformShader = AssetManager.Get<ShaderAsset>("transform");
+        if (transformShader != null) BeginShaderMode(transformShader.Shader);
 
         var ray = GetScreenToWorldRay(EditorRender.RelativeMouse3D, Core.ActiveCamera.Raylib);
 
@@ -302,7 +303,7 @@ internal class Transform(Obj obj) : Component(obj) {
         Axis("y", Vector3.UnitY, u, new Color(0.3f, 0.9f, 0.3f), ray);
         Axis("z", Vector3.UnitZ, f, new Color(0.3f, 0.3f, 0.9f), ray);
         
-        EndShaderMode();
+        if (transformShader != null) EndShaderMode();
     }
 
     public override void Render2D() {

@@ -3,7 +3,7 @@ using static Raylib_cs.Raylib;
 
 internal class LuaMouse {
 
-    public static bool IsLocked = false;
+    public static readonly bool IsLocked = false;
     
     public static Vector2 Delta;
     public static float Scroll => GetMouseWheelMove();

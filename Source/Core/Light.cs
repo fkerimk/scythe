@@ -34,19 +34,15 @@ internal class Light(Obj obj) : Component(obj) {
 
     public void Update(int index) {
         
-        var enabledLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{index}].enabled");
-        var typeLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{index}].type");
-        var posLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{index}].position");
-        var targetLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{index}].target");
-        var colorLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{index}].color");
-        var intensityLoc = Raylib.GetShaderLocation(Shaders.Pbr, $"lights[{index}].intensity");
+        var pbr = AssetManager.Get<ShaderAsset>("pbr");
+        if (pbr == null) return;
         
-        Raylib.SetShaderValue(Shaders.Pbr, enabledLoc, Enabled ? 1 : 0, ShaderUniformDataType.Int);
-        Raylib.SetShaderValue(Shaders.Pbr, typeLoc, Type, ShaderUniformDataType.Int);
-        Raylib.SetShaderValue(Shaders.Pbr, posLoc, _pos, ShaderUniformDataType.Vec3);
-        Raylib.SetShaderValue(Shaders.Pbr, targetLoc, _target, ShaderUniformDataType.Vec3);
-        Raylib.SetShaderValue(Shaders.Pbr, colorLoc, ScytheColor.ToVector4(), ShaderUniformDataType.Vec4);
-        Raylib.SetShaderValue(Shaders.Pbr, intensityLoc, Intensity, ShaderUniformDataType.Float);
+        Raylib.SetShaderValue(pbr.Shader, pbr.GetLoc($"lights[{index}].enabled"), Enabled ? 1 : 0, ShaderUniformDataType.Int);
+        Raylib.SetShaderValue(pbr.Shader, pbr.GetLoc($"lights[{index}].type"), Type, ShaderUniformDataType.Int);
+        Raylib.SetShaderValue(pbr.Shader, pbr.GetLoc($"lights[{index}].position"), _pos, ShaderUniformDataType.Vec3);
+        Raylib.SetShaderValue(pbr.Shader, pbr.GetLoc($"lights[{index}].target"), _target, ShaderUniformDataType.Vec3);
+        Raylib.SetShaderValue(pbr.Shader, pbr.GetLoc($"lights[{index}].color"), ScytheColor.ToVector4(), ShaderUniformDataType.Vec4);
+        Raylib.SetShaderValue(pbr.Shader, pbr.GetLoc($"lights[{index}].intensity"), Intensity, ShaderUniformDataType.Float);
     }
 
     public override unsafe void Logic() {

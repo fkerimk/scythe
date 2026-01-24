@@ -1,68 +1,74 @@
-﻿using System.Numerics;
-using Raylib_cs;
+﻿using Raylib_cs;
 using Newtonsoft.Json;
+using static Raylib_cs.Raylib;
 
 internal class Model(Obj obj) : Component(obj) {
 
     public override string LabelIcon => Icons.FaCube;
     public override Color LabelColor => Colors.GuiTypeModel;
     
-    [RecordHistory] [JsonProperty] [Label("Path")] [FilePath("Models", ".iqm")] public string Path { get; set; } = "";
+    [RecordHistory] [JsonProperty] [Label("Path")] [FindAsset("ModelAsset")] public string Path { get; set; } = "";
     [RecordHistory] [JsonProperty] [Label("Color")] public Color Color { get; set; } = Color.White;
     [RecordHistory] [JsonProperty] [Label("Transparent")] public bool IsTransparent { get; set; }
     [RecordHistory] [JsonProperty] [Label("Alpha Cutoff")] public float AlphaCutoff { get; set; } = 0.5f;
     [RecordHistory] [JsonProperty] [Label("Cast Shadows")] public bool CastShadows { get; set; } = true;
     [RecordHistory] [JsonProperty] [Label("Receive Shadows")] public bool ReceiveShadows { get; set; } = true;
     
-    public ModelAsset Asset = null!;
-    public Raylib_cs.Model RlModel;
+    public List<AssimpMesh> Meshes = [];
+    public List<BoneInfo> Bones = [];
+    public ModelAsset AssetRef = null!;
 
     public override bool Load() {
         
-        if (!PathUtil.BestPath($"Models/{Path}.iqm", out var modelPath)) return false;
-        if (!AssetManager.Load(modelPath, out Asset!)) return false;
-
-        // Create a local copy of the model structure (shallow copy) - This ensures this component has its own transform and bone state
-        RlModel = Asset.RlModel; 
-        
+        var loaded = AssetManager.Get<ModelAsset>(Path);
+        if (loaded is not { IsLoaded: true }) return false;
+        AssetRef = loaded;
+        foreach (var m in AssetRef.Meshes) Meshes.Add(m.Clone());
+        foreach (var b in AssetRef.Bones) Bones.Add(new BoneInfo { Name = b.Name, Index = b.Index, Offset = b.Offset });
         return true;
     }
 
-    public override void Logic() => RlModel.Transform = Obj.VisualWorldMatrix;
-
-    public override void Render3D() {
-        
-        if (IsTransparent) return;
-        Draw();
-    }
+    public override void Logic() { }
+    public override void Render3D() { if (!IsTransparent) Draw(); }
 
     public void DrawTransparent() {
         
-        Raylib.BeginBlendMode(BlendMode.Alpha);
+        BeginBlendMode(BlendMode.Alpha);
         Draw();
-        Raylib.EndBlendMode();
+        EndBlendMode();
     }
 
-    public void DrawShadow() {
-        
-        if (!CastShadows) return;
-        Draw();
-    }
+    public void DrawShadow() { if (CastShadows) Draw(); }
 
-    public unsafe void Draw() {
+    public void Draw() {
         
-        for (var i = 0; i < RlModel.MaterialCount; i++) {
-            
-            var emissiveColor = Raylib.ColorNormalize(RlModel.Materials[i].Maps[(int)MaterialMapIndex.Emission].Color);
-            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrEmissiveColor, emissiveColor, ShaderUniformDataType.Vec4);
-            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrMetallicValue, RlModel.Materials[i].Maps[(int)MaterialMapIndex.Metalness].Value, ShaderUniformDataType.Float);
-            Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrRoughnessValue, RlModel.Materials[i].Maps[(int)MaterialMapIndex.Roughness].Value, ShaderUniformDataType.Float);
+        if (AssetRef is not { IsLoaded: true }) return;
+        
+        // 1. Optimize: Global material update check (only if anything changed)
+        AssetRef.UpdateMaterialsIfDirty();
+
+        foreach (var mesh in Meshes) {
+            var material = (mesh.MaterialIndex >= 0 && mesh.MaterialIndex < AssetRef.Materials.Length) 
+                ? AssetRef.Materials[mesh.MaterialIndex] 
+                : MaterialAsset.Default.Material;
+
+            // 2. Resolve Material Asset parameters (only for shared shader values)
+            var shader = material.Shader;
+
+            // 3. Batch apply uniforms (Only if they exist in shader)
+            var loc = GetShaderLocation(shader, "albedo_color");
+            if (loc != -1) SetShaderValue(shader, loc, ColorNormalize(Color), ShaderUniformDataType.Vec4);
+
+            loc = GetShaderLocation(shader, "receive_shadows");
+            if (loc != -1) SetShaderValue(shader, loc, ReceiveShadows ? 1 : 0, ShaderUniformDataType.Int);
+
+            loc = GetShaderLocation(shader, "alpha_cutoff");
+            if (loc != -1) SetShaderValue(shader, loc, AlphaCutoff, ShaderUniformDataType.Float);
+
+            // 4. Draw
+            DrawMesh(mesh.RlMesh, material, Obj.VisualWorldMatrix);
         }
-
-        Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrTiling, new Vector2(0.5f, 0.5f), ShaderUniformDataType.Vec2);
-        Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrAlphaCutoff, AlphaCutoff, ShaderUniformDataType.Float);
-        Raylib.SetShaderValue(Shaders.Pbr, Shaders.PbrReceiveShadows, ReceiveShadows ? 1 : 0, ShaderUniformDataType.Int);
-        
-        Raylib.DrawModel(RlModel, Vector3.Zero, 1, Color);
     }
+
+    public override void Unload() { foreach (var m in Meshes) UnloadMesh(m.RlMesh); }
 }

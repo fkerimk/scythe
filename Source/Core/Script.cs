@@ -8,7 +8,7 @@ internal class Script(Obj obj) : Component(obj) {
     public override string LabelIcon => Icons.FaCode;
     public override Color LabelColor => Color.White;
 
-    [RecordHistory] [JsonProperty] [Label("Path")] [FilePath("Scripts", ".lua")] public string Path { get; set; } = "";
+    [RecordHistory] [JsonProperty] [Label("Path")] [FindAsset("ScriptAsset")] public string Path { get; set; } = "";
 
     public required MoonSharp.Interpreter.Script LuaScript;
     public DynValue? LuaLoop;
@@ -102,13 +102,12 @@ internal class Script(Obj obj) : Component(obj) {
 
         if (CommandLine.Editor) return true;
         
-        if (!PathUtil.BestPath($"Scripts/{Path}.lua", out var scriptPath)) return false;
+        var asset = AssetManager.Get<ScriptAsset>(Path);
+        if (asset == null || !asset.IsLoaded) return false;
         
         LuaScript = Make(Obj);
 
-        var code = File.ReadAllText(scriptPath);
-
-        SafeExec.LuaCall(() => LuaScript.DoString(code));
+        SafeExec.LuaCall(() => LuaScript.DoString(asset.Content));
         LuaLoop = LuaScript.Globals.Get("loop");
 
         return true;
