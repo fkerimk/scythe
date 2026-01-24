@@ -5,8 +5,11 @@ internal static class Window {
     
     public static int Width => GetScreenWidth();
     public static int Height => GetScreenHeight();
+
+    private static int _lastFps = -2;
     
     public static void UpdateFps() {
+        
         
         var targetFps = CommandLine.Editor ? 
             Config.Editor.FpsLock :
@@ -15,6 +18,9 @@ internal static class Window {
         if (targetFps == -1)
             targetFps = Screen.RefreshRate;
         
+        if (_lastFps == targetFps) return;
+        _lastFps = targetFps;
+            
         SetTargetFPS(targetFps);
     }
 
@@ -50,12 +56,6 @@ internal static class Window {
 
         // Flags
         Flags.Set(flags);
-        
-        // Logging
-        if (isSplash) SetTraceLogLevel(TraceLogLevel.None);
-        
-        else if (Enum.TryParse(CommandLine.Editor ? Config.Editor.RaylibLogLevel : Config.Runtime.RaylibLogLevel, out TraceLogLevel state))
-            SetTraceLogLevel(state);
         
         // New window     
         InitWindow(0, 0, title);
