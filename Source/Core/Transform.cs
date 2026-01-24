@@ -60,12 +60,8 @@ internal class Transform(Obj obj) : Component(obj) {
 
     public Quaternion WorldRot {
 
-        get {
-
-            Obj.DecomposeWorldMatrix(out _, out var rot, out _);
-            return rot;
-            
-        } set {
+        get => (Obj.Parent == null) ? Rot : Obj.Parent.Transform.WorldRot * Rot;
+        set {
 
             if (Obj.Parent == null) Rot = value; else {
 
@@ -195,6 +191,8 @@ internal class Transform(Obj obj) : Component(obj) {
         var targetPos = WorldPos;
         var targetRot = WorldRot;
 
+        if (Quaternion.Dot(_visualRot, targetRot) < 0) targetRot = Quaternion.Negate(targetRot);
+
         // Force reset if too far (e.g. teleporting or level load)
         if (Vector3.Distance(_visualPos, targetPos) > 10f) {
             
@@ -212,7 +210,7 @@ internal class Transform(Obj obj) : Component(obj) {
 
         // Only process bounce if selected, moving, or still settling
         var isMoving = _visualVel.LengthSquared() > 0.0001f;
-        var isRotating = Quaternion.Dot(_visualRot, targetRot) < 0.9999f;
+        var isRotating = MathF.Abs(Quaternion.Dot(_visualRot, targetRot)) < 0.9999f;
         
         if (!Obj.IsSelected && !isMoving && !isRotating) {
             

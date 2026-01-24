@@ -48,6 +48,7 @@ internal class Model(Obj obj) : Component(obj) {
         AssetRef.UpdateMaterialsIfDirty();
 
         foreach (var mesh in Meshes) {
+            
             var material = (mesh.MaterialIndex >= 0 && mesh.MaterialIndex < AssetRef.Materials.Length) 
                 ? AssetRef.Materials[mesh.MaterialIndex] 
                 : MaterialAsset.Default.Material;

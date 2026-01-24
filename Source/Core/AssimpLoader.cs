@@ -424,7 +424,7 @@ internal static class AssimpLoader {
             }
 
             mesh.AnimatedVertices[i] = finalV;
-            mesh.AnimatedNormals[i] = finalN;
+            mesh.AnimatedNormals[i] = Vector3.Normalize(finalN);
         }
 
         fixed (Vector3* v = mesh.AnimatedVertices)

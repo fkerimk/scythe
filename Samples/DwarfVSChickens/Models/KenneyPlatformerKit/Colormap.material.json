@@ -1,0 +1,15 @@
+{
+  "Shader": "Pbr",
+  "Textures": {
+    "albedo_map": "D:\\Projects\\scythe\\Samples\\DwarfVSChickens\\Models\\KenneyPlatformerKit\\Colormap.png",
+    "normal_map": "D:\\Projects\\scythe\\Resources\\Models\\NormalMap.png"
+  },
+  "Floats": {
+    "ambient_intensity": 0.75,
+    "aoValue": 1.0,
+    "normalValue": 0.0
+  },
+  "Ints": {},
+  "Colors": {},
+  "Vectors": {}
+}
