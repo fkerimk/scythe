@@ -1,4 +1,5 @@
-﻿PathUtil.Init();
+﻿NativeResolver.Init();
+PathUtil.Init();
 
 foreach (var arg in args) {
     
