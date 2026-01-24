@@ -42,7 +42,13 @@ function movement(dt)
 
     self.rot = quat.lerp(self.rot, rotTarget, dt * 15)
 
-    anim.track = moveInput == f2.zero and 5 or 6
+    -- Animation
+    local track = 5
+
+    if moveInput ~= f2.zero then track = 6 end
+    if vel.y < -0.5 then track = 3 end
+
+    anim.track = track
 end
 
 function camera(dt)

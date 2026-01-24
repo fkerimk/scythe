@@ -451,14 +451,19 @@ internal class ProjectBrowser : Viewport {
         // Thumbnail or Icon
         var textureAsset = AssetManager.Get<TextureAsset>(path);
         var matAsset = AssetManager.Get<MaterialAsset>(path);
+        var modelAsset = AssetManager.Get<ModelAsset>(path);
         
         var texId = IntPtr.Zero;
         Texture2D? thumbTex = null;
 
         if (textureAsset != null && textureAsset.Thumbnail.HasValue) thumbTex = textureAsset.Thumbnail.Value;
         else if (matAsset != null) {
-            if (!matAsset.Thumbnail.HasValue) matAsset.UpdateThumbnail();
+            if (!matAsset.Thumbnail.HasValue) Preview.UpdateThumbnail(matAsset);
             thumbTex = matAsset.Thumbnail;
+        }
+        else if (modelAsset != null) {
+            if (!modelAsset.Thumbnail.HasValue) Preview.UpdateThumbnail(modelAsset);
+            thumbTex = modelAsset.Thumbnail;
         }
 
         if (thumbTex.HasValue) texId = (IntPtr)thumbTex.Value.Id;
@@ -1020,6 +1025,7 @@ internal class ProjectBrowser : Viewport {
     private static bool IsMaterial(string path) => path.EndsWith(".material.json", StringComparison.OrdinalIgnoreCase);
     private static bool IsScript(string path) => path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase);
     private static bool IsModel(string path) {
+        
         var ext = Path.GetExtension(path).ToLowerInvariant();
         return ext is ".fbx" or ".obj" or ".gltf" or ".iqm";
     }

@@ -4,5 +4,6 @@
   "ProjectBrowser": true,
   "ObjectBrowser": true,
   "ScriptEditor": true,
-  "MusicPlayer": true
+  "MusicPlayer": true,
+  "Preview": true
 }

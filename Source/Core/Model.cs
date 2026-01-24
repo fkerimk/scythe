@@ -1,7 +1,6 @@
 ﻿using Raylib_cs;
 using Newtonsoft.Json;
 using static Raylib_cs.Raylib;
-using System.Numerics;
 
 internal class Model(Obj obj) : Component(obj) {
 

@@ -23,6 +23,7 @@ internal static unsafe class Editor {
     public static ScriptEditor ScriptEditor = null!;
     // ReSharper disable once MemberCanBePrivate.Global
     public static MusicPlayer MusicPlayer = null!;
+    public static Preview Preview = null!;
     
     public static bool IsScriptEditorFocused => ScriptEditor.IsFocused;
     
@@ -66,6 +67,7 @@ internal static unsafe class Editor {
         ObjectBrowser = new ObjectBrowser();
         ScriptEditor = new ScriptEditor();
         MusicPlayer = new MusicPlayer();
+        Preview = new Preview();
 
         var layoutPath = PathUtil.ExeRelative("Layouts/User.ini");
         
@@ -102,6 +104,7 @@ internal static unsafe class Editor {
                 MenuBar.Draw();
                 EditorRender.Draw();
                 ProjectBrowser.Draw();
+                Preview.Draw();
                 ScriptEditor.Draw();
                 
                 PopFont();
@@ -197,6 +200,7 @@ internal static unsafe class Editor {
             LevelBrowser.Draw();
             ObjectBrowser.Draw();
             ProjectBrowser.Draw();
+            Preview.Draw();
             ScriptEditor.Draw();
             MusicPlayer.Draw();
             

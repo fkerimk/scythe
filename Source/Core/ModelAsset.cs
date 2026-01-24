@@ -64,6 +64,7 @@ internal class ModelAsset : Asset {
             ApplyMaterialState(i, true);
         }
         
+        Preview.UpdateThumbnail(this);
         return true;
     }
 
