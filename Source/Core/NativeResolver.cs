@@ -9,6 +9,10 @@ internal static class NativeResolver {
 
     private static IntPtr Resolver(string libraryName, System.Reflection.Assembly assembly, DllImportSearchPath? searchPath) {
         
+        if (libraryName == "libdl.so" && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+            try { return NativeLibrary.Load("libdl.so.2"); } catch { }
+        }
+
         if (libraryName != "assimp") return IntPtr.Zero;
 
         var baseDir = AppDomain.CurrentDomain.BaseDirectory;

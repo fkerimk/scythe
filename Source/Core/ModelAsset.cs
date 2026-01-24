@@ -148,15 +148,19 @@ internal class ModelAsset : Asset {
         
         foreach (var mesh in Meshes) UnloadMesh(mesh.RlMesh);
 
-        for (var i = 0; i < Materials.Length; i++) {
-            
-            Materials[i].Shader = new Shader();
-            
-            if (Materials[i].Maps != null)
-                for (var j = 0; j < 12; j++)
-                    Materials[i].Maps[j].Texture = new Texture2D();
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        if (Materials != null) {
 
-            UnloadMaterial(Materials[i]);
+            for (var i = 0; i < Materials.Length; i++) {
+            
+                Materials[i].Shader = new Shader();
+            
+                if (Materials[i].Maps != null)
+                    for (var j = 0; j < 12; j++)
+                        Materials[i].Maps[j].Texture = new Texture2D();
+
+                UnloadMaterial(Materials[i]);
+            }
         }
 
         IsLoaded = false;
