@@ -1,5 +1,6 @@
 {
   "MeshMaterials": {
-    "0": "D:\\Projects\\scythe\\Samples\\DwarfVSChickens\\Models\\WizardGnome\\Material.material.json"
-  }
+    "0": "Models/WizardGnome/WizardGnome.material.json"
+  },
+  "ImportScale": 0.01
 }

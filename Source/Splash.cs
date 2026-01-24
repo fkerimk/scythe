@@ -57,6 +57,7 @@ internal static class Splash {
             EndDrawing();
         }
         
+        UnloadTexture(_art);
         CloseWindow();
     }
 }

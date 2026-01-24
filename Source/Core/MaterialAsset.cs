@@ -9,28 +9,44 @@ internal class MaterialAsset : Asset {
     public uint Version { get; private set; } = 1;
 
     public Material Material;
+    [RecordHistory]
     public MaterialData Data = new();
     
-    public class MaterialData {
+    public class MaterialData : ICloneable {
         
         public string Shader = "Pbr";
-        public readonly Dictionary<string, string> Textures = new();
-        public readonly Dictionary<string, float> Floats = new() {
+        public Dictionary<string, string> Textures = new();
+        public Dictionary<string, float> Floats = new() {
             ["metallic_value"] = 0.0f,
             ["roughness_value"] = 0.5f,
             ["aoValue"] = 1.0f,
             ["emissive_intensity"] = 1.0f,
             ["normalValue"] = 1.0f
         };
-        public readonly Dictionary<string, int> Ints = new();
-        public readonly Dictionary<string, Color> Colors = new() {
+        public Dictionary<string, int> Ints = new();
+        public Dictionary<string, Color> Colors = new() {
             ["albedo_color"] = new Color(255, 255, 255, 255),
             ["emissive_color"] = new Color(0, 0, 0, 255)
         };
-        public readonly Dictionary<string, Vector2> Vectors = new() {
+        public Dictionary<string, Vector2> Vectors = new() {
             ["tiling"] = Vector2.One,
             ["offset"] = Vector2.Zero
         };
+
+        public object Clone() {
+            var clone = (MaterialData)MemberwiseClone();
+            // Reflection-based cloning in History.cs expects types to match exactly for dictionaries
+            // but we can just use the History.CloneValue helper if we make it public or just redo it here.
+            // Actually, we can just do:
+            return new MaterialData {
+                Shader = Shader,
+                Textures = new Dictionary<string, string>(Textures),
+                Floats = new Dictionary<string, float>(Floats),
+                Ints = new Dictionary<string, int>(Ints),
+                Colors = new Dictionary<string, Color>(Colors),
+                Vectors = new Dictionary<string, Vector2>(Vectors)
+            };
+        }
     }
 
     public static MaterialAsset Default {
@@ -39,6 +55,12 @@ internal class MaterialAsset : Asset {
             
             if (field == null) {
                 
+                var asset = AssetManager.Get<MaterialAsset>("Materials/Default.material.json");
+                if (asset != null) {
+                    field = asset;
+                    return field;
+                }
+
                 field = new MaterialAsset {
                     
                     File = "Default",
@@ -80,15 +102,19 @@ internal class MaterialAsset : Asset {
         var shaderAsset = AssetManager.Get<ShaderAsset>(Data.Shader);
         if (shaderAsset != null) Material.Shader = shaderAsset.Shader;
 
-        foreach (var texKv in Data.Textures) {
-            
-            if (!Enum.TryParse<MaterialMapIndex>(texKv.Key, true, out var index)) continue;
-            
-            var texAsset = AssetManager.Get<TextureAsset>(texKv.Value);
-            
-            if (texAsset is { IsLoaded: true })
-                fixed (Material* matPtr = &Material) SetMaterialTexture(matPtr, index, texAsset.Texture);
+        void ApplyMap(string key, MaterialMapIndex index) {
+            var path = Data.Textures.GetValueOrDefault(key, "");
+            var tex = AssetManager.Get<TextureAsset>(path);
+            fixed (Material* p = &Material) 
+                SetMaterialTexture(p, index, tex?.Texture ?? new Texture2D());
         }
+
+        ApplyMap("albedo_map", MaterialMapIndex.Albedo);
+        ApplyMap("normal_map", MaterialMapIndex.Normal);
+        ApplyMap("metallic_map", MaterialMapIndex.Metalness);
+        ApplyMap("roughness_map", MaterialMapIndex.Roughness);
+        ApplyMap("occlusion_map", MaterialMapIndex.Occlusion);
+        ApplyMap("emissive_map", MaterialMapIndex.Emission);
     }
 
     public void ApplyUniforms(Shader shader) {
@@ -144,7 +170,18 @@ internal class MaterialAsset : Asset {
         }
     }
 
-    public override void Unload() { IsLoaded = false; }
+    public override unsafe void Unload() {
+        
+        Material.Shader = new Shader();
+
+        if (Material.Maps != null)
+            for (var i = 0; i < 12; i++)
+                Material.Maps[i].Texture = new Texture2D();
+        
+        UnloadMaterial(Material);
+        
+        IsLoaded = false;
+    }
     
     public void Save() {
         

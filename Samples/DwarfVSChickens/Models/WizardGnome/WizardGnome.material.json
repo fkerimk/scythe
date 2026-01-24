@@ -1,7 +1,8 @@
 {
   "Shader": "Pbr",
   "Textures": {
-    "albedo_map": "Models/KenneyPlatformerKit/Colormap.png"
+    "albedo_map": "Models/WizardGnome/WizardGnome.png",
+    "normal_map": ""
   },
   "Floats": {
     "metallic_value": 0.0,

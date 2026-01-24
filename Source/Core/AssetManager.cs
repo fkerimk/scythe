@@ -28,15 +28,11 @@ internal static class AssetManager {
              CreateWatcher(resourcesPath, "*.*", HandleFileChange, HandleFileDelete);
         }
 
-        // 2. Mod Directories
-        var dirs = new[] { "Models", "Scripts", "Shaders", "Images" };
-        
-        foreach (var d in dirs) {
-            
-            var path = PathUtil.ModRelative(d);
-            if (!Directory.Exists(path)) Directory.CreateDirectory(path);
-            ScanDirectory(path);
-            CreateWatcher(path, "*.*", HandleFileChange, HandleFileDelete);
+        // 2. Mod Directory (Recursive)
+        var modPath = Config.Mod.Path;
+        if (Directory.Exists(modPath)) {
+            ScanDirectory(modPath);
+            CreateWatcher(modPath, "*.*", HandleFileChange, HandleFileDelete);
         }
     }
     
@@ -175,10 +171,27 @@ internal static class AssetManager {
         PathLookup[typePrefix + full] = asset;
         PathLookup[typePrefix + name] = asset;
         
+        // Resource Relative Path
+        if (full.Contains("/resources/", StringComparison.InvariantCultureIgnoreCase)) {
+             var idx = full.IndexOf("/resources/", StringComparison.InvariantCultureIgnoreCase);
+             var relRes = full.Substring(idx + 1); // "resources/..."
+             PathLookup[typePrefix + relRes] = asset;
+             
+             // Also add without "resources/" prefix for cleaner lookup if needed, 
+             // but strictly we want "Resources/Materials/Default..."
+        }
+        
+        // Mod Relative Path
         if (full.Contains(Config.Mod.Path.Replace('\\', '/'), StringComparison.InvariantCultureIgnoreCase)) {
             
             var rel = Path.GetRelativePath(Config.Mod.Path, file).Replace('\\', '/').ToLowerInvariant();
             PathLookup[typePrefix + rel] = asset;
+            
+            // Should we update the asset.File to be relative here? 
+            // The USER requested that data NOT be stored as absolute path.
+            // Since Asset.File is "init", we can't change it easily on existing instances without refactoring Asset class or creating new instances.
+            // However, Asset.File is used for loading which usually requires absolute path.
+            // But we can store the "RelativePath" in a new property or update how we serialize.
         }
 
         if (!TypeCache.TryGetValue(typeof(T), out var list)) {
@@ -217,9 +230,24 @@ internal static class AssetManager {
 
     public static List<(string Name, string Path)> GetNames<T>() where T : Asset {
         
-        return TypeCache.TryGetValue(typeof(T), out var list)
-            ? list.Cast<T>().Select(a => (Path.GetFileNameWithoutExtension(a.File), a.File)).OrderBy(n => n.Item1).ToList()
-            : [];
+        if (!TypeCache.TryGetValue(typeof(T), out var list)) return [];
+
+        var modPath = Config.Mod.Path;
+        var resPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources");
+
+        return list.Cast<T>().Select(a => {
+            
+            var full = Path.GetFullPath(a.File);
+            var rel = full;
+            
+            if (full.StartsWith(modPath, StringComparison.OrdinalIgnoreCase))
+                rel = Path.GetRelativePath(modPath, full);
+            else if (full.StartsWith(resPath, StringComparison.OrdinalIgnoreCase))
+                rel = Path.GetRelativePath(AppDomain.CurrentDomain.BaseDirectory, full);
+                
+            return (Path.GetFileNameWithoutExtension(a.File), rel.Replace('\\', '/'));
+            
+        }).OrderBy(n => n.Item1).ToList();
     }
 
     public static void UnloadAll() {

@@ -14,7 +14,10 @@ internal static class Runtime {
         
         while (!WindowShouldClose()) {
             
-            if (Core.ActiveCamera == null) break;
+            if (Core.ActiveCamera == null) {
+                TraceLog(TraceLogLevel.Error, "RUNTIME: No active camera found, exiting loop.");
+                break;
+            }
             
             Window.UpdateFps();
             Core.Load();
@@ -43,8 +46,8 @@ internal static class Runtime {
             if (_scheduledQuit) break;
         }
         
-        CloseWindow();
         Core.Quit();
+        CloseWindow();
     }
     
     public static void Quit() => _scheduledQuit = true;

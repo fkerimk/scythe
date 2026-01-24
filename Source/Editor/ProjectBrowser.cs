@@ -292,11 +292,9 @@ internal class ProjectBrowser : Viewport {
         // Background Context Menu
         if (BeginPopupContextItem("GridCMS", ImGuiPopupFlags.MouseButtonRight)) {
             
-            var isInsideScripts = Path.GetFullPath(_currentPath).StartsWith(Path.GetFullPath(PathUtil.ModRelative("Scripts")), StringComparison.OrdinalIgnoreCase);
-            var isInsideLevels = Path.GetFullPath(_currentPath).StartsWith(Path.GetFullPath(PathUtil.ModRelative("Levels")), StringComparison.OrdinalIgnoreCase);
-
-            if (isInsideScripts) {
-                if (MenuItem("New Script")) CreateNewFile("Script", ".lua", name =>
+            if (BeginMenu("Create")) {
+                
+                if (MenuItem("Script")) CreateNewFile("Script", ".lua", name =>
                 $"""
                 print("{name} is working, yay!")
                 
@@ -304,10 +302,8 @@ internal class ProjectBrowser : Viewport {
                     -- loop is called once per frame
                 end
                 """);
-            }
-            
-            if (isInsideLevels) {
-                if (MenuItem("New Level")) CreateNewFile("NewLevel", ".json", name =>
+
+                if (MenuItem("Level")) CreateNewFile("NewLevel", ".level.json", name =>
                 $$"""
                 {
                   "Root": {
@@ -316,12 +312,11 @@ internal class ProjectBrowser : Viewport {
                   }
                 }
                 """);
-            }
-
-            var isInsideModels = Path.GetFullPath(_currentPath).StartsWith(Path.GetFullPath(PathUtil.ModRelative("Models")), StringComparison.OrdinalIgnoreCase);
-            if (isInsideModels) {
-                if (MenuItem("New Material")) CreateNewFile("Material", ".material.json", _ => 
-                    JsonConvert.SerializeObject(new MaterialAsset.MaterialData(), Formatting.Indented));
+    
+                if (MenuItem("Material")) CreateNewFile("Material", ".material.json", _ => 
+                     JsonConvert.SerializeObject(new MaterialAsset.MaterialData(), Formatting.Indented));
+                
+                EndMenu();
             }
             
             EndPopup();
@@ -428,16 +423,9 @@ internal class ProjectBrowser : Viewport {
         doubleClicked = false;
 
         var name = Path.GetFileName(path);
-        var displayName = name;
-        var ext = Path.GetExtension(path).ToLower();
-
-        var isInsideLevels = Path.GetFullPath(path).StartsWith(Path.GetFullPath(PathUtil.ModRelative("Levels")), StringComparison.OrdinalIgnoreCase);
-        var isInsideScripts = Path.GetFullPath(path).StartsWith(Path.GetFullPath(PathUtil.ModRelative("Scripts")), StringComparison.OrdinalIgnoreCase);
-
-        if (isInsideLevels && ext == ".json") displayName = Path.GetFileNameWithoutExtension(name);
-        if (isInsideScripts && ext == ".lua") displayName = Path.GetFileNameWithoutExtension(name);
-        if (path.EndsWith(".material.json", StringComparison.OrdinalIgnoreCase)) displayName = name.Substring(0, name.Length - ".material.json".Length);
         
+        string displayName = GetNameWithoutExtension(path);
+
         if (displayName.Length > 24) displayName = displayName[..24] + "...";
 
         PushID(path);
@@ -500,9 +488,10 @@ internal class ProjectBrowser : Viewport {
                 
             } else {
                 
-                 if (isInsideScripts && ext == ".lua") icon = Icons.FaFileCode;
-                 else if (isInsideLevels && ext == ".json") icon = Icons.FaFlag;
-                 else if (path.EndsWith(".material.json", StringComparison.OrdinalIgnoreCase)) icon = Icons.FaFileImage;
+                 if (IsScript(path)) icon = Icons.FaFileCode;
+                 else if (IsLevel(path)) icon = Icons.FaFlag;
+                 else if (IsMaterial(path)) icon = Icons.FaFileImage;
+                 else if (IsModel(path)) icon = Icons.FaCube;
                  else icon = Icons.FaFile;
             }
 
@@ -538,7 +527,7 @@ internal class ProjectBrowser : Viewport {
                 int Callback(ImGuiInputTextCallbackData* data) {
                     
                     if (!_setRenameSelection) return 0;
-                    var nameWithoutExt = Path.GetFileNameWithoutExtension(_renameBuffer);
+                    var nameWithoutExt = GetNameWithoutExtension(_renameBuffer);
                     data->SelectionStart = 0;
                     data->SelectionEnd = nameWithoutExt.Length;
                     data->CursorPos = 0;
@@ -652,16 +641,8 @@ internal class ProjectBrowser : Viewport {
                 _selectedPaths.Clear();
             } else {
                 
-                 if (Path.GetExtension(path).Equals(".lua", StringComparison.OrdinalIgnoreCase)) {
-                      Editor.OpenScript(path);
-                 }
-                 else if (Path.GetExtension(path).Equals(".json", StringComparison.OrdinalIgnoreCase)) {
-                      
-                      var levelsPath = PathUtil.ModRelative("Levels");
-                      if (Path.GetFullPath(path).StartsWith(Path.GetFullPath(levelsPath), StringComparison.OrdinalIgnoreCase)) {
-                          Editor.OpenLevel(path);
-                      }
-                 }
+                 if (IsScript(path)) Editor.OpenScript(path);
+                 else if (IsLevel(path)) Editor.OpenLevel(path);
             }
         }
 
@@ -841,12 +822,13 @@ internal class ProjectBrowser : Viewport {
                 
                 SafeExec.Try(() => {
                     
-                    if (!b.IsDir || Directory.Exists(b.Original)) return;
-                    
-                    if (Directory.Exists(b.Backup)) CopyDirectory(b.Backup, b.Original);
-                        
-                    else if (!b.IsDir && !File.Exists(b.Original))
-                        if (File.Exists(b.Backup)) File.Copy(b.Backup, b.Original);
+                    if (b.IsDir) {
+                        if (Directory.Exists(b.Backup) && !Directory.Exists(b.Original))
+                            CopyDirectory(b.Backup, b.Original);
+                    } else {
+                        if (File.Exists(b.Backup) && !File.Exists(b.Original))
+                            File.Copy(b.Backup, b.Original);
+                    }
                 });
             }
         }
@@ -856,7 +838,6 @@ internal class ProjectBrowser : Viewport {
             foreach (var b in backups)
                 RecyclePath(b.Original);
         }
-
     }
     
     private static void CopyDirectory(string sourceDir, string destinationDir) {
@@ -891,13 +872,20 @@ internal class ProjectBrowser : Viewport {
 
     private void CreateNewFile(string name, string extension, Func<string, string>? content = null) {
 
-        name = Generators.AvailableName(name, Directory.GetFileSystemEntries(_currentPath).Select(Path.GetFileNameWithoutExtension));
+        var existingNames = Directory.GetFileSystemEntries(_currentPath).Select(GetNameWithoutExtension);
+        name = Generators.AvailableName(name, existingNames);
         
         var fileName = name + extension;
         var fullPath = Path.Combine(_currentPath, fileName);
         
+        History.StartRecording(this, $"Create {name}");
+
         File.WriteAllText(fullPath, content?.Invoke(name) ?? "");
         
+        History.SetUndoAction(() => RecyclePath(fullPath));
+        History.SetRedoAction(() => File.WriteAllText(fullPath, content?.Invoke(name) ?? ""));
+        History.StopRecording();
+
         _selectedPaths.Clear();
         _selectedPaths.Add(fullPath);
         StartRename(fullPath);
@@ -1006,8 +994,6 @@ internal class ProjectBrowser : Viewport {
 
     private void CancelRename() => _renamingPath = null;
 
-
-
     // Helper struct for Rect
     public readonly struct Rect(float x, float y, float w, float h) {
         
@@ -1015,5 +1001,22 @@ internal class ProjectBrowser : Viewport {
         public Vector2 Min => new(_x, _y);
         public Vector2 Max => new(_x + _w, _y + _h);
         public bool Intersects(Rect r) => _x < r._x + r._w && _x + _w > r._x && _y < r._y + r._h && _y + _h > r._y;
+    }
+    
+    // Helpers
+    private static bool IsLevel(string path) => path.EndsWith(".level.json", StringComparison.OrdinalIgnoreCase);
+    private static bool IsMaterial(string path) => path.EndsWith(".material.json", StringComparison.OrdinalIgnoreCase);
+    private static bool IsScript(string path) => path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase);
+    private static bool IsModel(string path) {
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        return ext == ".fbx" || ext == ".obj" || ext == ".gltf" || ext == ".iqm";
+    }
+
+    private static string GetNameWithoutExtension(string path) {
+        var name = Path.GetFileName(path);
+        if (IsLevel(path)) return name[..^11];
+        if (IsMaterial(path)) return name[..^14];
+        if (IsModel(path)) return Path.GetFileNameWithoutExtension(name);
+        return Path.GetFileNameWithoutExtension(name);
     }
 }

@@ -41,7 +41,7 @@ internal static class Config {
     
     public static class Level {
 
-        public static string Formatting = "None";
+        public static string Formatting = "Indented";
     }
 
     private static readonly HashSet<string> LockedKeys = [];

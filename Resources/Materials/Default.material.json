@@ -1,7 +1,7 @@
 {
   "Shader": "Pbr",
   "Textures": {
-    "albedo_map": "Models/KenneyPlatformerKit/Colormap.png"
+    "albedo_map": "Resources/Textures/Default.png"
   },
   "Floats": {
     "metallic_value": 0.0,

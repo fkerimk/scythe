@@ -1,0 +1,226 @@
+{
+  "Root": {
+    "Children": {
+      "Dwarf": {
+        "Children": {},
+        "Transform": {
+          "Euler": {
+            "X": -6.830184E-06,
+            "Y": 4.0711087E-13,
+            "Z": 5.1226384E-06
+          },
+          "Scale": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 1.0
+          },
+          "Rot": {
+            "X": -5.9604638E-08,
+            "Y": -8.881784E-16,
+            "Z": -4.4703484E-08,
+            "W": 0.9999994
+          }
+        },
+        "Components": {
+          "Model": {
+            "Path": "Models/WizardGnome/WizardGnome.fbx",
+            "Color": {
+              "R": 255,
+              "G": 255,
+              "B": 255,
+              "A": 255
+            },
+            "AlphaCutoff": 0.5,
+            "CastShadows": true,
+            "ReceiveShadows": true
+          },
+          "Animation": {
+            "Path": "Models/WizardGnome/WizardGnome.fbx",
+            "IsPlaying": true,
+            "Looping": true
+          },
+          "Script": {
+            "Path": "Scripts/Player.lua"
+          },
+          "Rigidbody": {
+            "Friction": 0.0,
+            "Bounciness": 0.0,
+            "FreezeRotX": true,
+            "FreezeRotY": true,
+            "FreezeRotZ": true
+          },
+          "SphereCollider": {
+            "Radius": 0.3,
+            "Center": {
+              "Y": 0.3
+            }
+          }
+        }
+      },
+      "Environment": {
+        "Children": {
+          "Map": {
+            "Children": {
+              "Block": {
+                "Children": {},
+                "Transform": {
+                  "Pos": {
+                    "Y": -6.0
+                  },
+                  "Scale": {
+                    "X": 0.03,
+                    "Y": 0.03,
+                    "Z": 0.03
+                  },
+                  "Rot": {
+                    "W": 1.0,
+                    "IsIdentity": true
+                  }
+                },
+                "Components": {
+                  "Model": {
+                    "Path": "Models/KenneyPlatformerKit/BlockGrassOverhangLargeTall.fbx",
+                    "Color": {
+                      "R": 255,
+                      "G": 255,
+                      "B": 255,
+                      "A": 255
+                    },
+                    "AlphaCutoff": 0.5,
+                    "CastShadows": true,
+                    "ReceiveShadows": true
+                  },
+                  "BoxCollider": {
+                    "Size": {
+                      "X": 200.0,
+                      "Y": 200.0,
+                      "Z": 200.0
+                    },
+                    "Center": {
+                      "Y": 100.0
+                    }
+                  },
+                  "Rigidbody": {
+                    "IsStatic": true,
+                    "Gravity": false,
+                    "Bounciness": 0.0
+                  }
+                }
+              }
+            },
+            "Transform": {
+              "Scale": {
+                "X": 1.0,
+                "Y": 1.0,
+                "Z": 1.0
+              },
+              "Rot": {
+                "W": 1.0,
+                "IsIdentity": true
+              }
+            },
+            "Components": {}
+          }
+        },
+        "Transform": {
+          "Scale": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 1.0
+          },
+          "Rot": {
+            "W": 1.0,
+            "IsIdentity": true
+          }
+        },
+        "Components": {}
+      },
+      "Camera": {
+        "Children": {},
+        "Transform": {
+          "Pos": {
+            "Y": 3.0,
+            "Z": -3.0
+          },
+          "Euler": {
+            "X": 22.5
+          },
+          "Scale": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 1.0
+          },
+          "Rot": {
+            "X": 0.19509032,
+            "W": 0.98078525
+          }
+        },
+        "Components": {
+          "Camera": {}
+        }
+      },
+      "Directional Light": {
+        "Children": {},
+        "Transform": {
+          "Pos": {
+            "Y": 3.4
+          },
+          "Euler": {
+            "X": -56.309933,
+            "Y": 89.95154
+          },
+          "Scale": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 1.0
+          },
+          "Rot": {
+            "X": 0.270598,
+            "Y": -0.65328145,
+            "Z": 0.27059805,
+            "W": 0.6532813
+          }
+        },
+        "Components": {
+          "Light": {
+            "Enabled": true,
+            "Type": 0,
+            "ScytheColor": {
+              "R": 255,
+              "G": 255,
+              "B": 255,
+              "A": 255
+            },
+            "Intensity": 10.0,
+            "Range": 10.0,
+            "Shadows": true,
+            "ShadowStrength": 1.0
+          }
+        }
+      }
+    },
+    "Transform": {
+      "Scale": {
+        "X": 1.0,
+        "Y": 1.0,
+        "Z": 1.0
+      },
+      "Rot": {
+        "W": 1.0,
+        "IsIdentity": true
+      }
+    },
+    "Components": {}
+  },
+  "EditorCamera": {
+    "Position": {
+      "X": -10.18099,
+      "Y": 3.300783,
+      "Z": 3.7560534
+    },
+    "Rotation": {
+      "X": -0.5378402,
+      "Y": 27.071
+    }
+  }
+}

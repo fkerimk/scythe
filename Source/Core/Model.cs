@@ -1,6 +1,7 @@
 ﻿using Raylib_cs;
 using Newtonsoft.Json;
 using static Raylib_cs.Raylib;
+using System.Numerics;
 
 internal class Model(Obj obj) : Component(obj) {
 
@@ -22,6 +23,11 @@ internal class Model(Obj obj) : Component(obj) {
         
         var loaded = AssetManager.Get<ModelAsset>(Path);
         if (loaded is not { IsLoaded: true }) return false;
+        
+        // Ensure lists are clear before adding
+        Meshes.Clear();
+        Bones.Clear();
+        
         AssetRef = loaded;
         foreach (var m in AssetRef.Meshes) Meshes.Add(m.Clone());
         foreach (var b in AssetRef.Bones) Bones.Add(new BoneInfo { Name = b.Name, Index = b.Index, Offset = b.Offset });
@@ -90,9 +96,24 @@ internal class Model(Obj obj) : Component(obj) {
             if (locAmbCol != -1) SetShaderValue(shader, locAmbCol,Core.RenderSettings.AmbientColor.ToVector4(), ShaderUniformDataType.Vec3);
             
             // 4. Draw
-            DrawMesh(mesh.RlMesh, material, Obj.VisualWorldMatrix);
+            var matModel = Obj.VisualWorldMatrix;
+            if (AssetRef.Settings.ImportScale != 1.0f) {
+                
+                var s = AssetRef.Settings.ImportScale;
+                
+                // Scale only the basis vectors (rotation/scale) and NOT the translation (M41, M42, M43)
+                matModel.M11 *= s; matModel.M12 *= s; matModel.M13 *= s;
+                matModel.M21 *= s; matModel.M22 *= s; matModel.M23 *= s;
+                matModel.M31 *= s; matModel.M32 *= s; matModel.M33 *= s;
+            }
+            
+            DrawMesh(mesh.RlMesh, material, matModel);
         }
     }
 
-    public override void Unload() { foreach (var m in Meshes) UnloadMesh(m.RlMesh); }
+    public override void Unload() { 
+        foreach (var m in Meshes) UnloadMesh(m.RlMesh);
+        Meshes.Clear();
+        Bones.Clear();
+    }
 }

@@ -16,10 +16,26 @@ internal class ModelAsset : Asset {
     
     private uint _lastBakeVersion;
 
-    public class ModelSettings {
-        public readonly Dictionary<int, string> MeshMaterials = new();
-    }
+    [RecordHistory]
     public ModelSettings Settings = new();
+
+    public class ModelSettings : ICloneable {
+        public Dictionary<int, string> MeshMaterials = new();
+        public float ImportScale = 1.0f;
+
+        public object Clone() => new ModelSettings {
+            MeshMaterials = new Dictionary<int, string>(MeshMaterials),
+            ImportScale = ImportScale
+        };
+    }
+
+    public void ApplySettings() {
+        for (var i = 0; i < Materials.Length; i++) {
+            MaterialPaths[i] = Settings.MeshMaterials.GetValueOrDefault(i, "");
+            CachedMaterialAssets[i] = AssetManager.Get<MaterialAsset>(MaterialPaths[i]);
+            ApplyMaterialState(i, true);
+        }
+    }
 
     public override bool Load() {
         
@@ -121,9 +137,21 @@ internal class ModelAsset : Asset {
         }
     }
     
-    public override void Unload() {
+    public override unsafe void Unload() {
         
         foreach (var mesh in Meshes) UnloadMesh(mesh.RlMesh);
-        foreach (var mat in Materials) UnloadMaterial(mat);
+
+        for (var i = 0; i < Materials.Length; i++) {
+            
+            Materials[i].Shader = new Shader();
+            
+            if (Materials[i].Maps != null)
+                for (var j = 0; j < 12; j++)
+                    Materials[i].Maps[j].Texture = new Texture2D();
+
+            UnloadMaterial(Materials[i]);
+        }
+
+        IsLoaded = false;
     }
 }

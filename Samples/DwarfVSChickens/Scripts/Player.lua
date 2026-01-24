@@ -1,7 +1,7 @@
 local moveSpeed = 3
 local sensitivity = 0.3
 
-local rotTarget = quat.fromEuler(-90, 0, 0)
+local rotTarget = quat.identity
 
 local camRotTarget = f2.zero
 local camDistance = 5;
@@ -31,8 +31,7 @@ function movement(dt)
     if moveInput ~= f2.zero then
 
         rotTarget = quat.fromDir(cam.fwdFlat) *
-                    quat.fromEuler(0, mt.dirAngle(moveInput * -1), 0) *
-                    quat.fromEuler(-90, 0, 90)
+                    quat.fromEuler(0, mt.dirAngle(moveInput * 1) - 90, 0)
     end
 
     local vel = - moveInput.x * moveSpeed * cam.rightFlat
@@ -43,7 +42,7 @@ function movement(dt)
 
     self.rot = quat.lerp(self.rot, rotTarget, dt * 15)
 
-    anim.track = moveInput == f2.zero and 6 or 7
+    anim.track = moveInput == f2.zero and 5 or 6
 end
 
 function camera(dt)

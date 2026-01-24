@@ -6,6 +6,51 @@ using Newtonsoft.Json.Linq;
 [JsonObject(MemberSerialization.OptIn)]
 internal class Level {
     
+    // Custom converter to handle path relativization
+    public class RelativePathConverter : JsonConverter {
+        
+        public override bool CanConvert(Type objectType) => objectType == typeof(string);
+
+        public override object? ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer) {
+            
+            var val = (string?)reader.Value;
+            if (string.IsNullOrEmpty(val)) return val;
+            
+            // Try explicit mod path first
+            if (PathUtil.BestPath(val, out var fullPath)) return fullPath;
+            
+            // Try asset lookup
+            if (!Path.IsPathRooted(val)) {
+                // If it's relative, assume it's relative to Mod Root or Resources
+                // BestPath handles this logic perfectly if we treat it as relative
+                if (PathUtil.BestPath(val, out var bestPath)) return bestPath;
+            }
+            
+            return val; 
+        }
+
+        public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer) {
+            
+            var val = (string?)value;
+            if (string.IsNullOrEmpty(val)) {
+                writer.WriteValue(val);
+                return;
+            }
+
+            var modPath = Config.Mod.Path;
+            var resPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources");
+            
+            // Convert to relative if possible
+            if (val.StartsWith(modPath, StringComparison.OrdinalIgnoreCase)) {
+                val = Path.GetRelativePath(modPath, val).Replace('\\', '/');
+            } else if (val.StartsWith(resPath, StringComparison.OrdinalIgnoreCase)) {
+                val = Path.GetRelativePath(AppDomain.CurrentDomain.BaseDirectory, val).Replace('\\', '/');
+            }
+            
+            writer.WriteValue(val);
+        }
+    }
+    
     public string Name { get; set; } = null!;
     public string JsonPath { get; set; } = null!;
     public bool IsDirty { get; set; }
@@ -25,8 +70,9 @@ internal class Level {
         
         Name = name;
         
-        if (!PathUtil.BestPath($"Levels/{Name}.json", out var path))
-            throw new FileNotFoundException($"Could not find level json file {Name}");
+        if (!PathUtil.BestPath($"Levels/{Name}.level.json", out var path))
+            if (!PathUtil.BestPath($"{Name}.level.json", out path))
+                throw new FileNotFoundException($"Could not find level file {Name}.level.json");
 
         JsonPath = path;
         Root = new Obj("Root", null);
@@ -84,7 +130,8 @@ internal class Level {
             
             DefaultValueHandling = DefaultValueHandling.Ignore,
             NullValueHandling = NullValueHandling.Ignore,
-            TypeNameHandling = TypeNameHandling.None 
+            TypeNameHandling = TypeNameHandling.None,
+            Converters = { new RelativePathConverter() }
         };
 
         if (!Enum.TryParse(Config.Level.Formatting, out Formatting formatting))

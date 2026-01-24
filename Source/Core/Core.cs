@@ -55,9 +55,10 @@ internal static class Core {
         var skybox = AssetManager.Get<ShaderAsset>("skybox");
         if (skybox != null) _skyboxModel.Materials[0].Shader = skybox.Shader;
         
-        if (PathUtil.BestPath("Models/Skybox.png", out var skyboxPath)) {
+        var skyTex = AssetManager.Get<TextureAsset>("Skybox");
+        if (skyTex != null) {
             
-            var image = LoadImage(skyboxPath);
+            var image = LoadImage(skyTex.File);
             _skyboxTexture = LoadTextureCubemap(image, CubemapLayout.AutoDetect);
             UnloadImage(image);
             _skyboxModel.Materials[0].Maps[(int)MaterialMapIndex.Cubemap].Texture = _skyboxTexture;
@@ -98,9 +99,14 @@ internal static class Core {
         
         if (path == null) {
             
-            if (PathUtil.BestPath($"Levels/{name}.json", out var foundPath))
+            if (PathUtil.BestPath($"Levels/{name}.level.json", out var foundPath))
                  level = new Level(name, foundPath);
-            else return;
+            else if (PathUtil.BestPath($"{name}.level.json", out foundPath))
+                 level = new Level(name, foundPath);
+            else {
+                 TraceLog(TraceLogLevel.Error, $"CORE: Could not find level {name}");
+                 return;
+            }
         }
         
         else level = new Level(name, path);

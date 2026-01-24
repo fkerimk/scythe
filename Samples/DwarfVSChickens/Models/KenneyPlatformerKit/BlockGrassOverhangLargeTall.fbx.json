@@ -1,5 +1,6 @@
 {
   "MeshMaterials": {
-    "0": "D:\\Projects\\scythe\\Samples\\DwarfVSChickens\\Models\\KenneyPlatformerKit\\Colormap.material.json"
-  }
+    "0": "Models/KenneyPlatformerKit/Colormap.material.json"
+  },
+  "ImportScale": 1.0
 }

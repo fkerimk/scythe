@@ -129,10 +129,21 @@ internal static class Picking {
             foreach (var component in obj.Components.Values) {
                 
                 if (component is not Model { IsLoaded: true } model) continue;
+                if (model.AssetRef == null || !model.AssetRef.IsLoaded) continue;
+                
+                // Calculate correct world matrix with Import Scale
+                var worldMatrix = obj.WorldMatrix;
+                if (model.AssetRef.Settings.ImportScale != 1.0f) {
+                    var s = model.AssetRef.Settings.ImportScale;
+                    // Scale basis vectors only
+                    worldMatrix.M11 *= s; worldMatrix.M12 *= s; worldMatrix.M13 *= s;
+                    worldMatrix.M21 *= s; worldMatrix.M22 *= s; worldMatrix.M23 *= s;
+                    worldMatrix.M31 *= s; worldMatrix.M32 *= s; worldMatrix.M33 *= s;
+                }
                 
                 foreach (var mesh in model.Meshes) {
                     
-                    var collision = Raylib.GetRayCollisionMesh(ray, mesh.RlMesh, obj.WorldMatrix);
+                    var collision = Raylib.GetRayCollisionMesh(ray, mesh.RlMesh, worldMatrix);
                     
                     if (!collision.Hit || !(collision.Distance < minDistance)) continue;
                     

@@ -120,9 +120,10 @@ internal class ObjectBrowser : Viewport {
         NextColumn();
     }
 
-    private bool DrawInspectorField(string id, ref object? value, Type type, List<object> targets, string? propName, string? pickerType = null) {
+    private (bool changed, bool deactivated) DrawInspectorField(string id, ref object? value, Type type, List<object> targets, string? propName, string? pickerType = null) {
         
         var changed = false;
+        var deactivated = false;
         
         PushItemWidth(-1); // Fill the entire column
 
@@ -144,17 +145,6 @@ internal class ObjectBrowser : Viewport {
                     _ => new List<(string, string)>()
                 };
                 
-                if (names.Count == 0) {
-                    
-                     var baseDir = PathUtil.ModRelative(pickerType);
-                     
-                     if (Directory.Exists(baseDir)) {
-                         
-                         var files = Directory.GetFiles(baseDir, "*.*", SearchOption.AllDirectories);
-                         names = files.Select(f => (Path.GetFileNameWithoutExtension(f), f.Replace('\\', '/'))).ToList();
-                     }
-                }
-                
                 _foundFiles = names.Select(n => n.Path).ToArray();
                 _searchFilter = "";
                 
@@ -162,9 +152,10 @@ internal class ObjectBrowser : Viewport {
             }
             
             if (IsItemActivated() && propName != null) targets.ForEach(t => History.StartRecording(t, propName));
-            
+            if (IsItemDeactivated()) deactivated = true;
+
             SameLine();
-            if (Button($"{Icons.FaXMark}##{id}_clear")) { value = ""; changed = true; }
+            if (Button($"{Icons.FaXMark}##{id}_clear")) { value = ""; changed = true; deactivated = true; }
             if (IsItemActivated() && propName != null) targets.ForEach(t => History.StartRecording(t, propName));
             PopFont(); SameLine();
             
@@ -210,7 +201,7 @@ internal class ObjectBrowser : Viewport {
         if (IsItemActivated() && propName != null) 
             targets.ForEach(t => History.StartRecording(t, propName));
         
-        if (IsItemDeactivatedAfterEdit()) History.StopRecording();
+        if (IsItemDeactivated()) deactivated = true;
 
         if (IsItemHovered() && type == typeof(string) && !string.IsNullOrEmpty((string)value!)) 
             SetTooltip((string)value);
@@ -226,8 +217,7 @@ internal class ObjectBrowser : Viewport {
                 if (!string.IsNullOrEmpty(_searchFilter) && !f.Contains(_searchFilter, StringComparison.OrdinalIgnoreCase)) continue;
                 if (Selectable($"{n}##{f}")) { 
                     if (targets != null && propName != null) targets.ForEach(t => History.StartRecording(t, propName));
-                    value = f; changed = true; CloseCurrentPopup(); 
-                    History.StopRecording();
+                    value = f; changed = true; deactivated = true; CloseCurrentPopup(); 
                 }
                 if (nms.Count(x => x == n) > 1) { SameLine(); TextDisabled(Path.GetRelativePath(Config.Mod.Path, f)); }
             }
@@ -236,7 +226,7 @@ internal class ObjectBrowser : Viewport {
 
         PopItemWidth();
         NextColumn();
-        return changed;
+        return (changed, deactivated);
     }
 
     private void DrawSectionHeader(string title, string icon, Color color, out bool open, bool showRemove = false, Action? onRemove = null) {
@@ -292,8 +282,8 @@ internal class ObjectBrowser : Viewport {
             var asset = AssetManager.Get<MaterialAsset>(path);
             if (asset != null) DrawMaterialAssetInspector(asset);
         }
-        else if (ext == ".fbx" || ext == ".obj" || ext == ".gltf") {
-            var asset = AssetManager.Get<ModelAsset>(path);
+        else if (ext == ".fbx" || ext == ".obj" || ext == ".gltf" || ext == ".iqm") {
+            var asset = AssetManager.Get<ModelAsset>(path) ?? AssetManager.Get<ModelAsset>(Path.GetFileNameWithoutExtension(path));
             if (asset != null) DrawModelAssetInspector(asset);
         }
     }
@@ -302,12 +292,24 @@ internal class ObjectBrowser : Viewport {
         PushID(model.GetHashCode());
         DrawSectionHeader("Model Asset", Icons.FaCube, Colors.GuiTypeModel, out var open);
         if (open) {
+            DrawShadowedLabel("Import Scale");
+            object? scale = model.Settings.ImportScale;
+            var (sChanged, sDeactivated) = DrawInspectorField("ImportScale", ref scale, typeof(float), [model], "Settings");
+            if (sChanged) {
+                model.Settings.ImportScale = (float)scale!;
+                model.SaveSettings();
+            }
+            if (sDeactivated) History.StopRecording();
+
             for (var i = 0; i < model.Materials.Length; i++) {
                 var name = (i < model.Meshes.Count && !string.IsNullOrEmpty(model.Meshes[i].Name)) ? model.Meshes[i].Name : $"Mesh {i}";
                 DrawShadowedLabel(name);
                 object? val = model.MaterialPaths[i];
-                if (DrawInspectorField($"MeshMat_{i}", ref val, typeof(string), [], null, "MaterialAsset"))
+                var (changed, deactivated) = DrawInspectorField($"MeshMat_{i}", ref val, typeof(string), [model], "Settings", "MaterialAsset");
+                if (changed) {
                     model.ApplyMaterial(i, (string)val!);
+                }
+                if (deactivated) History.StopRecording();
             }
         }
         EndSection(open); PopID();
@@ -319,9 +321,11 @@ internal class ObjectBrowser : Viewport {
         if (open) {
             DrawShadowedLabel("Shader");
             object? shader = mat.Data.Shader;
-            if (DrawInspectorField("Shader", ref shader, typeof(string), [], null, "ShaderAsset")) {
+            var (shaderChanged, shaderDeactivated) = DrawInspectorField("Shader", ref shader, typeof(string), [mat], "Data", "ShaderAsset");
+            if (shaderChanged) {
                 mat.Data.Shader = (string)shader!; mat.Save(); mat.ApplyChanges();
             }
+            if (shaderDeactivated) History.StopRecording();
 
             var sa = AssetManager.Get<ShaderAsset>(mat.Data.Shader);
             if (sa != null) {
@@ -341,13 +345,15 @@ internal class ObjectBrowser : Viewport {
                         }
                     }
 
-                    if (val != null && DrawInspectorField(prop.Name, ref val, t, [], null, picker)) {
+                    var (propChanged, propDeactivated) = DrawInspectorField(prop.Name, ref val, t, [mat], "Data", picker);
+                    if (val != null && propChanged) {
                         if (t == typeof(string)) mat.Data.Textures[prop.Name] = (string)val!;
                         else if (t == typeof(float)) mat.Data.Floats[prop.Name] = (float)val!;
                         else if (t == typeof(Vector2)) mat.Data.Vectors[prop.Name] = (Vector2)val!;
                         else if (t == typeof(Color)) mat.Data.Colors[prop.Name] = (Color)val!;
                         mat.Save(); mat.ApplyChanges();
                     }
+                    if (propDeactivated) History.StopRecording();
                     PopID();
                 }
             }
@@ -394,13 +400,15 @@ internal class ObjectBrowser : Viewport {
                 var assetAttr = prop.GetCustomAttribute<FindAssetAttribute>();
                 var picker = assetAttr?.TypeName ?? fileAttr?.Category;
 
-                if (DrawInspectorField(id, ref val, prop.PropertyType, targets, prop.Name, picker)) {
+                var (changed, deactivated) = DrawInspectorField(id, ref val, prop.PropertyType, targets, prop.Name, picker);
+                if (changed) {
                     foreach (var t in targets) {
                         prop.SetValue(t, val);
                         if (t is Component comp && (prop.Name == "Path" || fileAttr != null || assetAttr != null)) comp.UnloadAndQuit();
                     }
                     if (Core.ActiveLevel != null) Core.ActiveLevel.IsDirty = true;
                 }
+                if (deactivated) History.StopRecording();
             }
         }
 

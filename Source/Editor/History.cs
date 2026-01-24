@@ -20,6 +20,9 @@ internal class HistoryStack {
 
     public void StartRecording(object reference, string? description = null) {
         
+        if (_activeRecord != null && description != null && _activeRecord.Description != description)
+            StopRecording();
+
         _activeRecord ??= new Record(description);
 
         if (_activeRecord.Objects.All(o => o.Reference != reference))
@@ -30,14 +33,23 @@ internal class HistoryStack {
         
         if (_activeRecord == null) return;
 
-        foreach (var record in _activeRecord.Objects)
+        var changed = false;
+        
+        foreach (var record in _activeRecord.Objects) {
+            
             record.FinalState = History.GetState(record.Reference);
+            if (!History.StateEquals(record.StartState, record.FinalState)) changed = true;
+        }
 
-        if (_currentIndex < _records.Count - 1)
-            _records.RemoveRange(_currentIndex + 1, _records.Count - (_currentIndex + 1));
+        if (changed) {
+            
+            if (_currentIndex < _records.Count - 1)
+                _records.RemoveRange(_currentIndex + 1, _records.Count - (_currentIndex + 1));
 
-        _records.Add(_activeRecord);
-        _currentIndex = _records.Count - 1;
+            _records.Add(_activeRecord);
+            _currentIndex = _records.Count - 1;
+        }
+        
         _activeRecord = null;
     }
 
@@ -150,6 +162,20 @@ internal static class History {
             case ICloneable cloneable:
                 return cloneable.Clone();
             
+            case IDictionary dict: {
+                var type = value.GetType();
+                if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>)) {
+                    var newDict = (IDictionary?)Activator.CreateInstance(type);
+                    if (newDict == null) return value;
+                    foreach (DictionaryEntry entry in dict) {
+                        var key = CloneValue(entry.Key);
+                        if (key != null) newDict.Add(key, CloneValue(entry.Value));
+                    }
+                    return newDict;
+                }
+                break;
+            }
+
             case IList list: {
                 
                 // Handle generic lists (specifically List<T>)
@@ -198,6 +224,55 @@ internal static class History {
         foreach (var field in fields) field.SetValue(reference, state[i++]);
 
         if (reference is Component comp) comp.UnloadAndQuit();
+        else if (reference is MaterialAsset mat) { mat.Save(); mat.ApplyChanges(); }
+        else if (reference is ModelAsset model) { model.ApplySettings(); model.SaveSettings(); }
+    }
+
+    public static bool StateEquals(object?[] state1, object?[] state2) {
+        
+        if (state1.Length != state2.Length) return false;
+        
+        for (var i = 0; i < state1.Length; i++) {
+            
+            if (!ValueEquals(state1[i], state2[i])) return false;
+        }
+        
+        return true;
+    }
+
+    private static bool ValueEquals(object? v1, object? v2) {
+        
+        if (v1 == null && v2 == null) return true;
+        if (v1 == null || v2 == null) return false;
+
+        if (v1 is IDictionary d1 && v2 is IDictionary d2) {
+            
+             if (d1.Count != d2.Count) return false;
+             
+             foreach (var key in d1.Keys) {
+                 
+                  if (!d2.Contains(key)) return false;
+                  
+                  var val1 = d1[key];
+                  var val2 = d2[key];
+                  
+                  if (!ValueEquals(val1, val2)) return false;
+             }
+             
+             return true;
+        }
+
+        if (v1 is IList l1 && v2 is IList l2) {
+            
+             if (l1.Count != l2.Count) return false;
+             
+             for (var i = 0; i < l1.Count; i++)
+                 if (!ValueEquals(l1[i], l2[i])) return false;
+             
+             return true;
+        }
+
+        return v1.Equals(v2);
     }
 }
 

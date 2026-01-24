@@ -1,14 +1,20 @@
 {
   "Shader": "Pbr",
   "Textures": {
-    "albedo_map": "D:\\Projects\\scythe\\Samples\\DwarfVSChickens\\Models\\WizardGnome\\WizardGnome.png"
+    "albedo_map": "Models/ToyBlocks/ToyBlocksColor.png",
+    "normal_map": ""
   },
   "Floats": {
     "metallic_value": 0.0,
     "roughness_value": 0.5,
     "aoValue": 1.0,
     "emissive_intensity": 1.0,
-    "normalValue": 1.0
+    "normalValue": 0.0,
+    "use_tex_albedo": 1.0,
+    "use_tex_normal": 1.0,
+    "use_tex_mra": 1.0,
+    "use_tex_emissive": 1.0,
+    "ambient_intensity": 0.0
   },
   "Ints": {},
   "Colors": {

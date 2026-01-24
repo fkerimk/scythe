@@ -62,3 +62,5 @@ if (!CommandLine.NoSplash) Splash.Show();
 if (CommandLine.Editor) 
       Editor.Show();
 else Runtime.Show();
+
+return 0;

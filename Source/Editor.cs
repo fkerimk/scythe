@@ -218,11 +218,12 @@ internal static unsafe class Editor {
         ScriptEditor.Save();
         ProjectBrowser.Save();
         EditorRender.Save();
+        
+        Shutdown();
+        Core.Quit();
         CloseWindow();
 
-        Directory.Delete(PathUtil.TempPath, true);
-
-        Core.Quit();
+        SafeExec.Try(() => Directory.Delete(PathUtil.TempPath, true));
     }
 
     public static void Quit() => _scheduledQuit = true;
