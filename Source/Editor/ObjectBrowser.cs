@@ -330,12 +330,12 @@ internal class ObjectBrowser : Viewport {
                     DrawShadowedLabel(prop.Name);
                     object? val = null; var t = typeof(float); string? picker = null;
 
-                    if (prop.Type == "sampler2D") { val = mat.Data.Textures.GetValueOrDefault(prop.Name, ""); t = typeof(string); picker = "TextureAsset"; }
-                    else if (prop.Type == "float") { val = mat.Data.Floats.GetValueOrDefault(prop.Name, 0f); t = typeof(float); }
-                    else if (prop.Type == "vec2") { val = mat.Data.Vectors.GetValueOrDefault(prop.Name, Vector2.Zero); t = typeof(Vector2); }
+                    if (prop.Type == "sampler2D") { val = mat.Data.Textures.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? "" : MaterialAsset.Default.Data.Textures.GetValueOrDefault(prop.Name, "")); t = typeof(string); picker = "TextureAsset"; }
+                    else if (prop.Type == "float") { val = mat.Data.Floats.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? 0f : MaterialAsset.Default.Data.Floats.GetValueOrDefault(prop.Name, 0f)); t = typeof(float); }
+                    else if (prop.Type == "vec2") { val = mat.Data.Vectors.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? Vector2.Zero : MaterialAsset.Default.Data.Vectors.GetValueOrDefault(prop.Name, Vector2.Zero)); t = typeof(Vector2); }
                     else if (prop.Type == "vec3" || prop.Type == "vec4") {
                         if (prop.Name.Contains("color", StringComparison.OrdinalIgnoreCase) || prop.Name.Contains("albedo", StringComparison.OrdinalIgnoreCase) || prop.Name.Contains("emiss", StringComparison.OrdinalIgnoreCase)) {
-                            val = mat.Data.Colors.GetValueOrDefault(prop.Name, Color.White); t = typeof(Color);
+                            val = mat.Data.Colors.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? Color.White : MaterialAsset.Default.Data.Colors.GetValueOrDefault(prop.Name, Color.White)); t = typeof(Color);
                         } else {
                             val = prop.Type == "vec3" ? Vector3.Zero : Vector4.One; t = prop.Type == "vec3" ? typeof(Vector3) : typeof(Vector4);
                         }

@@ -131,7 +131,13 @@ internal static class AssetManager {
 
     private static void ImportScript(string file) => GetOrLoad<ScriptAsset>(file);
     
-    private static void ImportMaterial(string file) => GetOrLoad<MaterialAsset>(file);
+    private static void ImportMaterial(string file) {
+        
+        if (!File.Exists(file) || new FileInfo(file).Length < 5)
+            SafeExec.Try(() => File.WriteAllText(file, JsonConvert.SerializeObject(new MaterialAsset.MaterialData(), Formatting.Indented)));
+
+        GetOrLoad<MaterialAsset>(file);
+    }
     
     private static void ImportTexture(string file) => GetOrLoad<TextureAsset>(file);
     

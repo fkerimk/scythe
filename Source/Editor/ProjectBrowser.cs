@@ -320,16 +320,8 @@ internal class ProjectBrowser : Viewport {
 
             var isInsideModels = Path.GetFullPath(_currentPath).StartsWith(Path.GetFullPath(PathUtil.ModRelative("Models")), StringComparison.OrdinalIgnoreCase);
             if (isInsideModels) {
-                if (MenuItem("New Material")) CreateNewFile("Material", ".material.json", _ =>
-                $$"""
-                {
-                  "Shader": "Pbr",
-                  "Textures": {},
-                  "Floats": {},
-                  "Colors": {},
-                  "Vectors": {}
-                }
-                """);
+                if (MenuItem("New Material")) CreateNewFile("Material", ".material.json", _ => 
+                    JsonConvert.SerializeObject(new MaterialAsset.MaterialData(), Formatting.Indented));
             }
             
             EndPopup();

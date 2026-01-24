@@ -1,15 +1,38 @@
 {
   "Shader": "Pbr",
   "Textures": {
-    "albedo_map": "D:\\Projects\\scythe\\Samples\\DwarfVSChickens\\Models\\KenneyPlatformerKit\\Colormap.png",
-    "normal_map": "D:\\Projects\\scythe\\Resources\\Models\\NormalMap.png"
+    "albedo_map": "D:\\Projects\\scythe\\Samples\\DwarfVSChickens\\Models\\KenneyPlatformerKit\\Colormap.png"
   },
   "Floats": {
-    "ambient_intensity": 0.75,
+    "metallic_value": 0.0,
+    "roughness_value": 0.5,
     "aoValue": 1.0,
-    "normalValue": 0.0
+    "emissive_intensity": 1.0,
+    "normalValue": 1.0
   },
   "Ints": {},
-  "Colors": {},
-  "Vectors": {}
+  "Colors": {
+    "albedo_color": {
+      "R": 255,
+      "G": 255,
+      "B": 255,
+      "A": 255
+    },
+    "emissive_color": {
+      "R": 0,
+      "G": 0,
+      "B": 0,
+      "A": 255
+    }
+  },
+  "Vectors": {
+    "tiling": {
+      "X": 1.0,
+      "Y": 1.0
+    },
+    "offset": {
+      "X": 0.0,
+      "Y": 0.0
+    }
+  }
 }
