@@ -39,6 +39,9 @@ internal class ModelAsset : Asset {
 
     public override bool Load() {
         
+        // Normalize path for Linux compatibility
+        File = File.Replace('\\', '/');
+
         if (!System.IO.File.Exists(File)) return false;
         
         try {
@@ -48,7 +51,10 @@ internal class ModelAsset : Asset {
             var jsonPath = File + ".json";
             if (System.IO.File.Exists(jsonPath)) Settings = JsonConvert.DeserializeObject<ModelSettings>(System.IO.File.ReadAllText(jsonPath)) ?? new ModelSettings();
             
-        } catch { return false; }
+        } catch (Exception e) { 
+            TraceLog(TraceLogLevel.Error, $"Failed to load model {File}: {e}");
+            return false; 
+        }
 
         IsLoaded = true;
         var matCount = Meshes.Count > 0 ? Meshes.Max(m => m.MaterialIndex) + 1 : 1;
