@@ -4,26 +4,57 @@ internal static class NativeResolver {
     
     public static void Init() {
         
-        NativeLibrary.SetDllImportResolver(typeof(Assimp.AssimpContext).Assembly, (libraryName, _, _) => {
+        NativeLibrary.SetDllImportResolver(typeof(Assimp.AssimpContext).Assembly, Resolver);
+    }
+
+    private static IntPtr Resolver(string libraryName, System.Reflection.Assembly assembly, DllImportSearchPath? searchPath) {
+        
+        if (libraryName != "assimp") return IntPtr.Zero;
+
+        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        
+        string rid;
+        string ext;
+        
+        var prefix = "";
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
             
-            if (libraryName != "assimp") return IntPtr.Zero;
-
-            var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-            var path = "";
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-                
-                path = Path.Combine(baseDir, "runtimes", "win-x64", "native", "assimp.dll");
-                if (!File.Exists(path)) path = Path.Combine(baseDir, "assimp.dll");
-            }
+            rid = "win-" + RuntimeInformation.ProcessArchitecture.ToString().ToLower();
+            ext = ".dll";
+        }
+        
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
             
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-                
-                path = Path.Combine(baseDir, "runtimes", "linux-x64", "native", "libassimp.so");
-                if (!File.Exists(path)) path = Path.Combine(baseDir, "libassimp.so");
-            }
+            rid = "linux-" + RuntimeInformation.ProcessArchitecture.ToString().ToLower();
+            ext = ".so";
+            prefix = "lib";
+        }
+        
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+            
+            rid = "osx-" + RuntimeInformation.ProcessArchitecture.ToString().ToLower();
+            ext = ".dylib";
+            prefix = "lib";
+        }
+        
+        else return IntPtr.Zero;
 
-            return File.Exists(path) ? NativeLibrary.Load(path) : IntPtr.Zero;
-        });
+        var fileName = libraryName.StartsWith(prefix) ? $"{libraryName}{ext}" : $"{prefix}{libraryName}{ext}";
+        
+        string[] searchPaths = [
+            
+            Path.Combine(baseDir, "runtimes", rid, "native", fileName),
+            RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? Path.Combine(baseDir, "runtimes", "osx", "native", fileName) : "",
+            Path.Combine(baseDir, fileName)
+        ];
+
+        foreach (var path in searchPaths) {
+            
+            if (string.IsNullOrEmpty(path)) continue;
+            if (File.Exists(path)) return NativeLibrary.Load(path);
+        }
+
+        return IntPtr.Zero;
     }
 }
