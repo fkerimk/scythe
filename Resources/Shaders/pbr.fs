@@ -30,12 +30,15 @@ out vec4 final_color;
 uniform int light_count;
 uniform sampler2D albedo_map;
 uniform vec4 albedo_color;
-uniform sampler2D mra_map;
+uniform sampler2D metallic_map;
 uniform float metallic_value;
+uniform sampler2D roughness_map;
 uniform float roughness_value;
+uniform sampler2D occlusion_map;
 uniform float aoValue;
 uniform sampler2D normal_map;
 uniform float normalValue;
+uniform int is_directx_normal;
 uniform sampler2D emissive_map; // r:geight g:emissive
 uniform vec4  emissive_color;
 uniform float emissive_intensity;
@@ -50,7 +53,9 @@ uniform vec2 offset;
 
 uniform int use_tex_albedo;
 uniform int use_tex_normal;
-uniform int use_tex_mra;
+uniform int use_tex_metallic;
+uniform int use_tex_roughness;
+uniform int use_tex_occlusion;
 uniform int use_tex_emissive;
 uniform vec3 ambient_color;
 uniform float ambient_intensity;
@@ -119,21 +124,19 @@ vec4 compute_pbr() {
     float roughness = clamp(roughness_value, 0.04, 1.0);
     float ao = clamp(aoValue, 0.0, 1.0);
     
-    if (use_tex_mra == 1) {
-
-        vec4 mra = texture(mra_map, vec2(frag_tex_pos.x * tiling.x + offset.x, frag_tex_pos.y * tiling.y + offset.y));
-        metallic = clamp(mra.r + metallic_value, 0.04, 1.0);
-        roughness = clamp(mra.g + roughness_value, 0.04, 1.0);
-        ao = clamp(mra.b + aoValue, 0.0, 1.0);
-    }
+    if (use_tex_metallic == 1) metallic = clamp(texture(metallic_map, vec2(frag_tex_pos.x * tiling.x + offset.x, frag_tex_pos.y * tiling.y + offset.y)).r + metallic_value, 0.0, 1.0);
+    if (use_tex_roughness == 1) roughness = clamp(texture(roughness_map, vec2(frag_tex_pos.x * tiling.x + offset.x, frag_tex_pos.y * tiling.y + offset.y)).r + roughness_value, 0.04, 1.0);
+    if (use_tex_occlusion == 1) ao = clamp(texture(occlusion_map, vec2(frag_tex_pos.x * tiling.x + offset.x, frag_tex_pos.y * tiling.y + offset.y)).r + aoValue - 1.0, 0.0, 1.0);
 
     vec3 n = normalize(frag_normal);
 
     if (use_tex_normal == 1) {
 
-        n = texture(normal_map, vec2(frag_tex_pos.x * tiling.x + offset.x, frag_tex_pos.y * tiling.y + offset.y)).rgb;
-        n = normalize(n * 2.0 - 1.0);
-        n = normalize(n * TBN);
+        vec3 normalSample = texture(normal_map, vec2(frag_tex_pos.x * tiling.x + offset.x, frag_tex_pos.y * tiling.y + offset.y)).rgb;
+        if (is_directx_normal == 1) normalSample.g = 1.0 - normalSample.g;
+        normalSample = normalize(normalSample * 2.0 - 1.0);
+        normalSample = mix(vec3(0.0, 0.0, 1.0), normalSample, normalValue);
+        n = normalize(normalSample * TBN);
     }
 
     vec3 v = normalize(view_pos - frag_pos);

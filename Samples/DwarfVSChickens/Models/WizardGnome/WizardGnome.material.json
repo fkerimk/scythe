@@ -9,9 +9,15 @@
     "roughness_value": 0.5,
     "aoValue": 1.0,
     "emissive_intensity": 1.0,
-    "normalValue": 1.0
+    "normalValue": 1.0,
+    "use_tex_albedo": 1.0,
+    "use_tex_normal": 1.0,
+    "use_tex_mra": 1.0,
+    "use_tex_emissive": 1.0
   },
-  "Ints": {},
+  "Ints": {
+    "is_directx_normal": 0
+  },
   "Colors": {
     "albedo_color": {
       "R": 255,

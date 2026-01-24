@@ -177,7 +177,12 @@ internal class ObjectBrowser : Viewport {
         }
         else if (type == typeof(int)) {
             var val = (int)(value ?? 0);
-            if (InputInt($"##{id}", ref val)) { value = val; changed = true; }
+            if (id.Contains("is_")) {
+                var bVal = val == 1;
+                if (Checkbox($"##{id}", ref bVal)) { value = bVal ? 1 : 0; changed = true; }
+            } else {
+                if (InputInt($"##{id}", ref val)) { value = val; changed = true; }
+            }
         }
         else if (type == typeof(bool)) {
             var val = (bool)(value ?? false);
@@ -336,6 +341,7 @@ internal class ObjectBrowser : Viewport {
 
                     if (prop.Type == "sampler2D") { val = mat.Data.Textures.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? "" : MaterialAsset.Default.Data.Textures.GetValueOrDefault(prop.Name, "")); t = typeof(string); picker = "TextureAsset"; }
                     else if (prop.Type == "float") { val = mat.Data.Floats.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? 0f : MaterialAsset.Default.Data.Floats.GetValueOrDefault(prop.Name, 0f)); t = typeof(float); }
+                    else if (prop.Type == "int") { val = mat.Data.Ints.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? 0 : MaterialAsset.Default.Data.Ints.GetValueOrDefault(prop.Name, 0)); t = typeof(int); }
                     else if (prop.Type == "vec2") { val = mat.Data.Vectors.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? Vector2.Zero : MaterialAsset.Default.Data.Vectors.GetValueOrDefault(prop.Name, Vector2.Zero)); t = typeof(Vector2); }
                     else if (prop.Type == "vec3" || prop.Type == "vec4") {
                         if (prop.Name.Contains("color", StringComparison.OrdinalIgnoreCase) || prop.Name.Contains("albedo", StringComparison.OrdinalIgnoreCase) || prop.Name.Contains("emiss", StringComparison.OrdinalIgnoreCase)) {
@@ -349,6 +355,7 @@ internal class ObjectBrowser : Viewport {
                     if (val != null && propChanged) {
                         if (t == typeof(string)) mat.Data.Textures[prop.Name] = (string)val!;
                         else if (t == typeof(float)) mat.Data.Floats[prop.Name] = (float)val!;
+                        else if (t == typeof(int)) mat.Data.Ints[prop.Name] = (int)val!;
                         else if (t == typeof(Vector2)) mat.Data.Vectors[prop.Name] = (Vector2)val!;
                         else if (t == typeof(Color)) mat.Data.Colors[prop.Name] = (Color)val!;
                         mat.Save(); mat.ApplyChanges();

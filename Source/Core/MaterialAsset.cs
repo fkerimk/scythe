@@ -9,36 +9,44 @@ internal class MaterialAsset : Asset {
     public uint Version { get; private set; } = 1;
 
     public Material Material;
-    [RecordHistory]
-    public MaterialData Data = new();
+    [RecordHistory] public MaterialData Data = new();
     
     public class MaterialData : ICloneable {
         
         public string Shader = "Pbr";
+        
         public Dictionary<string, string> Textures = new();
+        
         public Dictionary<string, float> Floats = new() {
+            
             ["metallic_value"] = 0.0f,
             ["roughness_value"] = 0.5f,
             ["aoValue"] = 1.0f,
             ["emissive_intensity"] = 1.0f,
             ["normalValue"] = 1.0f
         };
-        public Dictionary<string, int> Ints = new();
+        
+        public Dictionary<string, int> Ints = new() {
+            
+            ["is_directx_normal"] = 0
+        };
+        
         public Dictionary<string, Color> Colors = new() {
+            
             ["albedo_color"] = new Color(255, 255, 255, 255),
             ["emissive_color"] = new Color(0, 0, 0, 255)
         };
+        
         public Dictionary<string, Vector2> Vectors = new() {
+            
             ["tiling"] = Vector2.One,
             ["offset"] = Vector2.Zero
         };
 
         public object Clone() {
-            var clone = (MaterialData)MemberwiseClone();
-            // Reflection-based cloning in History.cs expects types to match exactly for dictionaries
-            // but we can just use the History.CloneValue helper if we make it public or just redo it here.
-            // Actually, we can just do:
+
             return new MaterialData {
+                
                 Shader = Shader,
                 Textures = new Dictionary<string, string>(Textures),
                 Floats = new Dictionary<string, float>(Floats),
@@ -53,26 +61,26 @@ internal class MaterialAsset : Asset {
         
         get {
             
-            if (field == null) {
-                
-                var asset = AssetManager.Get<MaterialAsset>("Materials/Default.material.json");
-                if (asset != null) {
-                    field = asset;
-                    return field;
-                }
-
-                field = new MaterialAsset {
-                    
-                    File = "Default",
-                    Material = LoadMaterialDefault(),
-                    IsLoaded = true,
-                    
-                    Data = new MaterialData()
-                };
-                
-                field.ApplyChanges();
-            }
+            if (field != null) return field;
             
+            var asset = AssetManager.Get<MaterialAsset>("Materials/Default.material.json");
+            
+            if (asset != null) {
+                
+                field = asset;
+                return field;
+            }
+
+            field = new MaterialAsset {
+                    
+                File = "Default",
+                Material = LoadMaterialDefault(),
+                IsLoaded = true,
+                Data = new MaterialData()
+            };
+                
+            field.ApplyChanges();
+
             return field;
         }
     }
@@ -88,7 +96,10 @@ internal class MaterialAsset : Asset {
 
         Material = LoadMaterialDefault();
         IsLoaded = true;
+        
         ApplyChanges();
+        UpdateThumbnail();
+        
         return true;
     }
     
@@ -102,19 +113,29 @@ internal class MaterialAsset : Asset {
         var shaderAsset = AssetManager.Get<ShaderAsset>(Data.Shader);
         if (shaderAsset != null) Material.Shader = shaderAsset.Shader;
 
-        void ApplyMap(string key, MaterialMapIndex index) {
-            var path = Data.Textures.GetValueOrDefault(key, "");
-            var tex = AssetManager.Get<TextureAsset>(path);
-            fixed (Material* p = &Material) 
-                SetMaterialTexture(p, index, tex?.Texture ?? new Texture2D());
-        }
-
         ApplyMap("albedo_map", MaterialMapIndex.Albedo);
         ApplyMap("normal_map", MaterialMapIndex.Normal);
         ApplyMap("metallic_map", MaterialMapIndex.Metalness);
         ApplyMap("roughness_map", MaterialMapIndex.Roughness);
         ApplyMap("occlusion_map", MaterialMapIndex.Occlusion);
         ApplyMap("emissive_map", MaterialMapIndex.Emission);
+
+        UpdateThumbnail();
+        return;
+
+        void ApplyMap(string key, MaterialMapIndex index) {
+            
+            var path = Data.Textures.GetValueOrDefault(key, "");
+            var tex = AssetManager.Get<TextureAsset>(path);
+            
+            fixed (Material* p = &Material) {
+                
+                SetMaterialTexture(p, index, tex?.Texture ?? new Texture2D());
+                
+                if (index == MaterialMapIndex.Albedo)
+                    p->Maps[(int)MaterialMapIndex.Albedo].Color = Data.Colors.GetValueOrDefault("albedo_color", Color.White);
+            }
+        }
     }
 
     public void ApplyUniforms(Shader shader) {
@@ -122,12 +143,22 @@ internal class MaterialAsset : Asset {
         var shaderAsset = AssetManager.Get<ShaderAsset>(Data.Shader);
         if (shaderAsset == null) return;
 
+        SetFlag("use_tex_albedo", "albedo_map");
+        SetFlag("use_tex_normal", "normal_map");
+        SetFlag("use_tex_metallic", "metallic_map");
+        SetFlag("use_tex_roughness", "roughness_map");
+        SetFlag("use_tex_occlusion", "occlusion_map");
+        SetFlag("use_tex_emissive", "emissive_map");
+
         foreach (var prop in shaderAsset.Properties) {
             
             var loc = shaderAsset.GetLoc(prop.Name);
             if (loc == -1) continue;
 
-                switch (prop.Type) {
+            // Skip usage flags as we handled them above
+            if (prop.Name.StartsWith("use_tex_")) continue;
+
+            switch (prop.Type) {
                     
                 case "float": {
                     
@@ -168,19 +199,90 @@ internal class MaterialAsset : Asset {
                 }
             }
         }
+
+        return;
+
+        // Set texture usage flags
+        void SetFlag(string name, string texKey) {
+            
+            var loc = shaderAsset.GetLoc(name);
+            if (loc != -1) SetShaderValue(shader, loc, Data.Textures.ContainsKey(texKey) && !string.IsNullOrEmpty(Data.Textures[texKey]) ? 1 : 0, ShaderUniformDataType.Int);
+        }
     }
 
     public override unsafe void Unload() {
         
+        // Reset shared shader/textures before unloading to prevent double-free/crash.
         Material.Shader = new Shader();
-
         if (Material.Maps != null)
             for (var i = 0; i < 12; i++)
                 Material.Maps[i].Texture = new Texture2D();
         
         UnloadMaterial(Material);
         
+        if (Thumbnail.HasValue)
+            UnloadTexture(Thumbnail.Value);
+        
         IsLoaded = false;
+    }
+
+    private static Mesh? _previewSphere;
+
+    private unsafe void UpdateThumbnail() {
+        
+        if (!IsLoaded) return;
+        
+        const int size = 64;
+        var rt = LoadRenderTexture(size, size);
+        
+        BeginTextureMode(rt);
+        ClearBackground(new Color(30, 30, 30, 255));
+        
+        var camera = new Raylib_cs.Camera3D {
+            
+            Position = new Vector3(0, 0, 2.8f),
+            Target = Vector3.Zero,
+            Up = Vector3.UnitY,
+            FovY = 45.0f,
+            Projection = CameraProjection.Perspective
+        };
+        
+        BeginMode3D(camera);
+        
+        var shader = Material.Shader;
+        var shaderAsset = AssetManager.Get<ShaderAsset>(Data.Shader);
+        
+        if (shaderAsset != null) {
+            
+            SetShaderValue(shader, shaderAsset.GetLoc("view_pos"), camera.Position, ShaderUniformDataType.Vec3);
+            SetShaderValue(shader, shaderAsset.GetLoc("light_count"), 1, ShaderUniformDataType.Int);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[0].enabled"), 1, ShaderUniformDataType.Int);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[0].type"), 0, ShaderUniformDataType.Int);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[0].position"), new Vector3(1, 1, 1), ShaderUniformDataType.Vec3);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[0].target"), Vector3.Zero, ShaderUniformDataType.Vec3);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[0].color"), Vector3.One, ShaderUniformDataType.Vec3);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[0].intensity"), 2.0f, ShaderUniformDataType.Float);
+            
+            SetShaderValue(shader, shaderAsset.GetLoc("ambient_intensity"), 0.5f, ShaderUniformDataType.Float);
+            SetShaderValue(shader, shaderAsset.GetLoc("ambient_color"), Vector3.One, ShaderUniformDataType.Vec3);
+        }
+
+        ApplyUniforms(shader);
+        
+        _previewSphere ??= GenMeshSphere(1.0f, 32, 32);
+        DrawMesh(_previewSphere.Value, Material, Matrix4x4.Identity);
+        
+        EndMode3D();
+        EndTextureMode();
+        
+        var img = LoadImageFromTexture(rt.Texture);
+        ImageFlipVertical(&img);
+        
+        if (Thumbnail.HasValue) UnloadTexture(Thumbnail.Value);
+        Thumbnail = LoadTextureFromImage(img);
+        
+        UnloadImage(img);
+        UnloadRenderTexture(rt);
     }
     
     public void Save() {

@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using ImGuiNET;
 using Newtonsoft.Json;
+using Raylib_cs;
 using static ImGuiNET.ImGui;
 
 internal class ProjectBrowser : Viewport {
@@ -451,11 +452,19 @@ internal class ProjectBrowser : Viewport {
         
         // Thumbnail or Icon
         var textureAsset = AssetManager.Get<TextureAsset>(path);
-        var texId = (textureAsset != null && textureAsset.Thumbnail.HasValue) ? (IntPtr)textureAsset.Thumbnail.Value.Id : IntPtr.Zero;
+        var matAsset = AssetManager.Get<MaterialAsset>(path);
+        
+        var texId = IntPtr.Zero;
+        Texture2D? thumbTex = null;
+
+        if (textureAsset != null && textureAsset.Thumbnail.HasValue) thumbTex = textureAsset.Thumbnail.Value;
+        else if (matAsset != null && matAsset.Thumbnail.HasValue) thumbTex = matAsset.Thumbnail.Value;
+
+        if (thumbTex.HasValue) texId = (IntPtr)thumbTex.Value.Id;
         
         if (texId != IntPtr.Zero) {
             
-             var tex = textureAsset!.Thumbnail!.Value;
+             var tex = thumbTex!.Value;
              float w = tex.Width;
              float h = tex.Height;
              

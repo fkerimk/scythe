@@ -34,11 +34,17 @@ internal class ShaderAsset : Asset {
             var locAlbedo = GetShaderLocation(Shader, "albedo_map");
             if (locAlbedo != -1) Shader.Locs[(int)ShaderLocationIndex.MapAlbedo] = locAlbedo;
             
-            var locMra = GetShaderLocation(Shader, "mra_map");
-            if (locMra != -1) Shader.Locs[(int)ShaderLocationIndex.MapMetalness] = locMra;
-            
             var locNormal = GetShaderLocation(Shader, "normal_map");
             if (locNormal != -1) Shader.Locs[(int)ShaderLocationIndex.MapNormal] = locNormal;
+
+            var locMetallic = GetShaderLocation(Shader, "metallic_map");
+            if (locMetallic != -1) Shader.Locs[(int)ShaderLocationIndex.MapMetalness] = locMetallic;
+
+            var locRoughness = GetShaderLocation(Shader, "roughness_map");
+            if (locRoughness != -1) Shader.Locs[(int)ShaderLocationIndex.MapRoughness] = locRoughness;
+
+            var locOcclusion = GetShaderLocation(Shader, "occlusion_map");
+            if (locOcclusion != -1) Shader.Locs[(int)ShaderLocationIndex.MapOcclusion] = locOcclusion;
             
             var locEmission = GetShaderLocation(Shader, "emissive_map");
             if (locEmission != -1) Shader.Locs[(int)ShaderLocationIndex.MapEmission] = locEmission;
@@ -50,9 +56,9 @@ internal class ShaderAsset : Asset {
             Shader.Locs[(int)ShaderLocationIndex.VertexTangent] = GetShaderLocation(Shader, "vertex_tangent");
             Shader.Locs[(int)ShaderLocationIndex.VertexColor] = GetShaderLocation(Shader, "vertex_color");
 
-            // Standard Uniforms mapping
-            var locColor = GetShaderLocation(Shader, "albedo_color");
-            if (locColor != -1) Shader.Locs[(int)ShaderLocationIndex.ColorDiffuse] = locColor;
+            // Standard Uniforms mapping (we handle albedo_color manually in Model.Draw to allow per-instance tinting)
+            // var locColor = GetShaderLocation(Shader, "albedo_color");
+            // if (locColor != -1) Shader.Locs[(int)ShaderLocationIndex.ColorDiffuse] = locColor;
             
             var locView = GetShaderLocation(Shader, "view_pos");
             if (locView != -1) Shader.Locs[(int)ShaderLocationIndex.VectorView] = locView;
