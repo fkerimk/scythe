@@ -90,10 +90,22 @@ For more detailed configuration, you can refer to the [configuring](./CONFIGURIN
 
 ## 🙏 Attributions
 
+#### Fonts
+
 [Font Awesome](http://fontawesome.io) by Dave Gandy.
+<br/>
+[Montserrat](https://fonts.google.com/specimen/Montserrat/license) by Julieta Ulanovsky, Sol Matas, Juan Pablo del Peral, Jacques Le Bailly.
+<br/>
+[Cascadia Code](https://fonts.google.com/specimen/Cascadia+Code/license) by Aaron Bell, Mohamad Dakak, Viktoriya Grabowska, Liron Lavi Turkenich.
+
+#### Samples
+
+[Wooden Alphabet Blocks](https://skfb.ly/oRnRU) by Cherryvania, licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
+<br/>
+[The Green Wizard Gnome N64 Style](https://skfb.ly/oXSLR) by Drillimpact, licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
+<br/>
+[Animated FPS Pistol](https://skfb.ly/psqCp) by Levraicoincoin, DJMaesen, licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
+
+#### Early Samples
 
 [Bear Man PSX](https://skfb.ly/p9SUZ) by Bonvikt, licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
-
-[The Green Wizard Gnome N64 Style](https://skfb.ly/oXSLR) by Drillimpact, licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
-
-[Wooden Alphabet Blocks](https://skfb.ly/oRnRU) by Cherryvania, licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/)
