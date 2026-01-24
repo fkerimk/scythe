@@ -458,7 +458,10 @@ internal class ProjectBrowser : Viewport {
         Texture2D? thumbTex = null;
 
         if (textureAsset != null && textureAsset.Thumbnail.HasValue) thumbTex = textureAsset.Thumbnail.Value;
-        else if (matAsset != null && matAsset.Thumbnail.HasValue) thumbTex = matAsset.Thumbnail.Value;
+        else if (matAsset != null) {
+            if (!matAsset.Thumbnail.HasValue) matAsset.UpdateThumbnail();
+            thumbTex = matAsset.Thumbnail;
+        }
 
         if (thumbTex.HasValue) texId = (IntPtr)thumbTex.Value.Id;
         

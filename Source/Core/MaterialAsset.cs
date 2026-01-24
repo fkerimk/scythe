@@ -103,14 +103,16 @@ internal class MaterialAsset : Asset {
         return true;
     }
     
-    public unsafe void ApplyChanges() {
+    private bool _isUpdatingThumbnail = false;
+    public unsafe void ApplyChanges(bool updateThumbnail = true) {
         
         if (!IsLoaded) return;
         
         GlobalVersion++;
         Version++;
 
-        var shaderAsset = AssetManager.Get<ShaderAsset>(Data.Shader);
+        var shaderName = string.IsNullOrEmpty(Data.Shader) ? "pbr" : Data.Shader;
+        var shaderAsset = AssetManager.Get<ShaderAsset>(shaderName);
         if (shaderAsset != null) Material.Shader = shaderAsset.Shader;
 
         ApplyMap("albedo_map", MaterialMapIndex.Albedo);
@@ -120,7 +122,7 @@ internal class MaterialAsset : Asset {
         ApplyMap("occlusion_map", MaterialMapIndex.Occlusion);
         ApplyMap("emissive_map", MaterialMapIndex.Emission);
 
-        UpdateThumbnail();
+        if (updateThumbnail && !_isUpdatingThumbnail) UpdateThumbnail();
         return;
 
         void ApplyMap(string key, MaterialMapIndex index) {
@@ -140,7 +142,8 @@ internal class MaterialAsset : Asset {
 
     public void ApplyUniforms(Shader shader) {
         
-        var shaderAsset = AssetManager.Get<ShaderAsset>(Data.Shader);
+        var shaderName = string.IsNullOrEmpty(Data.Shader) ? "pbr" : Data.Shader;
+        var shaderAsset = AssetManager.Get<ShaderAsset>(shaderName);
         if (shaderAsset == null) return;
 
         SetFlag("use_tex_albedo", "albedo_map");
@@ -228,63 +231,109 @@ internal class MaterialAsset : Asset {
 
     private static Mesh? _previewSphere;
 
-    private unsafe void UpdateThumbnail() {
+    internal unsafe void UpdateThumbnail() {
         
-        if (!IsLoaded) return;
-        
-        const int size = 64;
-        var rt = LoadRenderTexture(size, size);
-        
-        BeginTextureMode(rt);
-        ClearBackground(new Color(30, 30, 30, 255));
-        
-        var camera = new Raylib_cs.Camera3D {
+        if (!IsLoaded || _isUpdatingThumbnail) return;
+        _isUpdatingThumbnail = true;
+
+        try {
+            // Check if textures are loaded
+            var allTexturesReady = true;
             
-            Position = new Vector3(0, 0, 2.8f),
-            Target = Vector3.Zero,
-            Up = Vector3.UnitY,
-            FovY = 45.0f,
-            Projection = CameraProjection.Perspective
-        };
-        
-        BeginMode3D(camera);
-        
-        var shader = Material.Shader;
-        var shaderAsset = AssetManager.Get<ShaderAsset>(Data.Shader);
-        
-        if (shaderAsset != null) {
+            foreach (var path in Data.Textures.Values) {
+                
+                if (string.IsNullOrEmpty(path)) continue;
+                
+                var texRes = AssetManager.Get<TextureAsset>(path);
+                if (texRes is { IsLoaded: true }) continue;
+                
+                allTexturesReady = false;
+                break;
+            }
+
+            if (!allTexturesReady) return;
+
+            // Re-apply maps right before generating thumbnail to ensure textures that loaded LATER than the material are correctly bound.
+            ApplyChanges(updateThumbnail: false);
+            
+            const int size = 64;
+            var rt = LoadRenderTexture(size, size);
+            
+            BeginTextureMode(rt);
+            ClearBackground(Color.Blank);
+            BeginBlendMode(BlendMode.Alpha);
+            
+            var camera = new Raylib_cs.Camera3D {
+                
+                Position = new Vector3(0, 0, 2.8f),
+                Target = Vector3.Zero,
+                Up = Vector3.UnitY,
+                FovY = 45.0f,
+                Projection = CameraProjection.Perspective
+            };
+            
+            BeginMode3D(camera);
+            
+            var shaderPath = string.IsNullOrEmpty(Data.Shader) ? "pbr" : Data.Shader;
+            var shaderAsset = AssetManager.Get<ShaderAsset>(shaderPath) ?? AssetManager.Get<ShaderAsset>("pbr");
+            
+            if (shaderAsset is not { IsLoaded: true }) {
+                
+                EndMode3D();
+                EndBlendMode();
+                EndTextureMode();
+                UnloadRenderTexture(rt);
+                return;
+            }
+
+            var shader = shaderAsset.Shader;
             
             SetShaderValue(shader, shaderAsset.GetLoc("view_pos"), camera.Position, ShaderUniformDataType.Vec3);
-            SetShaderValue(shader, shaderAsset.GetLoc("light_count"), 1, ShaderUniformDataType.Int);
+            SetShaderValue(shader, shaderAsset.GetLoc("light_count"), 2, ShaderUniformDataType.Int);
+            
+            // Light 1: Key light
             SetShaderValue(shader, shaderAsset.GetLoc("lights[0].enabled"), 1, ShaderUniformDataType.Int);
             SetShaderValue(shader, shaderAsset.GetLoc("lights[0].type"), 0, ShaderUniformDataType.Int);
-            SetShaderValue(shader, shaderAsset.GetLoc("lights[0].position"), new Vector3(1, 1, 1), ShaderUniformDataType.Vec3);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[0].position"), new Vector3(2, 2, 2), ShaderUniformDataType.Vec3);
             SetShaderValue(shader, shaderAsset.GetLoc("lights[0].target"), Vector3.Zero, ShaderUniformDataType.Vec3);
-            SetShaderValue(shader, shaderAsset.GetLoc("lights[0].color"), Vector3.One, ShaderUniformDataType.Vec3);
-            SetShaderValue(shader, shaderAsset.GetLoc("lights[0].intensity"), 2.0f, ShaderUniformDataType.Float);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[0].color"), Vector4.One, ShaderUniformDataType.Vec4);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[0].intensity"), 4.0f, ShaderUniformDataType.Float);
             
-            SetShaderValue(shader, shaderAsset.GetLoc("ambient_intensity"), 0.5f, ShaderUniformDataType.Float);
+            // Light 2: Fill light
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[1].enabled"), 1, ShaderUniformDataType.Int);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[1].type"), 0, ShaderUniformDataType.Int);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[1].position"), new Vector3(-2, 0.5f, 1), ShaderUniformDataType.Vec3);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[1].target"), Vector3.Zero, ShaderUniformDataType.Vec3);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[1].color"), new Vector4(0.8f, 0.9f, 1.0f, 1.0f), ShaderUniformDataType.Vec4);
+            SetShaderValue(shader, shaderAsset.GetLoc("lights[1].intensity"), 1.5f, ShaderUniformDataType.Float);
+            
+            ApplyUniforms(shader);
+            
+            // Override with neutral preview settings as requested
+            SetShaderValue(shader, shaderAsset.GetLoc("ambient_intensity"), 1.0f, ShaderUniformDataType.Float);
             SetShaderValue(shader, shaderAsset.GetLoc("ambient_color"), Vector3.One, ShaderUniformDataType.Vec3);
+            SetShaderValue(shader, shaderAsset.GetLoc("aoValue"), 1.0f, ShaderUniformDataType.Float);
+            
+            _previewSphere ??= GenMeshSphere(1.0f, 32, 32);
+            DrawMesh(_previewSphere.Value, Material, Matrix4x4.Identity);
+            
+            EndMode3D();
+            EndBlendMode();
+            EndTextureMode();
+            
+            var img = LoadImageFromTexture(rt.Texture);
+            ImageFlipVertical(&img);
+            
+            if (Thumbnail.HasValue) UnloadTexture(Thumbnail.Value);
+            Thumbnail = LoadTextureFromImage(img);
+            
+            UnloadImage(img);
+            UnloadRenderTexture(rt);
         }
-
-        ApplyUniforms(shader);
         
-        _previewSphere ??= GenMeshSphere(1.0f, 32, 32);
-        DrawMesh(_previewSphere.Value, Material, Matrix4x4.Identity);
-        
-        EndMode3D();
-        EndTextureMode();
-        
-        var img = LoadImageFromTexture(rt.Texture);
-        ImageFlipVertical(&img);
-        
-        if (Thumbnail.HasValue) UnloadTexture(Thumbnail.Value);
-        Thumbnail = LoadTextureFromImage(img);
-        
-        UnloadImage(img);
-        UnloadRenderTexture(rt);
+        finally { _isUpdatingThumbnail = false; }
     }
-    
+
     public void Save() {
         
         var json = JsonConvert.SerializeObject(Data, Formatting.Indented);
