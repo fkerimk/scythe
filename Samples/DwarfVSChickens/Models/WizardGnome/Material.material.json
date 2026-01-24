@@ -1,0 +1,17 @@
+{
+  "Shader": "Pbr",
+  "Textures": {
+    "albedo_map": "D:\\Projects\\scythe\\Samples\\DwarfVSChickens\\Models\\WizardGnome\\WizardGnome.png",
+    "normal_map": "D:\\Projects\\scythe\\Resources\\Models\\NormalMap.png"
+  },
+  "Floats": {
+    "ambient_intensity": 225.0,
+    "aoValue": 1.0,
+    "normalValue": 1.0,
+    "metallic_value": 0.0,
+    "roughness_value": 0.0
+  },
+  "Ints": {},
+  "Colors": {},
+  "Vectors": {}
+}

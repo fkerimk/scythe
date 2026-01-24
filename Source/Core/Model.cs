@@ -40,12 +40,16 @@ internal class Model(Obj obj) : Component(obj) {
 
     public void DrawShadow() { if (CastShadows) Draw(); }
 
-    public void Draw() {
+    public void Draw(float? overrideAlphaCutoff = null) {
         
         if (AssetRef is not { IsLoaded: true }) return;
         
         // 1. Optimize: Global material update check (only if anything changed)
         AssetRef.UpdateMaterialsIfDirty();
+
+        MaterialAsset? lastMatAsset = null;
+        uint lastShaderId = 0;
+        uint lastMatVersion = 0;
 
         foreach (var mesh in Meshes) {
             
@@ -53,8 +57,20 @@ internal class Model(Obj obj) : Component(obj) {
                 ? AssetRef.Materials[mesh.MaterialIndex] 
                 : MaterialAsset.Default.Material;
 
+            var matAsset = (mesh.MaterialIndex >= 0 && mesh.MaterialIndex < AssetRef.CachedMaterialAssets.Count)
+                ? (AssetRef.CachedMaterialAssets[mesh.MaterialIndex] ?? MaterialAsset.Default)
+                : MaterialAsset.Default;
+
             // 2. Resolve Material Asset parameters (only for shared shader values)
             var shader = material.Shader;
+
+            if (matAsset != lastMatAsset || shader.Id != lastShaderId || matAsset.Version != lastMatVersion) {
+                
+                matAsset.ApplyUniforms(shader);
+                lastMatAsset = matAsset;
+                lastShaderId = shader.Id;
+                lastMatVersion = matAsset.Version;
+            }
 
             // 3. Batch apply uniforms (Only if they exist in shader)
             var loc = GetShaderLocation(shader, "albedo_color");
@@ -64,8 +80,15 @@ internal class Model(Obj obj) : Component(obj) {
             if (loc != -1) SetShaderValue(shader, loc, ReceiveShadows ? 1 : 0, ShaderUniformDataType.Int);
 
             loc = GetShaderLocation(shader, "alpha_cutoff");
-            if (loc != -1) SetShaderValue(shader, loc, AlphaCutoff, ShaderUniformDataType.Float);
+            if (loc != -1) SetShaderValue(shader, loc, overrideAlphaCutoff ?? AlphaCutoff, ShaderUniformDataType.Float);
 
+            // Global Ambient (Live Update)
+            var locAmbInt = GetShaderLocation(shader, "ambient_intensity");
+            if (locAmbInt != -1) SetShaderValue(shader, locAmbInt, Core.RenderSettings.AmbientIntensity, ShaderUniformDataType.Float);
+
+            var locAmbCol = GetShaderLocation(shader, "ambient_color");
+            if (locAmbCol != -1) SetShaderValue(shader, locAmbCol,Core.RenderSettings.AmbientColor.ToVector4(), ShaderUniformDataType.Vec3);
+            
             // 4. Draw
             DrawMesh(mesh.RlMesh, material, Obj.VisualWorldMatrix);
         }

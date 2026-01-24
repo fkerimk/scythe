@@ -10,7 +10,7 @@ internal static class Core {
     public static Camera3D? ActiveCamera;
     public static bool ShouldFocusActiveLevel;
 
-    public static readonly RenderSettings RenderSettings = new(false);
+    public static readonly RenderSettings RenderSettings = new();
 
     private static readonly List<Light> Lights = [];
     private static readonly List<TransparentDrawCall> TransparentRenderQueue = [];
@@ -332,14 +332,8 @@ internal static class Core {
                 Rlgl.DisableDepthMask();
                 BeginBlendMode(BlendMode.Alpha);
                 
-                foreach (var call in TransparentRenderQueue) {
-                    
-                    var pbr = AssetManager.Get<ShaderAsset>("pbr");
-                    if (pbr != null)
-                        SetShaderValue(pbr.Shader, pbr.GetLoc("alpha_cutoff"), 0.0f, ShaderUniformDataType.Float);
-                        
-                    call.Model.Draw();
-                }
+                foreach (var call in TransparentRenderQueue)
+                    call.Model.Draw(0.0f);
                 
                 EndBlendMode();
                 Rlgl.EnableDepthMask();

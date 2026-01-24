@@ -6,6 +6,7 @@ using static Raylib_cs.Raylib;
 internal class MaterialAsset : Asset {
     
     public static uint GlobalVersion { get; private set; } = 1;
+    public uint Version { get; private set; } = 1;
 
     public Material Material;
     public MaterialData Data = new();
@@ -27,6 +28,7 @@ internal class MaterialAsset : Asset {
             field ??= new MaterialAsset {
                 
                 IsLoaded = true,
+                Data = new MaterialData(),
                 Material = LoadMaterialDefault(),
                 File = "Default"
             };
@@ -36,7 +38,9 @@ internal class MaterialAsset : Asset {
     }
 
     public override bool Load() {
+        
         if (!System.IO.File.Exists(File)) return false;
+        
         try {
             var json = System.IO.File.ReadAllText(File);
             Data = JsonConvert.DeserializeObject<MaterialData>(json) ?? new MaterialData();
@@ -53,6 +57,7 @@ internal class MaterialAsset : Asset {
         if (!IsLoaded) return;
         
         GlobalVersion++;
+        Version++;
 
         var shaderAsset = AssetManager.Get<ShaderAsset>(Data.Shader);
         if (shaderAsset != null) Material.Shader = shaderAsset.Shader;
@@ -66,31 +71,57 @@ internal class MaterialAsset : Asset {
             if (texAsset is { IsLoaded: true })
                 fixed (Material* matPtr = &Material) SetMaterialTexture(matPtr, index, texAsset.Texture);
         }
+    }
 
+    public void ApplyUniforms(Shader shader) {
+        
+        var shaderAsset = AssetManager.Get<ShaderAsset>(Data.Shader);
         if (shaderAsset == null) return;
-        
-        foreach (var kv in Data.Colors) {
+
+        foreach (var prop in shaderAsset.Properties) {
             
-            var loc = shaderAsset.GetLoc(kv.Key);
-            if (loc != -1) SetShaderValue(shaderAsset.Shader, loc, ColorNormalize(kv.Value), ShaderUniformDataType.Vec4);
-        }
-        
-        foreach (var kv in Data.Vectors) {
-            
-            var loc = shaderAsset.GetLoc(kv.Key);
-            if (loc != -1) SetShaderValue(shaderAsset.Shader, loc, kv.Value, ShaderUniformDataType.Vec2);
-        }
-        
-        foreach (var kv in Data.Floats) {
-            
-            var loc = shaderAsset.GetLoc(kv.Key);
-            if (loc != -1) SetShaderValue(shaderAsset.Shader, loc, kv.Value, ShaderUniformDataType.Float);
-        }
-        
-        foreach (var kv in Data.Ints) {
-            
-            var loc = shaderAsset.GetLoc(kv.Key);
-            if (loc != -1) SetShaderValue(shaderAsset.Shader, loc, kv.Value, ShaderUniformDataType.Int);
+            var loc = shaderAsset.GetLoc(prop.Name);
+            if (loc == -1) continue;
+
+                switch (prop.Type) {
+                    
+                case "float": {
+                    
+                    var val = Data.Floats.GetValueOrDefault(prop.Name, prop.Name.Contains("roughness") ? 0.5f : 0f);
+                    SetShaderValue(shader, loc, val, ShaderUniformDataType.Float);
+                    break;
+                }
+                
+                case "int": {
+                    
+                    var val = Data.Ints.GetValueOrDefault(prop.Name, 0);
+                    SetShaderValue(shader, loc, val, ShaderUniformDataType.Int);
+                    break;
+                }
+                
+                case "vec2": {
+                    
+                    var val = Data.Vectors.GetValueOrDefault(prop.Name, prop.Name == "tiling" ? Vector2.One : Vector2.Zero);
+                    SetShaderValue(shader, loc, val, ShaderUniformDataType.Vec2);
+                    break;
+                }
+                
+                case "vec3": {
+                    
+                    // Note: We don't have a Vec3 dictionary, but we can use Colors or just default to zero
+                    var val = Vector3.Zero;
+                    if (Data.Colors.TryGetValue(prop.Name, out var col)) val = new Vector3(col.R / 255f, col.G / 255f, col.B / 255f);
+                    SetShaderValue(shader, loc, val, ShaderUniformDataType.Vec3);
+                    break;
+                }
+                
+                case "vec4": {
+                    
+                    var val = Data.Colors.TryGetValue(prop.Name, out var col) ? ColorNormalize(col) : Vector4.One;
+                    SetShaderValue(shader, loc, val, ShaderUniformDataType.Vec4);
+                    break;
+                }
+            }
         }
     }
 

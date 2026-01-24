@@ -202,6 +202,13 @@ internal static class AssetManager {
         return null;
     }
 
+    public static List<T> GetAssets<T>() where T : Asset {
+        
+        return TypeCache.TryGetValue(typeof(T), out var list)
+            ? list.Cast<T>().ToList()
+            : [];
+    }
+
     public static List<(string Name, string Path)> GetNames<T>() where T : Asset {
         
         return TypeCache.TryGetValue(typeof(T), out var list)

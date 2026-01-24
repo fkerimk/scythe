@@ -78,7 +78,7 @@ internal class Script(Obj obj) : Component(obj) {
                 ["self"] = generateDefinitions ? new Obj(null!, null) : obj,
                 ["level"] = generateDefinitions ? new Level(null!) : Core.ActiveLevel,
                 ["cam"] = generateDefinitions ? new Camera(null!) { Cam = new Camera3D() } : Core.ActiveLevel?.Root.FindComponent("Camera", "Camera"),
-                ["renderSettings"] = generateDefinitions ? new RenderSettings(true) : Core.RenderSettings,
+                ["renderSettings"] = generateDefinitions ? new RenderSettings() : Core.RenderSettings,
                 ["f2"] = LuaF2,
                 ["f3"] = LuaF3,
                 ["mt"] = LuaMt,
