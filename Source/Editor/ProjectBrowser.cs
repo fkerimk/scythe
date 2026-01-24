@@ -423,9 +423,7 @@ internal class ProjectBrowser : Viewport {
         var itemClicked = false;
         doubleClicked = false;
 
-        var name = Path.GetFileName(path);
-        
-        string displayName = GetNameWithoutExtension(path);
+        var displayName = GetNameWithoutExtension(path);
 
         if (displayName.Length > 24) displayName = displayName[..24] + "...";
 
@@ -581,13 +579,12 @@ internal class ProjectBrowser : Viewport {
         EndGroup();
         
         var groupHeight = GetItemRectSize().Y;
-        var boxMin = cellStartScreen; 
         var boxMax = new Vector2(cellStartScreen.X + ThumbnailSize + 2 * padding, cellStartScreen.Y + groupHeight + 2 * padding);
-        var itemRect = new Rect(boxMin.X, boxMin.Y, boxMax.X - boxMin.X, boxMax.Y - boxMin.Y);
+        var itemRect = new Rect(cellStartScreen.X, cellStartScreen.Y, boxMax.X - cellStartScreen.X, boxMax.Y - cellStartScreen.Y);
 
         // Interaction
-        SetCursorScreenPos(boxMin);
-        InvisibleButton("btn", boxMax - boxMin);
+        SetCursorScreenPos(cellStartScreen);
+        InvisibleButton("btn", boxMax - cellStartScreen);
         
         var hovered = IsItemHovered();
         var isSelected = _selectedPaths.Contains(path);
@@ -713,9 +710,9 @@ internal class ProjectBrowser : Viewport {
         drawList.ChannelsSetCurrent(0);
         
         if (isSelected)
-            drawList.AddRectFilled(boxMin, boxMax, GetColorU32(ImGuiCol.ButtonActive), 4f);
+            drawList.AddRectFilled(cellStartScreen, boxMax, GetColorU32(ImGuiCol.ButtonActive), 4f);
         else if (hovered)
-            drawList.AddRectFilled(boxMin, boxMax, GetColorU32(ImGuiCol.HeaderHovered), 4f);
+            drawList.AddRectFilled(cellStartScreen, boxMax, GetColorU32(ImGuiCol.HeaderHovered), 4f);
 
         drawList.ChannelsMerge();
 
@@ -835,9 +832,12 @@ internal class ProjectBrowser : Viewport {
                 SafeExec.Try(() => {
                     
                     if (b.IsDir) {
+                        
                         if (Directory.Exists(b.Backup) && !Directory.Exists(b.Original))
                             CopyDirectory(b.Backup, b.Original);
+                        
                     } else {
+                        
                         if (File.Exists(b.Backup) && !File.Exists(b.Original))
                             File.Copy(b.Backup, b.Original);
                     }
@@ -1021,14 +1021,16 @@ internal class ProjectBrowser : Viewport {
     private static bool IsScript(string path) => path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase);
     private static bool IsModel(string path) {
         var ext = Path.GetExtension(path).ToLowerInvariant();
-        return ext == ".fbx" || ext == ".obj" || ext == ".gltf" || ext == ".iqm";
+        return ext is ".fbx" or ".obj" or ".gltf" or ".iqm";
     }
 
     private static string GetNameWithoutExtension(string path) {
+        
         var name = Path.GetFileName(path);
+        
         if (IsLevel(path)) return name[..^11];
         if (IsMaterial(path)) return name[..^14];
-        if (IsModel(path)) return Path.GetFileNameWithoutExtension(name);
+
         return Path.GetFileNameWithoutExtension(name);
     }
 }
