@@ -38,10 +38,10 @@ internal class Animation(Obj obj) : Component(obj) {
 
     public override bool Load() {
         
-        _asset = AssetManager.Get<AnimationAsset>(Path)!;
+        var loaded = AssetManager.Get<AnimationAsset>(Path);
+        if (loaded is not { IsLoaded: true }) return false;
         
-        if (!_asset.IsLoaded) return false;
-        
+        _asset = loaded;
         Track = (int)Raymath.Clamp(Track, 0, _asset.Animations.Count - 1);
         
         return true;
@@ -49,7 +49,7 @@ internal class Animation(Obj obj) : Component(obj) {
 
     public override void Logic() {
         
-        if (!_asset.IsLoaded || _asset.Animations.Count == 0) return;
+        if (_asset is not { IsLoaded: true } || _asset.Animations.Count == 0) return;
         if (!IsPlaying || !Obj.Components.TryGetValue("Model", out var component) || component is not Model { IsLoaded: true } model) return;
         
         var modelAsset = model.AssetRef;
