@@ -291,7 +291,7 @@ internal static class AssimpLoader {
         return clip;
     }
 
-    public static void UpdateAnimation(ModelNode node, AnimationClip clip, double time, Matrix4x4 parentTransform, Matrix4x4 globalInverse, List<BoneInfo> bones, Dictionary<string, AnimationChannel> channelMap) {
+    public static void UpdateAnimation(ModelNode node, AnimationClip clip, double time, in Matrix4x4 parentTransform, in Matrix4x4 globalInverse, List<BoneInfo> bones, Dictionary<string, AnimationChannel> channelMap) {
         
         var nodeTransform = node.Transformation;
         
@@ -394,7 +394,7 @@ internal static class AssimpLoader {
 
     public static unsafe void SkinMesh(AssimpMesh mesh, List<BoneInfo> bones) {
         
-        for (var i = 0; i < mesh.Vertices.Length; i++) {
+        Parallel.For(0, mesh.Vertices.Length, i => {
             
             var bd = mesh.BoneData[i];
             var v = mesh.Vertices[i];
@@ -404,28 +404,32 @@ internal static class AssimpLoader {
             var finalN = Vector3.Zero;
 
             if (bd.Weight0 > 0) {
-                finalV += Vector3.Transform(v, bones[bd.Bone0].FinalTransformation) * bd.Weight0;
-                finalN += Vector3.TransformNormal(n, bones[bd.Bone0].FinalTransformation) * bd.Weight0;
+                var m = bones[bd.Bone0].FinalTransformation;
+                finalV += Vector3.Transform(v, m) * bd.Weight0;
+                finalN += Vector3.TransformNormal(n, m) * bd.Weight0;
             }
             
             if (bd.Weight1 > 0) {
-                finalV += Vector3.Transform(v, bones[bd.Bone1].FinalTransformation) * bd.Weight1;
-                finalN += Vector3.TransformNormal(n, bones[bd.Bone1].FinalTransformation) * bd.Weight1;
+                var m = bones[bd.Bone1].FinalTransformation;
+                finalV += Vector3.Transform(v, m) * bd.Weight1;
+                finalN += Vector3.TransformNormal(n, m) * bd.Weight1;
             }
             
             if (bd.Weight2 > 0) {
-                finalV += Vector3.Transform(v, bones[bd.Bone2].FinalTransformation) * bd.Weight2;
-                finalN += Vector3.TransformNormal(n, bones[bd.Bone2].FinalTransformation) * bd.Weight2;
+                var m = bones[bd.Bone2].FinalTransformation;
+                finalV += Vector3.Transform(v, m) * bd.Weight2;
+                finalN += Vector3.TransformNormal(n, m) * bd.Weight2;
             }
             
             if (bd.Weight3 > 0) {
-                finalV += Vector3.Transform(v, bones[bd.Bone3].FinalTransformation) * bd.Weight3;
-                finalN += Vector3.TransformNormal(n, bones[bd.Bone3].FinalTransformation) * bd.Weight3;
+                var m = bones[bd.Bone3].FinalTransformation;
+                finalV += Vector3.Transform(v, m) * bd.Weight3;
+                finalN += Vector3.TransformNormal(n, m) * bd.Weight3;
             }
 
             mesh.AnimatedVertices[i] = finalV;
             mesh.AnimatedNormals[i] = Vector3.Normalize(finalN);
-        }
+        });
 
         fixed (Vector3* v = mesh.AnimatedVertices)
             Buffer.MemoryCopy(v, mesh.RlMesh.Vertices, (long)mesh.AnimatedVertices.Length * 3 * sizeof(float), (long)mesh.AnimatedVertices.Length * 3 * sizeof(float));
