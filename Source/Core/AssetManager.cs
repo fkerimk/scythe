@@ -43,7 +43,12 @@ internal static class AssetManager {
         foreach (var file in files) ImportFile(Path.GetFullPath(file));
     }
 
-    private static void HandleFileChange(string file) => ImportFile(file);
+    private static void HandleFileChange(string file) {
+        
+        UnloadAsset(file);
+        ImportFile(file);
+    }
+    
     private static void HandleFileDelete(string file) => UnloadAsset(file);
 
     private static void ImportFile(string file) {

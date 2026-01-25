@@ -172,6 +172,7 @@ function Camera:render3D() end
 ---@field ambientIntensity number
 ---@field ambientColor Color
 ---@field shadowFovScale number
+---@field shadowBias number
 local RenderSettings = {}
 ---@class LuaF2
 ---@field new fun(arg0: number, arg1: number): Vector2

@@ -373,6 +373,7 @@ internal static class Core {
             SetShaderValueMatrix(pbr.Shader, pbr.GetLoc("lightVP"), lightVp);
             SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_light_index"), shadowLightIndex, ShaderUniformDataType.Int);
             SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_strength"), shadowLight.ShadowStrength, ShaderUniformDataType.Float);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_bias"), RenderSettings.ShadowBias, ShaderUniformDataType.Float);
             SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_map_resolution"), ShadowMapResolution, ShaderUniformDataType.Int);
 
             const int shadowMapSlot = 10;

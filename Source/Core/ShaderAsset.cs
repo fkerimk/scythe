@@ -116,14 +116,22 @@ internal class ShaderAsset : Asset {
             var name = match.Groups[2].Value;
                 
             // Skip standard uniforms
-            if (name == "mvp" || name == "matModel" || name == "matNormal" || name == "view_pos" || 
-                name == "light_count" || name.StartsWith("lights[") || name == "lightVP" ||
-                name == "shadowMap" || name == "shadow_light_index" || name == "shadow_strength" ||
-                name == "shadow_map_resolution" || name == "receive_shadows" ||
-                // Skip Material Maps standard names if handled automatically, but maybe we want to expose them?
-                // Let's expose everything not strictly system-internal.
-                name == "tiling" || name == "alpha_cutoff") 
-                continue;
+            if ( name.StartsWith("lights[") || name is
+                 "mvp" or
+                 "matModel" or
+                 "matNormal" or
+                 "view_pos" or
+                 "light_count" or
+                 "lightVP" or
+                 "shadowMap" or
+                 "shadow_light_index" or
+                 "shadow_strength" or
+                 "shadow_map_resolution" or
+                 "receive_shadows" or
+                 "shadow_bias" or
+                 "tiling" or
+                 "alpha_cutoff"
+            ) continue;
 
             if (Properties.All(p => p.Name != name))
                 Properties.Add(new ShaderProperty { Name = name, Type = type });

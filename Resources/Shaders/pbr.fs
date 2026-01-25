@@ -46,6 +46,7 @@ uniform vec3 view_pos;
 uniform sampler2D shadowMap;
 uniform int shadow_light_index;
 uniform float shadow_strength;
+uniform float shadow_bias;
 uniform int shadow_map_resolution;
 
 uniform vec2 tiling;
@@ -70,7 +71,7 @@ float compute_shadow(vec4 shadowPos, vec3 n, vec3 l) {
     if (projCoords.z > 1.0) return 1.0;
     
     // Tighter bias for better definition
-    float bias = max(0.0005 * (1.0 - dot(n, l)), 0.00005);
+    float bias = max(shadow_bias * (1.0 - dot(n, l)), shadow_bias * 0.1);
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
     
