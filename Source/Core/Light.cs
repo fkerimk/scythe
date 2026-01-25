@@ -45,19 +45,17 @@ internal class Light(Obj obj) : Component(obj) {
         Raylib.SetShaderValue(pbr.Shader, pbr.GetLoc($"lights[{index}].intensity"), Intensity, ShaderUniformDataType.Float);
     }
 
-    public override unsafe void Logic() {
+    public override void Logic() {
         
-        var position = Vector3.Zero;
-        var rotation = Quaternion.Identity;
-        var scale = Vector3.One;
-    
-        Raymath.MatrixDecompose( Obj.Matrix, &position, &rotation, &scale);
+        Obj.DecomposeWorldMatrix(out var worldPos, out _, out _);
 
-        _pos = position;
+        _pos = worldPos;
         _target = _pos + Obj.Fwd * (Type == 0 ? 1 : Range);
     }
 
     public override void Render3D() {
+        
+        if (Core.IsPreviewRender) return;
         
         if (IsSelected) {
 

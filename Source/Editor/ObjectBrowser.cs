@@ -57,7 +57,7 @@ internal class ObjectBrowser : Viewport {
 
         // Object & component inspection
         DrawProperties(targets.Cast<object>().ToList(), false, "Object");
-        DrawProperties(targets.Select(t => (object)t.Transform).ToList(), true, "Transform");
+        DrawProperties(targets.Select(t => (object)t.Transform).ToList(), true, "Transform", false);
 
         var firstObj = targets[0];
         
@@ -67,8 +67,8 @@ internal class ObjectBrowser : Viewport {
 
         foreach (var compName in commonCompNames) {
             
-            var compInstances = targets.Select(t => (object)t.Components[compName]).ToList();
-            DrawProperties(compInstances, true, compName);
+            var compInstances = targets.Select(object (t) => t.Components[compName]).ToList();
+            DrawProperties(compInstances, true, compName, false);
         }
 
         DrawAddComponentButton(targets);
@@ -304,9 +304,10 @@ internal class ObjectBrowser : Viewport {
         return (changed, deactivated);
     }
 
-    private static void DrawSectionHeader(string title, string icon, Color color, out bool open, bool showRemove = false, Action? onRemove = null) {
+    private static void DrawSectionHeader(string title, string icon, Color color, out bool open, bool showRemove = false, Action? onRemove = null, bool defaultOpen = true, Component? comp = null) {
         
-        const ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags.DefaultOpen | ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.SpanFullWidth;
+        var flags = ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.SpanFullWidth;
+        if (defaultOpen) flags |= ImGuiTreeNodeFlags.DefaultOpen;
         
         Spacing();
         var headerPos = GetCursorScreenPos();
@@ -316,6 +317,15 @@ internal class ObjectBrowser : Viewport {
         PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(4, 3));
         PushStyleColor(ImGuiCol.Header, new Vector4(0, 0, 0, 0));
         open = TreeNodeEx($"##{title}", flags);
+        
+        if (comp != null && BeginDragDropSource()) {
+            
+            LevelBrowser.DragComponent = comp;
+            SetDragDropPayload("component", IntPtr.Zero, 0);
+            Text(title);
+            EndDragDropSource();
+        }
+        
         PopStyleColor(); PopStyleVar();
 
         SameLine(); SetCursorPosX(GetCursorPosX() - 7.5f); SetCursorPosY(GetCursorPosY() + 2.5f);
@@ -514,7 +524,7 @@ internal class ObjectBrowser : Viewport {
         EndSection(open); PopID();
     }
 
-    private void DrawProperties(List<object> targets, bool separator, string title) {
+    private void DrawProperties(List<object> targets, bool separator, string title, bool defaultOpen = true) {
         
         var first = targets[0];
         PushID(first.GetHashCode());
@@ -534,7 +544,8 @@ internal class ObjectBrowser : Viewport {
                 comp.UnloadAndQuit(); targetObj.Components.Remove(name);
                 if (Core.ActiveLevel != null) Core.ActiveLevel.IsDirty = true;
                 History.StopRecording();
-            });
+                
+            }, defaultOpen, first as Component);
             
         } else {
             

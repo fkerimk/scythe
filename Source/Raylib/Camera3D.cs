@@ -1,7 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
 using static Raylib_cs.Raylib;
-using static Raylib_cs.Raymath;
 
 internal class Camera3D {
 
@@ -19,17 +18,16 @@ internal class Camera3D {
     public Vector3 Position { get => Raylib.Position; set => Raylib.Position = value; }
     public Vector3 Target { get => Raylib.Target; set => Raylib.Target = value; }
     public Vector3 Up { get => Raylib.Up; set => Raylib.Up = value; }
+    
+    public Vector3 Fwd => Raylib.Fwd;
+    public Vector3 Right => Raylib.Right;
 }
 
 internal static partial class Extensions {
     
-    extension(Camera3D camera) {
+    extension(Raylib_cs.Camera3D camera) {
         
-        public void DrawCameraFrustum(Color color) {
-        
-            const float near = 0.1f, far = 10.0f;
-
-            const int fov = 60;
+        public void DrawCameraFrustum(Color color, float fov, float near, float far) {
         
             var aspect = (float)GetScreenWidth() / GetScreenHeight();
             var topNear = MathF.Tan(fov * DEG2RAD / 2.0f) * near;
@@ -63,8 +61,8 @@ internal static partial class Extensions {
             }
         }
 
-        public Vector3 Up => Vector3Normalize(Vector3CrossProduct(camera.Fwd, camera.Right));
-        public Vector3 Fwd => Vector3Normalize(camera.Target - camera.Position);
-        public Vector3 Right => Vector3Normalize(Vector3CrossProduct(camera.Fwd, Vector3.UnitY));
+        public Vector3 Up => Vector3.Normalize(Vector3.Cross(camera.Right, camera.Fwd));
+        public Vector3 Fwd => Vector3.Normalize(camera.Target - camera.Position);
+        public Vector3 Right => Vector3.Normalize(Vector3.Cross(camera.Fwd, Vector3.UnitY));
     }
 }

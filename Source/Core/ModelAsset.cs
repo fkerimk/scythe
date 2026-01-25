@@ -7,6 +7,7 @@ internal class ModelAsset : Asset {
     
     public List<AssimpMesh> Meshes = [];
     public List<BoneInfo> Bones = [];
+    public readonly Dictionary<string, List<BoneInfo>> BoneMap = new();
     public ModelNode RootNode = null!;
     public Matrix4x4 GlobalInverse;
     public List<AnimationClip> Animations = [];
@@ -20,17 +21,21 @@ internal class ModelAsset : Asset {
     public ModelSettings Settings = new();
 
     public class ModelSettings : ICloneable {
+        
         public Dictionary<int, string> MeshMaterials = new();
         public float ImportScale = 1.0f;
 
         public object Clone() => new ModelSettings {
+            
             MeshMaterials = new Dictionary<int, string>(MeshMaterials),
             ImportScale = ImportScale
         };
     }
 
     public void ApplySettings() {
+        
         for (var i = 0; i < Materials.Length; i++) {
+            
             MaterialPaths[i] = Settings.MeshMaterials.GetValueOrDefault(i, "");
             CachedMaterialAssets[i] = AssetManager.Get<MaterialAsset>(MaterialPaths[i]);
             ApplyMaterialState(i, true);
@@ -48,10 +53,25 @@ internal class ModelAsset : Asset {
             
             var data = AssimpLoader.Load(File);
             Meshes = data.Meshes; Bones = data.Bones; RootNode = data.Root; GlobalInverse = data.GlobalInverse; Animations = data.Animations;
+            
+            BoneMap.Clear();
+            
+            foreach (var b in Bones) {
+                
+                if (!BoneMap.TryGetValue(b.Name, out var list)) {
+                    
+                    list = [];
+                    BoneMap[b.Name] = list;
+                }
+                
+                list.Add(b);
+            }
+
             var jsonPath = File + ".json";
             if (System.IO.File.Exists(jsonPath)) Settings = JsonConvert.DeserializeObject<ModelSettings>(System.IO.File.ReadAllText(jsonPath)) ?? new ModelSettings();
             
         } catch (Exception e) { 
+            
             TraceLog(TraceLogLevel.Error, $"Failed to load model {File}: {e}");
             return false; 
         }

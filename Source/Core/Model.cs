@@ -16,6 +16,7 @@ internal class Model(Obj obj) : Component(obj) {
     
     public List<AssimpMesh> Meshes = [];
     public List<BoneInfo> Bones = [];
+    public Dictionary<string, List<BoneInfo>> BoneMap = new();
     public ModelAsset AssetRef = null!;
 
     public override bool Load() {
@@ -26,10 +27,26 @@ internal class Model(Obj obj) : Component(obj) {
         // Ensure lists are clear before adding
         Meshes.Clear();
         Bones.Clear();
+        BoneMap.Clear();
         
         AssetRef = loaded;
         foreach (var m in AssetRef.Meshes) Meshes.Add(m.Clone());
-        foreach (var b in AssetRef.Bones) Bones.Add(new BoneInfo { Name = b.Name, Index = b.Index, Offset = b.Offset });
+        
+        // Copy bones and build the multi-bone map
+        foreach (var b in AssetRef.Bones) {
+            
+            var newBone = new BoneInfo { Name = b.Name, Index = b.Index, Offset = b.Offset };
+            Bones.Add(newBone);
+            
+            if (!BoneMap.TryGetValue(newBone.Name, out var list)) {
+                
+                list = [];
+                BoneMap[newBone.Name] = list;
+            }
+            
+            list.Add(newBone);
+        }
+        
         return true;
     }
 
@@ -49,7 +66,7 @@ internal class Model(Obj obj) : Component(obj) {
         
         if (AssetRef is not { IsLoaded: true }) return;
         
-        // 1. Optimize: Global material update check (only if anything changed)
+        // Global material update check (only if anything changed)
         AssetRef.UpdateMaterialsIfDirty();
 
         MaterialAsset? lastMatAsset = null;
@@ -68,35 +85,32 @@ internal class Model(Obj obj) : Component(obj) {
 
             // 2. Resolve Material Asset parameters (only for shared shader values)
             var shader = material.Shader;
+            var locs = UniformCache.Get(shader);
 
             if (matAsset != lastMatAsset || shader.Id != lastShaderId || matAsset.Version != lastMatVersion) {
                 
                 matAsset.ApplyUniforms(shader);
                 lastMatAsset = matAsset;
-                lastShaderId = shader.Id;
                 lastMatVersion = matAsset.Version;
             }
 
-            // 3. Batch apply uniforms (Only if they exist in shader)
-            var loc = GetShaderLocation(shader, "albedo_color");
-            if (loc != -1) SetShaderValue(shader, loc, ColorNormalize(Color), ShaderUniformDataType.Vec4);
+            // Batch apply uniforms (Using cached locations) - ONLY if shader changed this draw call
+            if (shader.Id != lastShaderId) {
+                
+                if (locs.AlbedoColor != -1) SetShaderValue(shader, locs.AlbedoColor, ColorNormalize(Color), ShaderUniformDataType.Vec4);
+                if (locs.ReceiveShadows != -1) SetShaderValue(shader, locs.ReceiveShadows, ReceiveShadows ? 1 : 0, ShaderUniformDataType.Int);
+                if (locs.AlphaCutoff != -1) SetShaderValue(shader, locs.AlphaCutoff, overrideAlphaCutoff ?? AlphaCutoff, ShaderUniformDataType.Float);
 
-            loc = GetShaderLocation(shader, "receive_shadows");
-            if (loc != -1) SetShaderValue(shader, loc, ReceiveShadows ? 1 : 0, ShaderUniformDataType.Int);
-
-            loc = GetShaderLocation(shader, "alpha_cutoff");
-            if (loc != -1) SetShaderValue(shader, loc, overrideAlphaCutoff ?? AlphaCutoff, ShaderUniformDataType.Float);
-
-            // Global Ambient (Live Update)
-            var locAmbInt = GetShaderLocation(shader, "ambient_intensity");
-            if (locAmbInt != -1) SetShaderValue(shader, locAmbInt, Core.RenderSettings.AmbientIntensity, ShaderUniformDataType.Float);
-
-            var locAmbCol = GetShaderLocation(shader, "ambient_color");
-            if (locAmbCol != -1) SetShaderValue(shader, locAmbCol,Core.RenderSettings.AmbientColor.ToVector4(), ShaderUniformDataType.Vec3);
+                // Global Ambient (Live Update)
+                if (locs.AmbientIntensity != -1) SetShaderValue(shader, locs.AmbientIntensity, Core.RenderSettings.AmbientIntensity, ShaderUniformDataType.Float);
+                if (locs.AmbientColor != -1) SetShaderValue(shader, locs.AmbientColor,Core.RenderSettings.AmbientColor.ToVector4(), ShaderUniformDataType.Vec3);
+            }
             
-            // 4. Draw
+            lastShaderId = shader.Id;
+
+            // Draw
             var matModel = Obj.VisualWorldMatrix;
-            if (AssetRef.Settings.ImportScale != 1.0f) {
+            if (Math.Abs(AssetRef.Settings.ImportScale - 1.0f) > 0.001f) {
                 
                 var s = AssetRef.Settings.ImportScale;
                 
@@ -110,9 +124,44 @@ internal class Model(Obj obj) : Component(obj) {
         }
     }
 
+    private static class UniformCache {
+        
+        private static readonly Dictionary<uint, ShaderLocations> Cache = new();
+        
+        public class ShaderLocations {
+            
+            public int AlbedoColor;
+            public int ReceiveShadows;
+            public int AlphaCutoff;
+            public int AmbientIntensity;
+            public int AmbientColor;
+        }
+        
+        public static ShaderLocations Get(Shader shader) {
+            
+            if (Cache.TryGetValue(shader.Id, out var locs)) return locs;
+            
+            locs = new ShaderLocations {
+                
+                AlbedoColor = GetShaderLocation(shader, "albedo_color"),
+                ReceiveShadows = GetShaderLocation(shader, "receive_shadows"),
+                AlphaCutoff = GetShaderLocation(shader, "alpha_cutoff"),
+                AmbientIntensity = GetShaderLocation(shader, "ambient_intensity"),
+                AmbientColor = GetShaderLocation(shader, "ambient_color")
+            };
+            
+            Cache[shader.Id] = locs;
+            return locs;
+        }
+    }
+
     public override void Unload() { 
-        foreach (var m in Meshes) UnloadMesh(m.RlMesh);
+        
+        foreach (var m in Meshes)
+            UnloadMesh(m.RlMesh);
+        
         Meshes.Clear();
         Bones.Clear();
+        BoneMap.Clear();
     }
 }

@@ -178,11 +178,9 @@ internal class Transform(Obj obj) : Component(obj) {
     public override void Logic() {
         
         UpdateTransform();
-        
-        if (CommandLine.Editor) UpdateCartoon();
     }
 
-    private void UpdateCartoon() {
+    internal void UpdateCartoon() {
         
         var dt = GetFrameTime();
         if (dt > 0.1f) dt = 0.1f;
@@ -271,7 +269,7 @@ internal class Transform(Obj obj) : Component(obj) {
 
     public override void Render3D() {
         
-        if (!CommandLine.Editor || Core.ActiveCamera == null) return;
+        if (!CommandLine.Editor || Core.ActiveCamera == null || Core.IsPreviewRender) return;
 
         // Only draw gizmo for the "main" selected object to avoid clutter
         if (Obj != LevelBrowser.SelectedObject) return;

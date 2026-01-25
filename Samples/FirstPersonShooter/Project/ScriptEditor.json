@@ -1,0 +1,8 @@
+{
+  "OpenTabs": [
+    "Scripts/PlayerRotation.lua",
+    "Scripts/PlayerMovement.lua",
+    "Scripts/PistolAnimation.lua"
+  ],
+  "ActiveTabIndex": 0
+}

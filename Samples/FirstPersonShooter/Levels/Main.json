@@ -1,0 +1,292 @@
+{
+  "Root": {
+    "Children": {
+      "Directional Light": {
+        "Children": {},
+        "Transform": {
+          "Pos": {
+            "Y": 5.0
+          },
+          "Euler": {
+            "X": 54.7356,
+            "Y": -29.999989,
+            "Z": -35.264385
+          },
+          "Scale": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 1.0
+          },
+          "Rot": {
+            "X": 0.35355338,
+            "Y": 0.35355335,
+            "Z": 0.1464466,
+            "W": 0.8535533
+          }
+        },
+        "Components": {
+          "Light": {
+            "Enabled": true,
+            "Type": 0,
+            "ScytheColor": {
+              "R": 255,
+              "G": 255,
+              "B": 255,
+              "A": 255
+            },
+            "Intensity": 15.0,
+            "Range": 10.0,
+            "Shadows": true,
+            "ShadowStrength": 1.0
+          }
+        }
+      },
+      "Object": {
+        "Children": {},
+        "Transform": {
+          "Pos": {
+            "Y": -0.05
+          },
+          "Scale": {
+            "X": 5.0,
+            "Y": 0.1,
+            "Z": 5.0
+          },
+          "Rot": {
+            "W": 1.0,
+            "IsIdentity": true
+          }
+        },
+        "Components": {
+          "Model": {
+            "Path": "D:/Projects/scythe/Resources/Models/Cube.fbx",
+            "Color": {
+              "R": 255,
+              "G": 255,
+              "B": 255,
+              "A": 255
+            },
+            "AlphaCutoff": 0.5,
+            "CastShadows": true,
+            "ReceiveShadows": true
+          },
+          "BoxCollider": {
+            "Size": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "Rigidbody": {
+            "IsStatic": true,
+            "Gravity": false,
+            "Bounciness": 0.0
+          }
+        }
+      },
+      "Object 1": {
+        "Children": {},
+        "Transform": {
+          "Pos": {
+            "X": -1.0,
+            "Y": 1.0
+          },
+          "Scale": {
+            "X": 1.0,
+            "Y": 2.0,
+            "Z": 1.0
+          },
+          "Rot": {
+            "W": 1.0,
+            "IsIdentity": true
+          }
+        },
+        "Components": {
+          "Model": {
+            "Path": "D:/Projects/scythe/Resources/Models/Cube.fbx",
+            "Color": {
+              "R": 255,
+              "G": 255,
+              "B": 255,
+              "A": 255
+            },
+            "AlphaCutoff": 0.5,
+            "CastShadows": true,
+            "ReceiveShadows": true
+          },
+          "BoxCollider": {
+            "Size": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "Rigidbody": {
+            "IsStatic": true,
+            "Gravity": false,
+            "Bounciness": 0.0
+          }
+        }
+      },
+      "Player": {
+        "Children": {
+          "Head Parent": {
+            "Children": {
+              "Head": {
+                "Children": {
+                  "Camera": {
+                    "Children": {
+                      "Pistol": {
+                        "Children": {},
+                        "Transform": {
+                          "Pos": {
+                            "Y": -0.065,
+                            "Z": 0.01
+                          },
+                          "Scale": {
+                            "X": 0.1,
+                            "Y": 0.1,
+                            "Z": 0.1
+                          },
+                          "Rot": {
+                            "W": 1.0,
+                            "IsIdentity": true
+                          }
+                        },
+                        "Components": {
+                          "Model": {
+                            "Path": "Models/Pistol/Pistol.fbx",
+                            "Color": {
+                              "R": 255,
+                              "G": 255,
+                              "B": 255,
+                              "A": 255
+                            },
+                            "AlphaCutoff": 0.5,
+                            "CastShadows": true,
+                            "ReceiveShadows": true
+                          },
+                          "Animation": {
+                            "Path": "Models/Pistol/Pistol.fbx",
+                            "IsPlaying": true,
+                            "Looping": true
+                          },
+                          "Script": {
+                            "Path": "Scripts/PistolAnimation.lua"
+                          }
+                        }
+                      }
+                    },
+                    "Transform": {
+                      "Pos": {
+                        "Y": 0.100000024
+                      },
+                      "Scale": {
+                        "X": 1.0,
+                        "Y": 1.0,
+                        "Z": 1.0
+                      },
+                      "Rot": {
+                        "W": 1.0,
+                        "IsIdentity": true
+                      }
+                    },
+                    "Components": {
+                      "Camera": {
+                        "Fov": 90.0,
+                        "NearClip": 0.01,
+                        "FarClip": 1000.0
+                      }
+                    }
+                  }
+                },
+                "Transform": {
+                  "Scale": {
+                    "X": 1.0,
+                    "Y": 1.0,
+                    "Z": 1.0
+                  },
+                  "Rot": {
+                    "W": 1.0,
+                    "IsIdentity": true
+                  }
+                },
+                "Components": {
+                  "Script": {
+                    "Path": "Scripts/PlayerRotation.lua"
+                  }
+                }
+              }
+            },
+            "Transform": {
+              "Pos": {
+                "Y": 1.3
+              },
+              "Scale": {
+                "X": 1.0,
+                "Y": 1.0,
+                "Z": 1.0
+              },
+              "Rot": {
+                "W": 1.0,
+                "IsIdentity": true
+              }
+            },
+            "Components": {}
+          }
+        },
+        "Transform": {
+          "Scale": {
+            "X": 1.0,
+            "Y": 1.0,
+            "Z": 1.0
+          },
+          "Rot": {
+            "W": 0.99999976
+          }
+        },
+        "Components": {
+          "Script": {
+            "Path": "Scripts/PlayerMovement.lua"
+          },
+          "Rigidbody": {
+            "Friction": 0.0,
+            "Bounciness": 0.0,
+            "FreezeRotX": true,
+            "FreezeRotY": true,
+            "FreezeRotZ": true
+          },
+          "SphereCollider": {
+            "Radius": 0.25,
+            "Center": {
+              "Y": 0.25
+            }
+          }
+        }
+      }
+    },
+    "Transform": {
+      "Scale": {
+        "X": 1.0,
+        "Y": 1.0,
+        "Z": 1.0
+      },
+      "Rot": {
+        "W": 1.0,
+        "IsIdentity": true
+      }
+    },
+    "Components": {}
+  },
+  "EditorCamera": {
+    "Position": {
+      "X": 4.9887943,
+      "Y": 3.7639916,
+      "Z": -0.9258369
+    },
+    "Rotation": {
+      "X": -0.33083725,
+      "Y": -7.5641937
+    }
+  }
+}

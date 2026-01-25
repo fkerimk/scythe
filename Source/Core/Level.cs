@@ -22,7 +22,6 @@ internal class Level {
             // Try asset lookup
             if (!Path.IsPathRooted(val)) {
                 // If it's relative, assume it's relative to Mod Root or Resources
-                // BestPath handles this logic perfectly if we treat it as relative
                 if (PathUtil.BestPath(val, out var bestPath)) return bestPath;
             }
             
@@ -32,7 +31,9 @@ internal class Level {
         public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer) {
             
             var val = (string?)value;
+            
             if (string.IsNullOrEmpty(val)) {
+                
                 writer.WriteValue(val);
                 return;
             }
@@ -41,11 +42,11 @@ internal class Level {
             var resPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources");
             
             // Convert to relative if possible
-            if (val.StartsWith(modPath, StringComparison.OrdinalIgnoreCase)) {
+            if (val.StartsWith(modPath, StringComparison.OrdinalIgnoreCase))
                 val = Path.GetRelativePath(modPath, val).Replace('\\', '/');
-            } else if (val.StartsWith(resPath, StringComparison.OrdinalIgnoreCase)) {
+            
+            else if (val.StartsWith(resPath, StringComparison.OrdinalIgnoreCase))
                 val = Path.GetRelativePath(AppDomain.CurrentDomain.BaseDirectory, val).Replace('\\', '/');
-            }
             
             writer.WriteValue(val);
         }
@@ -72,7 +73,9 @@ internal class Level {
         
         if (!PathUtil.BestPath($"Levels/{Name}.level.json", out var path))
             if (!PathUtil.BestPath($"{Name}.level.json", out path))
-                throw new FileNotFoundException($"Could not find level file {Name}.level.json");
+                if (!PathUtil.BestPath($"Levels/{Name}.json", out path))
+                    if (!PathUtil.BestPath($"{Name}.json", out path))
+                        throw new FileNotFoundException($"Could not find level file {Name} with .level.json or .json extension");
 
         JsonPath = path;
         Root = new Obj("Root", null);

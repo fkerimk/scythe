@@ -74,6 +74,7 @@ internal class AssimpMesh {
             }
         };
 
+
         fixed (Vector3* v = Vertices) Buffer.MemoryCopy(v, am.RlMesh.Vertices, (long)Vertices.Length * 3 * sizeof(float), (long)Vertices.Length * 3 * sizeof(float));
         fixed (Vector3* n = Normals) Buffer.MemoryCopy(n, am.RlMesh.Normals, (long)Vertices.Length * 3 * sizeof(float), (long)Vertices.Length * 3 * sizeof(float));
         fixed (Vector2* t = TexCoords) Buffer.MemoryCopy(t, am.RlMesh.TexCoords, (long)Vertices.Length * 2 * sizeof(float), (long)Vertices.Length * 2 * sizeof(float));
@@ -102,6 +103,7 @@ internal class AnimationClip {
     public double Duration;
     public double TicksPerSecond;
     public readonly List<AnimationChannel> Channels = [];
+    public readonly Dictionary<string, AnimationChannel> ChannelMap = [];
 }
 
 internal static class AssimpLoader {
@@ -288,40 +290,102 @@ internal static class AssimpLoader {
         // Use the actual content length, not the metadata duration which can be bloated
         clip.Duration = maxTime > 0 ? maxTime : anim.DurationInTicks;
 
+        // Pre-build channel map for faster lookup
+        foreach (var channel in clip.Channels)
+            clip.ChannelMap[channel.NodeName] = channel;
+
         return clip;
     }
 
-    public static void UpdateAnimation(ModelNode node, AnimationClip clip, double time, in Matrix4x4 parentTransform, in Matrix4x4 globalInverse, List<BoneInfo> bones, Dictionary<string, AnimationChannel> channelMap) {
+    public static void UpdateAnimation(ModelNode node, AnimationClip clip, double time, in Matrix4x4 parentTransform, in Matrix4x4 globalInverse, Dictionary<string, List<BoneInfo>> boneMap) {
         
         var nodeTransform = node.Transformation;
         
-        if (channelMap.TryGetValue(node.Name, out var channel))
-            nodeTransform = GetInterpolatedTransform(channel, time);
+        if (clip.ChannelMap.TryGetValue(node.Name, out var channel))
+            nodeTransform = GetInterpolatedTransform(channel, time, node.Transformation);
         
         var globalTransform = nodeTransform * parentTransform;
         
-        foreach (var bone in bones)
-            if (bone.Name == node.Name)
+        if (boneMap.TryGetValue(node.Name, out var bones))
+            foreach (var bone in bones)
                 bone.FinalTransformation = bone.Offset * globalTransform * globalInverse;
         
         foreach (var child in node.Children)
-            UpdateAnimation(child, clip, time, globalTransform, globalInverse, bones, channelMap);
+            UpdateAnimation(child, clip, time, globalTransform, globalInverse, boneMap);
     }
 
-    private static Matrix4x4 GetInterpolatedTransform(AnimationChannel channel, double time) {
+    public static void UpdateAnimationBlended(ModelNode node, AnimationClip clipA, double timeA, AnimationClip clipB, double timeB, float blend, in Matrix4x4 parentTransform, in Matrix4x4 globalInverse, Dictionary<string, List<BoneInfo>> boneMap) {
         
-        var pos = InterpolatePosition(channel.PositionKeys, time);
-        var rot = InterpolateRotation(channel.RotationKeys, time);
-        var scale = InterpolateScale(channel.ScaleKeys, time);
+        var nodeTransform = GetBlendedTransform(
+            clipA.ChannelMap.GetValueOrDefault(node.Name), timeA, 
+            clipB.ChannelMap.GetValueOrDefault(node.Name), timeB, 
+            blend, node.Transformation);
+        
+        var globalTransform = nodeTransform * parentTransform;
+        
+        if (boneMap.TryGetValue(node.Name, out var bones))
+            foreach (var bone in bones)
+                bone.FinalTransformation = bone.Offset * globalTransform * globalInverse;
+        
+        foreach (var child in node.Children)
+            UpdateAnimationBlended(child, clipA, timeA, clipB, timeB, blend, globalTransform, globalInverse, boneMap);
+    }
+
+    private static Matrix4x4 GetInterpolatedTransform(AnimationChannel channel, double time, Matrix4x4 bindPose) {
+        
+        Matrix4x4.Decompose(bindPose, out var bScale, out var bRot, out var bPos);
+
+        var pos = InterpolatePosition(channel.PositionKeys, time, bPos);
+        var rot = InterpolateRotation(channel.RotationKeys, time, bRot);
+        var scale = InterpolateScale(channel.ScaleKeys, time, bScale);
         
         return Matrix4x4.CreateScale(scale) * Matrix4x4.CreateFromQuaternion(rot) * Matrix4x4.CreateTranslation(pos);
     }
 
-    private static Vector3 InterpolatePosition(List<(double Time, Vector3 Position)> keys, double time) {
+    private static Matrix4x4 GetBlendedTransform(AnimationChannel? channelA, double timeA, AnimationChannel? channelB, double timeB, float blend, Matrix4x4 bindPose) {
+        
+        Matrix4x4.Decompose(bindPose, out var bScale, out var bRot, out var bPos);
+        Vector3 posA, posB, scaleA, scaleB;
+        Quaternion rotA, rotB;
+
+        if (channelA != null) {
+            
+            posA = InterpolatePosition(channelA.PositionKeys, timeA, bPos);
+            rotA = InterpolateRotation(channelA.RotationKeys, timeA, bRot);
+            scaleA = InterpolateScale(channelA.ScaleKeys, timeA, bScale);
+            
+        } else {
+            
+            posA = bPos;
+            rotA = bRot;
+            scaleA = bScale;
+        }
+
+        if (channelB != null) {
+            
+            posB = InterpolatePosition(channelB.PositionKeys, timeB, bPos);
+            rotB = InterpolateRotation(channelB.RotationKeys, timeB, bRot);
+            scaleB = InterpolateScale(channelB.ScaleKeys, timeB, bScale);
+            
+        } else {
+            
+            posB = bPos;
+            rotB = bRot;
+            scaleB = bScale;
+        }
+
+        var pos = Vector3.Lerp(posA, posB, blend);
+        var rot = Quaternion.Slerp(rotA, rotB, blend);
+        var scale = Vector3.Lerp(scaleA, scaleB, blend);
+
+        return Matrix4x4.CreateScale(scale) * Matrix4x4.CreateFromQuaternion(rot) * Matrix4x4.CreateTranslation(pos);
+    }
+
+    private static Vector3 InterpolatePosition(List<(double Time, Vector3 Position)> keys, double time, Vector3 fallback) {
         
         switch (keys.Count) {
             
-            case 0: return Vector3.Zero;
+            case 0: return fallback;
             case 1: return keys[0].Position;
         }
 
@@ -330,23 +394,21 @@ internal static class AssimpLoader {
         for (; i < keys.Count - 1; i++)
             if (time < keys[i + 1].Time) break;
         
-        var next = i + 1;
-        if (next >= keys.Count) next = 0; // Should not happen if time is clamped
-        
+        var next = (i + 1) % keys.Count;
         var t1 = keys[i].Time;
         var t2 = keys[next].Time;
-        var factor = (float)((time - t1) / (t2 - t1));
-        if (factor < 0) factor = 0;
-        if (factor > 1) factor = 1;
+        
+        if (t2 <= t1) return keys[i].Position;
 
-        return Vector3.Lerp(keys[i].Position, keys[next].Position, factor);
+        var factor = (float)((time - t1) / (t2 - t1));
+        return Vector3.Lerp(keys[i].Position, keys[next].Position, Math.Clamp(factor, 0f, 1f));
     }
 
-    private static Quaternion InterpolateRotation(List<(double Time, Quaternion Rotation)> keys, double time) {
+    private static Quaternion InterpolateRotation(List<(double Time, Quaternion Rotation)> keys, double time, Quaternion fallback) {
         
         switch (keys.Count) {
             
-            case 0: return Quaternion.Identity;
+            case 0: return fallback;
             case 1: return keys[0].Rotation;
         }
 
@@ -355,41 +417,34 @@ internal static class AssimpLoader {
         for (; i < keys.Count - 1; i++)
             if (time < keys[i + 1].Time) break;
 
-        var next = i + 1;
-        if (next >= keys.Count) next = 0;
-
+        var next = (i + 1) % keys.Count;
         var t1 = keys[i].Time;
         var t2 = keys[next].Time;
-        var factor = (float)((time - t1) / (t2 - t1));
-        if (factor < 0) factor = 0;
-        if (factor > 1) factor = 1;
+        if (t2 <= t1) return keys[i].Rotation;
 
-        return Quaternion.Slerp(keys[i].Rotation, keys[next].Rotation, factor);
+        var factor = (float)((time - t1) / (t2 - t1));
+        return Quaternion.Slerp(keys[i].Rotation, keys[next].Rotation, Math.Clamp(factor, 0f, 1f));
     }
 
-    private static Vector3 InterpolateScale(List<(double Time, Vector3 Scale)> keys, double time) {
+    private static Vector3 InterpolateScale(List<(double Time, Vector3 Scale)> keys, double time, Vector3 fallback) {
         
         switch (keys.Count) {
             
-            case 0: return Vector3.One;
+            case 0: return fallback;
             case 1: return keys[0].Scale;
         }
 
         var i = 0;
-        
         for (; i < keys.Count - 1; i++)
             if (time < keys[i + 1].Time) break;
 
-        var next = i + 1;
-        if (next >= keys.Count) next = 0;
-
+        var next = (i + 1) % keys.Count;
         var t1 = keys[i].Time;
         var t2 = keys[next].Time;
-        var factor = (float)((time - t1) / (t2 - t1));
-        if (factor < 0) factor = 0;
-        if (factor > 1) factor = 1;
+        if (t2 <= t1) return keys[i].Scale;
 
-        return Vector3.Lerp(keys[i].Scale, keys[next].Scale, factor);
+        var factor = (float)((time - t1) / (t2 - t1));
+        return Vector3.Lerp(keys[i].Scale, keys[next].Scale, Math.Clamp(factor, 0f, 1f));
     }
 
     public static unsafe void SkinMesh(AssimpMesh mesh, List<BoneInfo> bones) {
@@ -397,6 +452,17 @@ internal static class AssimpLoader {
         Parallel.For(0, mesh.Vertices.Length, i => {
             
             var bd = mesh.BoneData[i];
+            
+            // Safety: If no bone weights, don't modify the vertex
+            var totalWeight = bd.Weight0 + bd.Weight1 + bd.Weight2 + bd.Weight3;
+            
+            if (totalWeight < 0.001f) {
+                
+                mesh.AnimatedVertices[i] = mesh.Vertices[i];
+                mesh.AnimatedNormals[i] = mesh.Normals[i];
+                return;
+            }
+
             var v = mesh.Vertices[i];
             var n = mesh.Normals[i];
             
@@ -404,24 +470,28 @@ internal static class AssimpLoader {
             var finalN = Vector3.Zero;
 
             if (bd.Weight0 > 0) {
+                
                 var m = bones[bd.Bone0].FinalTransformation;
                 finalV += Vector3.Transform(v, m) * bd.Weight0;
                 finalN += Vector3.TransformNormal(n, m) * bd.Weight0;
             }
             
             if (bd.Weight1 > 0) {
+                
                 var m = bones[bd.Bone1].FinalTransformation;
                 finalV += Vector3.Transform(v, m) * bd.Weight1;
                 finalN += Vector3.TransformNormal(n, m) * bd.Weight1;
             }
             
             if (bd.Weight2 > 0) {
+                
                 var m = bones[bd.Bone2].FinalTransformation;
                 finalV += Vector3.Transform(v, m) * bd.Weight2;
                 finalN += Vector3.TransformNormal(n, m) * bd.Weight2;
             }
             
             if (bd.Weight3 > 0) {
+                
                 var m = bones[bd.Bone3].FinalTransformation;
                 finalV += Vector3.Transform(v, m) * bd.Weight3;
                 finalN += Vector3.TransformNormal(n, m) * bd.Weight3;

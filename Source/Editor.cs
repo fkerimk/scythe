@@ -14,16 +14,15 @@ internal static unsafe class Editor {
     
     public static ImGuiIOPtr ImGuiIoPtr;
 
+    // ReSharper disable MemberCanBePrivate.Global
     public static EditorRender EditorRender = null!;
     public static LevelBrowser LevelBrowser = null!;
     public static ProjectBrowser ProjectBrowser = null!;
-    // ReSharper disable once MemberCanBePrivate.Global
     public static ObjectBrowser ObjectBrowser = null!;
-    // ReSharper disable once MemberCanBePrivate.Global
     public static ScriptEditor ScriptEditor = null!;
-    // ReSharper disable once MemberCanBePrivate.Global
     public static MusicPlayer MusicPlayer = null!;
     public static Preview Preview = null!;
+    // ReSharper restore MemberCanBePrivate.Global
     
     public static bool IsScriptEditorFocused => ScriptEditor.IsFocused;
     
@@ -160,10 +159,13 @@ internal static unsafe class Editor {
             FreeCam.Loop(EditorRender);
             
             // Draw objects and skybox
+            Camera.ApplySettings(Core.ActiveCamera, 0.01f, 2000.0f);
             BeginMode3D(Core.ActiveCamera.Raylib);
             Core.Render(false);
             Grid.Draw(Core.ActiveCamera);
             EndMode3D();
+
+
             
             // Render Outline Post
             if (LevelBrowser.SelectedObject != null || Picking.IsDragging) {
@@ -182,6 +184,7 @@ internal static unsafe class Editor {
             // Draw 2D UI for components
             Core.Render(true);
             Picking.Render2D();
+
             Window.DrawFps();
             EndTextureMode();
 
@@ -248,6 +251,7 @@ internal static unsafe class Editor {
                 var originalShaders = new Dictionary<int, Shader>();
 
                 for (var i = 0; i < modelAsset.Materials.Length; i++) {
+                    
                     originalShaders[i] = modelAsset.Materials[i].Shader;
                     modelAsset.Materials[i].Shader = outlineMask.Shader;
                 } 
@@ -255,14 +259,12 @@ internal static unsafe class Editor {
                 model.Draw();
                     
                 // Restore
-                for (var i = 0; i < modelAsset.Materials.Length; i++) {
-                    if (originalShaders.TryGetValue(i, out var shader)) {
+                for (var i = 0; i < modelAsset.Materials.Length; i++)
+                    if (originalShaders.TryGetValue(i, out var shader))
                         modelAsset.Materials[i].Shader = shader;
-                    }
-                }
-            } else {
-                model.Draw();
             }
+            
+            else model.Draw();
         }
         
         foreach (var child in obj.Children.Values) RenderOutline(child);

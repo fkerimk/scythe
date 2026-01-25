@@ -106,7 +106,6 @@ internal class Obj {
         History.StopRecording();
     }
     
-    [MoonSharpHidden]
     public void SetParent(Obj? obj, bool keepWorld = false) {
         
         if (obj == null || obj == this || Parent == null) return;
@@ -195,13 +194,22 @@ internal class Obj {
         
         var current = this;
 
-        current = names.Aggregate(current, (current1, name) => current1.Children[name]);
+        foreach (var name in names) {
+            
+            if (current.Children.TryGetValue(name, out var next)) current = next;
+            else return null;
+        }
 
-        return current.Name != names[^1] ? null : current;
+        return current;
     }
     
     [MoonSharpHidden]
-    public Component? FindComponent(params string[] names) => Find(names[..^1])?.Components[names[^1]];
+    public Component? FindComponent(params string[] names) {
+        
+        var obj = Find(names[..^1]);
+
+        return obj?.Components.GetValueOrDefault(names[^1]);
+    }
     
     public Obj? Find(Table t) => Find(t.Values.Select(v => v.String).ToArray());
     public Component? FindComponent(Table t) => FindComponent(t.Values.Select(v => v.String).ToArray());

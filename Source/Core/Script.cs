@@ -77,7 +77,7 @@ internal class Script(Obj obj) : Component(obj) {
                 
                 ["self"] = generateDefinitions ? new Obj(null!, null) : obj,
                 ["level"] = generateDefinitions ? new Level(null!) : Core.ActiveLevel,
-                ["cam"] = generateDefinitions ? new Camera(null!) { Cam = new Camera3D() } : Core.ActiveLevel?.Root.FindComponent("Camera", "Camera"),
+                ["cam"] = generateDefinitions ? new Camera(null!) { Cam = new Camera3D() } : FindFirstCameraComponent(Core.ActiveLevel?.Root),
                 ["renderSettings"] = generateDefinitions ? new RenderSettings() : Core.RenderSettings,
                 ["f2"] = LuaF2,
                 ["f3"] = LuaF3,
@@ -96,6 +96,20 @@ internal class Script(Obj obj) : Component(obj) {
         LuaDefinitionGenerator.Generate(script, PathUtil.TempRelative("Scythe.lua"));
 
         return script;
+    }
+
+    private static Camera? FindFirstCameraComponent(Obj? obj) {
+        
+        if (obj == null) return null;
+        if (obj.Components.Values.FirstOrDefault(c => c is Camera) is Camera found) return found;
+
+        foreach (var child in obj.Children.Values) {
+            
+            var cam = FindFirstCameraComponent(child);
+            if (cam != null) return cam;
+        }
+
+        return null;
     }
     
     public override bool Load() {

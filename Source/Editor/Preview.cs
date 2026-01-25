@@ -20,7 +20,7 @@ internal class Preview : Viewport {
     private static Mesh? _previewCylinder;
     private static Mesh? _previewTorus;
 
-    private static readonly string[] PrimitiveNames = { "Sphere", "Cube", "Plane", "Cylinder", "Torus" };
+    private static readonly string[] PrimitiveNames = ["Sphere", "Cube", "Plane", "Cylinder", "Torus"];
     
     private int _currentPrimitiveIndex;
     private int _currentAnimationIndex;
@@ -38,13 +38,14 @@ internal class Preview : Viewport {
     protected override void OnDraw() {
         
         var selectedFile = Editor.ProjectBrowser.SelectedFile;
-        
-        if (string.IsNullOrEmpty(selectedFile)) {
+        var selectedCamera = LevelBrowser.SelectedObject?.Components.GetValueOrDefault("Camera") as Camera;
+
+        if (selectedCamera == null && string.IsNullOrEmpty(selectedFile)) {
             
             _lastFile = "";
             
             BeginChild("##empty");
-            TextDisabled("Select an asset to preview");
+            TextDisabled("Select an asset or a camera to preview");
             EndChild();
             
             return;
@@ -53,18 +54,18 @@ internal class Preview : Viewport {
         var avail = GetContentRegionAvail();
         if (avail.X <= 1 || avail.Y <= 1) return;
 
-        var textureAsset = AssetManager.Get<TextureAsset>(selectedFile);
-        var matAsset = AssetManager.Get<MaterialAsset>(selectedFile);
-        var modelAsset = AssetManager.Get<ModelAsset>(selectedFile);
-
-        // Reset view when switching assets
-        if (selectedFile != _lastFile) {
+        // Reset view when switching assets (only if no camera is selected)
+        if (selectedCamera == null && selectedFile != _lastFile) {
             
             _pan = Vector2.Zero;
             _rotation = new Vector2(45.0f, 45.0f);
             _currentAnimationIndex = 0;
             _animationTime = 0;
             
+            var textureAsset = AssetManager.Get<TextureAsset>(selectedFile);
+            var matAsset = AssetManager.Get<MaterialAsset>(selectedFile);
+            var modelAsset = AssetManager.Get<ModelAsset>(selectedFile);
+
             if (textureAsset is { IsLoaded: true }) {
                 
                 var tw = (float)textureAsset.Texture.Width;
@@ -79,18 +80,7 @@ internal class Preview : Viewport {
                 if (asset != null)  _distance = GetAssetAutoDistance(asset, out _) * 1.6f; 
             }
             
-            _lastFile = selectedFile;
-        }
-
-        if (textureAsset == null && matAsset == null && modelAsset == null) {
-            
-            _lastFile = "";
-            
-            BeginChild("##invalid");
-            TextDisabled("No preview available for this asset type");
-            EndChild();
-            
-            return;
+            _lastFile = selectedFile ?? "";
         }
 
         // Ensure RT matches window size
@@ -103,14 +93,30 @@ internal class Preview : Viewport {
         BeginTextureMode(_rt);
         ClearBackground(new Color(25, 25, 25, 255));
         
-        if (textureAsset != null) DrawTexturePreview(textureAsset); else {
+        if (selectedCamera != null) {
             
-            var asset = (Asset?)matAsset ?? modelAsset;
+            Core.IsPreviewRender = true;
+            Camera.ApplySettings(selectedCamera.Cam, selectedCamera.NearClip, selectedCamera.FarClip);
+            BeginMode3D(selectedCamera.Cam.Raylib);
+            Core.Render(false);
+            EndMode3D();
+            Core.IsPreviewRender = false;
             
-            if (asset != null) {
+        } else {
+            
+            var textureAsset = AssetManager.Get<TextureAsset>(selectedFile!);
+            var matAsset = AssetManager.Get<MaterialAsset>(selectedFile!);
+            var modelAsset = AssetManager.Get<ModelAsset>(selectedFile!);
+            
+            if (textureAsset != null) DrawTexturePreview(textureAsset); else {
                 
-                Draw3DPreview(asset);
-                DrawOverlayUi(asset);
+                var asset = (Asset?)matAsset ?? modelAsset;
+                
+                if (asset != null) {
+                    
+                    Draw3DPreview(asset);
+                    DrawOverlayUi(asset);
+                }
             }
         }
         
@@ -247,7 +253,7 @@ internal class Preview : Viewport {
                 currentIndex = _currentPrimitiveIndex;
                 break;
             
-            case ModelAsset model when model.Animations.Count > 0:
+            case ModelAsset { Animations.Count: > 0 } model:
                 label = model.Animations[_currentAnimationIndex].Name;
                 count = model.Animations.Count;
                 currentIndex = _currentAnimationIndex;
@@ -385,11 +391,9 @@ internal class Preview : Viewport {
                     _animationTime += GetFrameTime() * clip.TicksPerSecond;
                     if (_animationTime > clip.Duration) _animationTime = 0;
                 
-                    var channelMap = new Dictionary<string, AnimationChannel>();
-                    foreach (var c in clip.Channels) channelMap[c.NodeName] = c;
-                    AssimpLoader.UpdateAnimation(model.RootNode, clip, _animationTime, Matrix4x4.Identity, model.GlobalInverse, model.Bones, channelMap);
+                    AssimpLoader.UpdateAnimation(model.RootNode, clip, _animationTime, Matrix4x4.Identity, model.GlobalInverse, model.BoneMap);
                 
-                    foreach (var mesh in model.Meshes) AssimpLoader.SkinMesh(mesh, model.Bones);
+                     foreach (var mesh in model.Meshes) AssimpLoader.SkinMesh(mesh, model.Bones);
                 }
 
                 foreach (var mesh in model.Meshes) {

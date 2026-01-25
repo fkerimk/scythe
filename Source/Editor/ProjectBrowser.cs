@@ -242,6 +242,30 @@ internal class ProjectBrowser : Viewport {
         SetCursorPosX(GetCursorPosX() - 4f); // Pull closer to icon
         Text(name);
 
+        if (BeginPopupContextItem("TreeCMS_" + rootPath)) {
+            
+            _currentPath = rootPath; // Switch to this folder
+            
+            if (BeginMenu("Create")) {
+                DrawCreateMenu();
+                EndMenu();
+            }
+            
+            if (MenuItem("New Folder")) CreateNewFolder();
+            
+            Separator();
+            
+            if (MenuItem("Delete")) {
+                _selectedPaths.Clear();
+                _selectedPaths.Add(rootPath);
+                DeleteSelectedItems();
+            }
+            
+            if (MenuItem("Rename")) StartRename(rootPath);
+            
+            EndPopup();
+        }
+
         if (!isNodeOpen) return;
         
         if (hasSubDirs)
@@ -295,30 +319,11 @@ internal class ProjectBrowser : Viewport {
             
             if (BeginMenu("Create")) {
                 
-                if (MenuItem("Script")) CreateNewFile("Script", ".lua", name =>
-                $"""
-                print("{name} is working, yay!")
-                
-                function loop()
-                    -- loop is called once per frame
-                end
-                """);
-
-                if (MenuItem("Level")) CreateNewFile("NewLevel", ".level.json", name =>
-                $$"""
-                {
-                  "Root": {
-                     "Name": "{{name}}",
-                     "Children": {}
-                  }
-                }
-                """);
-    
-                if (MenuItem("Material")) CreateNewFile("Material", ".material.json", _ => 
-                     JsonConvert.SerializeObject(new MaterialAsset.MaterialData(), Formatting.Indented));
-                
+                DrawCreateMenu();
                 EndMenu();
             }
+
+            if (MenuItem("New Folder")) CreateNewFolder();
             
             EndPopup();
         }
@@ -456,13 +461,21 @@ internal class ProjectBrowser : Viewport {
         var texId = IntPtr.Zero;
         Texture2D? thumbTex = null;
 
-        if (textureAsset != null && textureAsset.Thumbnail.HasValue) thumbTex = textureAsset.Thumbnail.Value;
+        if (textureAsset is { Thumbnail: not null }) thumbTex = textureAsset.Thumbnail.Value;
+        
         else if (matAsset != null) {
-            if (!matAsset.Thumbnail.HasValue) Preview.UpdateThumbnail(matAsset);
+            
+            if (!matAsset.Thumbnail.HasValue)
+                Preview.UpdateThumbnail(matAsset);
+            
             thumbTex = matAsset.Thumbnail;
         }
+        
         else if (modelAsset != null) {
-            if (!modelAsset.Thumbnail.HasValue) Preview.UpdateThumbnail(modelAsset);
+            
+            if (!modelAsset.Thumbnail.HasValue)
+                Preview.UpdateThumbnail(modelAsset);
+            
             thumbTex = modelAsset.Thumbnail;
         }
 
@@ -670,6 +683,29 @@ internal class ProjectBrowser : Viewport {
                 _selectedPaths.Add(path);
             }
             
+            if (isDirectory) {
+                
+                if (BeginMenu("Create")) {
+                    
+                    var oldPath = _currentPath;
+                    _currentPath = path;
+                    DrawCreateMenu();
+                    _currentPath = oldPath;
+                    
+                    EndMenu();
+                }
+
+                if (MenuItem("New Folder")) {
+                    
+                    var oldPath = _currentPath;
+                    _currentPath = path;
+                    CreateNewFolder();
+                    _currentPath = oldPath;
+                }
+                
+                Separator();
+            }
+
             if (MenuItem("Delete")) DeleteSelectedItems();
             if (MenuItem("Rename")) StartRename(path);
             
@@ -906,6 +942,50 @@ internal class ProjectBrowser : Viewport {
         _selectedPaths.Clear();
         _selectedPaths.Add(fullPath);
         StartRename(fullPath);
+    }
+    
+    private void CreateNewFolder(string name = "New Folder") {
+        
+        var existingNames = Directory.GetFileSystemEntries(_currentPath).Select(Path.GetFileName);
+        name = Generators.AvailableName(name, existingNames!);
+        
+        var fullPath = Path.Combine(_currentPath, name);
+        
+        History.StartRecording(this, $"Create Folder {name}");
+        Directory.CreateDirectory(fullPath);
+        
+        History.SetUndoAction(() => RecyclePath(fullPath));
+        History.SetRedoAction(() => Directory.CreateDirectory(fullPath));
+        History.StopRecording();
+
+        _selectedPaths.Clear();
+        _selectedPaths.Add(fullPath);
+        StartRename(fullPath);
+    }
+
+    private void DrawCreateMenu() {
+        
+        if (MenuItem("Script")) CreateNewFile("Script", ".lua", name =>
+        $"""
+        print("{name} is working, yay!")
+        
+        function loop()
+            -- loop is called once per frame
+        end
+        """);
+
+        if (MenuItem("Level")) CreateNewFile("NewLevel", ".level.json", name =>
+        $$"""
+        {
+          "Root": {
+             "Name": "{{name}}",
+             "Children": {}
+          }
+        }
+        """);
+
+        if (MenuItem("Material")) CreateNewFile("Material", ".material.json", _ => 
+             JsonConvert.SerializeObject(new MaterialAsset.MaterialData(), Formatting.Indented));
     }
     
     // Rename Helpers

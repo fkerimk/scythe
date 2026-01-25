@@ -9,6 +9,7 @@ internal static class Core {
     public static Level? ActiveLevel => ActiveLevelIndex >= 0 && ActiveLevelIndex < OpenLevels.Count ? OpenLevels[ActiveLevelIndex] : null;
     public static Camera3D? ActiveCamera;
     public static bool ShouldFocusActiveLevel;
+    public static bool IsPreviewRender;
 
     public static readonly RenderSettings RenderSettings = new();
 
@@ -56,13 +57,13 @@ internal static class Core {
         if (skybox != null) _skyboxModel.Materials[0].Shader = skybox.Shader;
         
         var skyTex = AssetManager.Get<TextureAsset>("Skybox");
-        if (skyTex != null) {
-            
-            var image = LoadImage(skyTex.File);
-            _skyboxTexture = LoadTextureCubemap(image, CubemapLayout.AutoDetect);
-            UnloadImage(image);
-            _skyboxModel.Materials[0].Maps[(int)MaterialMapIndex.Cubemap].Texture = _skyboxTexture;
-        }
+
+        if (skyTex == null) return;
+        
+        var image = LoadImage(skyTex.File);
+        _skyboxTexture = LoadTextureCubemap(image, CubemapLayout.AutoDetect);
+        UnloadImage(image);
+        _skyboxModel.Materials[0].Maps[(int)MaterialMapIndex.Cubemap].Texture = _skyboxTexture;
     }
 
     private static RenderTexture2D LoadShadowmapRenderTexture(int width, int height) {
@@ -99,13 +100,18 @@ internal static class Core {
         
         if (path == null) {
             
-            if (PathUtil.BestPath($"Levels/{name}.level.json", out var foundPath))
-                 level = new Level(name, foundPath);
-            else if (PathUtil.BestPath($"{name}.level.json", out foundPath))
-                 level = new Level(name, foundPath);
+            if (
+                PathUtil.BestPath($"Levels/{name}.level.json", out var foundPath) ||
+                PathUtil.BestPath($"{name}.level.json", out foundPath) ||
+                PathUtil.BestPath($"Levels/{name}.json", out foundPath) || 
+                PathUtil.BestPath($"{name}.json", out foundPath)
+                
+            ) level = new Level(name, foundPath);
+            
             else {
-                 TraceLog(TraceLogLevel.Error, $"CORE: Could not find level {name}");
-                 return;
+                
+                TraceLog(TraceLogLevel.Error, $"CORE: Could not find level {name}");
+                return;
             }
         }
         
@@ -137,17 +143,34 @@ internal static class Core {
         
         History.Clear(); // Clear history when switching levels to avoid cross-level undo
         ActiveLevel.Root.Transform.UpdateTransform();
-        ActiveCamera = CommandLine.Editor ? new Camera3D() : (ActiveLevel.Root.Children["Camera"].Components["Camera"] as Camera)?.Cam;
         
-        if (CommandLine.Editor) {
+        if (!CommandLine.Editor) {
             
-            if (ActiveLevel.EditorCamera != null) {
+            if (ActiveLevel.Root.Children.TryGetValue("Camera", out var cameraObj) && cameraObj.Components.TryGetValue("Camera", out var camComp))
+                 ActiveCamera = (camComp as Camera)?.Cam;
+            else ActiveCamera = FindFirstCamera(ActiveLevel.Root);
+        }
+        
+        else ActiveCamera = new Camera3D();
+
+        if (!CommandLine.Editor) return;
+        
+        if (ActiveLevel.EditorCamera != null) {
                 
-                FreeCam.Pos = ActiveLevel.EditorCamera.Position;
-                FreeCam.Rot = ActiveLevel.EditorCamera.Rotation;
-            }
+            FreeCam.Pos = ActiveLevel.EditorCamera.Position;
+            FreeCam.Rot = ActiveLevel.EditorCamera.Rotation;
+        }
             
-            else FreeCam.SetFromTarget(ActiveCamera);
+        else FreeCam.SetFromTarget(ActiveCamera);
+
+        return;
+
+        static Camera3D? FindFirstCamera(Obj obj) {
+            
+            if (obj.Components.Values.FirstOrDefault(c => c is Camera) is Camera found)
+                return found.Cam;
+
+            return obj.Children.Values.Select(FindFirstCamera).OfType<Camera3D>().FirstOrDefault();
         }
     }
 
@@ -180,8 +203,8 @@ internal static class Core {
                     component.IsLoaded = true;
             }
 
-            foreach (var child in obj.Children)
-                LoadObj(child.Value);
+            foreach (var child in obj.Children.Values.ToArray())
+                LoadObj(child);
         }
     }
 
@@ -194,39 +217,72 @@ internal static class Core {
         Lights.Clear();
         TransparentRenderQueue.Clear();
         
+        if (!CommandLine.Editor) Physics.Update();
+        
+        // Behavior & Logic (Scripts, Tweens, Physics Sync) This pass determines WHERE objects want to be in this frame.
+        RunLogic(ActiveLevel.Root);
+
+        // Hierarchy Sync & Visuals (World Matrices + Cartoon Bounce) his pass settles the physical truth and prepares the visual state for rendering.
+        SyncHierarchy(ActiveLevel.Root);
+        
+        // Update global pbr parameters after everything is settled
         var pbr = AssetManager.Get<ShaderAsset>("pbr");
         if (pbr != null)
             SetShaderValue(pbr.Shader, pbr.GetLoc("view_pos"), ActiveCamera?.Position ?? Vector3.Zero, ShaderUniformDataType.Vec3);
         
-        if (!CommandLine.Editor) Physics.Update();
-        
-        UpdateObj(ActiveLevel.Root);
-        
         return;
 
-        void UpdateObj(Obj obj) {
+        void RunLogic(Obj obj) {
             
+            // Priority: Rigidbodies must sync physics to transform before scripts run
+            if (obj.Components.TryGetValue("Rigidbody", out var rb) && rb.IsLoaded)
+                rb.Logic();
+
+            foreach (var component in obj.Components.Values) {
+                
+                if (component is Rigidbody) continue;
+                if (component.IsLoaded) component.Logic();
+            }
+
+            foreach (var child in obj.Children.Values.ToArray()) RunLogic(child);
+        }
+
+        void SyncHierarchy(Obj obj) {
+            
+            // Physical World Sync (Top-Down)
             if (obj.Parent != null) {
                 
                 obj.WorldMatrix = obj.Parent.WorldMatrix * obj.Matrix;
                 obj.WorldRotMatrix = obj.Parent.WorldRotMatrix * obj.RotMatrix;
-                obj.VisualWorldMatrix = obj.Parent.VisualWorldMatrix * obj.Matrix;
                 
             } else {
                 
                 obj.WorldMatrix = obj.Matrix;
                 obj.WorldRotMatrix = obj.RotMatrix;
-                obj.VisualWorldMatrix = obj.WorldMatrix;
             }
-            
-            // Logic and component updates
-            obj.Transform.Logic();
-            
+
+            // Visual State Sync
+            if (!CommandLine.Editor) {
+                
+                // Runtime: Instant sync for zero lag (Physics etc.)
+                obj.VisualWorldMatrix = obj.WorldMatrix;
+                
+            } else {
+                
+                // Handle Cartoon Bounce Start with a clean inherited baseline
+                obj.VisualWorldMatrix = obj.Parent != null
+                    ? obj.Parent.VisualWorldMatrix * obj.Matrix
+                    : obj.WorldMatrix;
+
+                // If this is the selected object or undergoing local bounce, UpdateCartoon will override it
+                obj.Transform.UpdateCartoon();
+            }
+
+            // 3. Collection & Preparation
             foreach (var component in obj.Components.Values) {
                 
-                if (component.IsLoaded)
-                    component.Logic();
-                
+                if (!component.IsLoaded) continue;
+
                 switch (component) {
                     
                     case Light light: Lights.Add(light); break;
@@ -241,7 +297,7 @@ internal static class Core {
                 }
             }
 
-            foreach (var child in obj.Children) UpdateObj(child.Value);
+            foreach (var child in obj.Children.Values.ToArray()) SyncHierarchy(child);
         }
     }
 
@@ -260,15 +316,18 @@ internal static class Core {
             
             var shadowLightIndex = Lights.IndexOf(shadowLight);
 
+            var pos = shadowLight.Obj.Transform.WorldPos;
+            var fwd = shadowLight.Obj.Fwd;
+
             var lightCamera = new Raylib_cs.Camera3D {
                 
-                Position = shadowLight.Type == 0 ? shadowLight.Obj.Pos - shadowLight.Obj.Fwd * 500.0f : shadowLight.Obj.Pos,
+                Position = shadowLight.Type == 0 ? pos - fwd * 500.0f : pos,
                 
                 Target = shadowLight.Type switch {
                     
-                    0 => shadowLight.Obj.Pos,
-                    1 => shadowLight.Obj.Pos + Vector3.UnitY * -1,
-                    _ => shadowLight.Obj.Pos + shadowLight.Obj.Fwd
+                    0 => pos,
+                    1 => pos + Vector3.UnitY * -1,
+                    _ => pos + fwd
                 },
                 
                 Up = shadowLight.Type == 1 ? Vector3.UnitX : Vector3.UnitY,
@@ -286,7 +345,9 @@ internal static class Core {
 
             // Draw objects for shadow depth
             var depth = AssetManager.Get<ShaderAsset>("depth");
+            
             if (depth != null) {
+                
                 BeginShaderMode(depth.Shader);
                 RenderHierarchy(ActiveLevel.Root, false, true);
                 EndShaderMode();
@@ -374,7 +435,7 @@ internal static class Core {
             }
         }
         
-        foreach (var child in obj.Children) RenderHierarchy(child.Value, is2D, isShadowPass);
+        foreach (var child in obj.Children.Values.ToArray()) RenderHierarchy(child, is2D, isShadowPass);
     }
 
     public static void Loop(bool is2D) {
@@ -419,7 +480,7 @@ internal static class Core {
                 component.Quit();
             }
             
-            foreach (var child in obj.Children) QuitObj(child.Value);
+            foreach (var child in obj.Children.Values.ToArray()) QuitObj(child);
         }
     }
 }
