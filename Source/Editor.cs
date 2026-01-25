@@ -11,6 +11,7 @@ using static rlImGui_cs.rlImGui;
 internal static unsafe class Editor {
     
     private static bool _scheduledQuit;
+    private static Camera3D _editorCamera = null!;
     
     public static ImGuiIOPtr ImGuiIoPtr;
 
@@ -22,7 +23,10 @@ internal static unsafe class Editor {
     public static ScriptEditor ScriptEditor = null!;
     public static MusicPlayer MusicPlayer = null!;
     public static Preview Preview = null!;
+    public static RuntimeRender RuntimeRender = null!;
     // ReSharper restore MemberCanBePrivate.Global
+    
+    private static Level? _editorLevelRef; 
     
     public static bool IsScriptEditorFocused => ScriptEditor.IsFocused;
     
@@ -67,6 +71,7 @@ internal static unsafe class Editor {
         ScriptEditor = new ScriptEditor();
         MusicPlayer = new MusicPlayer();
         Preview = new Preview();
+        RuntimeRender = new RuntimeRender();
 
         var layoutPath = PathUtil.ExeRelative("Layouts/User.ini");
         
@@ -79,6 +84,8 @@ internal static unsafe class Editor {
         
         // Setup core
         Core.Init();
+        _editorCamera = new Camera3D();
+        FreeCam.SetFromTarget(Core.ActiveCamera);
         
         EditorRender.Load();
         
@@ -87,6 +94,8 @@ internal static unsafe class Editor {
         ScriptEditor.Load();
         ProjectBrowser.Load();
         
+        Core.Load();
+
         while (!WindowShouldClose()) {
 
             Window.UpdateFps();
@@ -116,9 +125,36 @@ internal static unsafe class Editor {
                 continue;
             }
 
-            Core.Load();
+            // Sync Input State & Focus
+            // LuaMouse.InputAllowed = RuntimeRender.IsFocused;
 
-            // Reload viewport render
+            // Start Drawing & ImGui Frame
+            BeginDrawing();
+            
+            // --- CORE SIMULATION ---
+            // Run logic inside BeginDrawing (for timing) but BEFORE rlImGui (to avoid input/state conflicts)
+            Core.ActiveCamera = Core.IsPlaying ? Core.GameCamera : _editorCamera;
+            Core.Logic();
+            Core.ShadowPass();
+
+            ClearBackground(Color.Black);
+            Begin();
+            Style.Push();
+            PushFont(Fonts.ImMontserratRegular);
+            
+            DockSpaceOverViewport(GetMainViewport().ID);
+            ImGuiIoPtr.MouseDoubleClickTime = 0.2f;
+
+            // Handle Editor UI Lock when playing with mouse locked
+            if (LuaMouse.IsLocked) {
+                GetIO().ConfigFlags |= ImGuiConfigFlags.NoMouse;
+                GetIO().ConfigFlags |= ImGuiConfigFlags.NoKeyboard;
+            } else {
+                GetIO().ConfigFlags &= ~ImGuiConfigFlags.NoMouse;
+                GetIO().ConfigFlags &= ~ImGuiConfigFlags.NoKeyboard;
+            }
+
+            // Reload Viewport Textures if Resized
             if (EditorRender.TexSize != EditorRender.TexTemp) {
 
                 UnloadRenderTexture(EditorRender.Rt);
@@ -131,45 +167,50 @@ internal static unsafe class Editor {
                 EditorRender.TexTemp = EditorRender.TexSize;
             }
 
-            // Core Logic & Shadow Mapping (Internal switches RT, ends in screen buffer)
-            Core.Logic();
-            Core.ShadowPass();
+            if (RuntimeRender.TexSize != RuntimeRender.TexTemp) {
+                
+                UnloadRenderTexture(RuntimeRender.Rt);
+                RuntimeRender.Rt = LoadRenderTexture((int)RuntimeRender.TexSize.X, (int)RuntimeRender.TexSize.Y);
+                
+                RuntimeRender.TexTemp = RuntimeRender.TexSize;
+            }
 
-            // Outline Mask Pass
+            // Outline mask pass
             if (LevelBrowser.SelectedObject != null || Picking.DragSource != null || Picking.DragTarget != null) {
-            
                 BeginTextureMode(EditorRender.OutlineRt);
                 ClearBackground(Color.Blank);
-                ClearScreenBuffers(); // Explicitly clear depth and color buffers
-                
-                BeginMode3D(Core.ActiveCamera.Raylib);
+                ClearScreenBuffers();
+                BeginMode3D(_editorCamera.Raylib);
                 foreach (var obj in LevelBrowser.SelectedObjects) RenderOutline(obj);
                 if (Picking.DragSource != null) RenderOutline(Picking.DragSource);
                 if (Picking.DragTarget != null) RenderOutline(Picking.DragTarget);
                 EndMode3D();
-                
                 EndTextureMode();
             }
 
-            // Viewport Rendering
+            // Runtime viewport
+            BeginTextureMode(RuntimeRender.Rt);
+            Window.Clear(Colors.Game);
+            Core.IsPreviewRender = true;
+            Core.RenderAll(Core.GameCamera);
+            Core.IsPreviewRender = false;
+            EndTextureMode();
+
+            // Editor viewport
             BeginTextureMode(EditorRender.Rt);
             Window.Clear(Colors.Game);
             
-            // Freecam
+            Core.ActiveCamera = _editorCamera;
             FreeCam.Loop(EditorRender);
             
-            // Draw objects and skybox
-            Camera.ApplySettings(Core.ActiveCamera, 0.01f, 2000.0f);
-            BeginMode3D(Core.ActiveCamera.Raylib);
+            Camera.ApplySettings(_editorCamera, 0.01f, 2000.0f);
+            BeginMode3D(_editorCamera.Raylib);
             Core.Render(false);
-            Grid.Draw(Core.ActiveCamera);
+            Grid.Draw(_editorCamera);
             EndMode3D();
-
-
             
-            // Render Outline Post
+            // Post-process outline
             if (LevelBrowser.SelectedObject != null || Picking.IsDragging) {
-                 
                 var outlinePost = AssetManager.Get<ShaderAsset>("outline_post");
                 if (outlinePost != null) {
                     BeginShaderMode(outlinePost.Shader);
@@ -181,42 +222,32 @@ internal static unsafe class Editor {
                 }
             }
             
-            // Draw 2D UI for components
-            Core.Render(true);
+            Core.Render(true); // 2D Icons/Gizmos
             Picking.Render2D();
-
-            Window.DrawFps();
             EndTextureMode();
 
-            // Render editor
-            BeginDrawing();
-            ClearBackground(Color.Black);
-            Begin();
-            Style.Push();
-            PushFont(Fonts.ImMontserratRegular);
-            
-            DockSpaceOverViewport(GetMainViewport().ID);
-            ImGuiIoPtr.MouseDoubleClickTime = 0.2f;
-            
+            // IMGUI
             MenuBar.Draw();
             EditorRender.Draw();
+            RuntimeRender.Draw();
             LevelBrowser.Draw();
             ObjectBrowser.Draw();
             ProjectBrowser.Draw();
-            Preview.Draw();
             ScriptEditor.Draw();
             MusicPlayer.Draw();
+            Preview.Draw();
             
             Picking.Update();
-            
+
+            // END
             PopFont();
             Style.Pop();
             rlImGui.End();
+            
             Notifications.Draw();
             EndDrawing();
 
             Shortcuts.Check();
-            
             if (_scheduledQuit) break;
         }
 
@@ -234,6 +265,59 @@ internal static unsafe class Editor {
     }
 
     public static void Quit() => _scheduledQuit = true;
+
+    public static void TogglePlayMode(Vector2? mouseCenter = null) {
+
+        if (Core.ActiveLevel == null) return;
+
+        if (!Core.IsPlaying) {
+            
+            // Isolate editor state
+            _editorLevelRef = Core.ActiveLevel; 
+            var snapshot = Core.ActiveLevel.ToSnapshot(); 
+            
+            Core.IsPlaying = true;
+            LuaMouse.IsLocked = true;
+            RuntimeRender.IsOpen = true;
+            RuntimeRender.ShouldFocus = true; 
+            
+            // Re-init physics to clear any leftovers and prepare for fresh simulation
+            Physics.Init();
+            
+            // Replace the level reference in the active slot with a runtime clone
+            Core.OpenLevels[Core.ActiveLevelIndex] = new Level(_editorLevelRef.Name, _editorLevelRef.JsonPath, snapshot);
+            Core.SetActiveLevel(Core.ActiveLevelIndex, clearHistory: false);
+            Core.Load();
+            
+            if (mouseCenter.HasValue)
+                SetMousePosition((int)mouseCenter.Value.X, (int)mouseCenter.Value.Y);
+            
+            Notifications.Show("Play Mode Started");
+            
+        } else {
+            
+            // Stop play mode
+            Core.IsPlaying = false;
+            LuaMouse.IsLocked = false;
+            EnableCursor();
+            ShowCursor();
+            
+            // Re-init physics to clear runtime bodies
+            Physics.Init();
+            
+            // Restore - Undo history holds references to objects in _editorLevelRef.
+            if (_editorLevelRef != null) {
+                
+                Core.OpenLevels[Core.ActiveLevelIndex] = _editorLevelRef;
+                Core.SetActiveLevel(Core.ActiveLevelIndex, clearHistory: false);
+                _editorLevelRef = null;
+            }
+            
+            Notifications.Show("Play Mode Stopped");
+        }
+        
+        Core.ActiveCamera = Core.IsPlaying ? Core.GameCamera : _editorCamera;
+    }
 
     private static void RenderOutline(Obj obj) {
 

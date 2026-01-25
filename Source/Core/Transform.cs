@@ -136,6 +136,9 @@ internal class Transform(Obj obj) : Component(obj) {
 
     public void UpdateTransform() {
         
+        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+        if (Obj == null) return;
+        
         var rotMatrix = Matrix4x4.Transpose(Matrix4x4.CreateFromQuaternion(Rot));
         
         var matrix = Raymath.MatrixMultiply(

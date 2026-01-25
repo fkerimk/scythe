@@ -110,7 +110,7 @@ internal class HistoryStack {
         public Action? UndoAction, RedoAction;
     }
 
-    internal class ObjectRecord(object reference) {
+    private class ObjectRecord(object reference) {
         
         public readonly object Reference = reference;
         public readonly object?[] StartState = History.GetState(reference);
@@ -127,7 +127,11 @@ internal static class History {
     
     public static void Clear() => Global.Clear();
 
-    public static void StartRecording(object reference, string? description = null) => Global.StartRecording(reference, description);
+    public static void StartRecording(object reference, string? description = null) {
+        
+        if (CommandLine.Editor && Core.IsPlaying) return; 
+        Global.StartRecording(reference, description);
+    }
     public static void StopRecording() => Global.StopRecording();
     public static void Undo() => Global.Undo();
     public static void Redo() => Global.Redo();

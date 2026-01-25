@@ -22,25 +22,14 @@ internal static class Runtime {
             Window.UpdateFps();
             Core.Load();
             
-            // Input first
-            LuaMouse.Loop();
-            
-            // Logic (updates matrices, scripts, and camera)
-            Core.Logic();
-            
             BeginDrawing();
             ClearBackground(Colors.Game);
             
-            // Shadow pass (internal RT switch)
-            Core.ShadowPass();
+            Core.Step();
             
-            // Main Render
-            BeginMode3D(Core.ActiveCamera.Raylib);
-            Core.Render(false);
-            EndMode3D();
-            
-            Core.Render(true);
-            Window.DrawFps();
+            var fpsText = Window.GetFpsText();
+            var textSize = Raylib.MeasureTextEx(Fonts.RlMontserratRegular, fpsText, 20, 1);
+            Window.DrawFps(new System.Numerics.Vector2(Window.Width - textSize.X - 15, 15));
             EndDrawing();
             
             if (_scheduledQuit) break;

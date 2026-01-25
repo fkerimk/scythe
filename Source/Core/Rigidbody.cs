@@ -34,8 +34,9 @@ internal class Rigidbody(Obj obj) : Component(obj) {
     private Quaternion _lastSyncedRot;
     
     public Vector3 Velocity {
-        get => Body == null ? Vector3.Zero : Conversion.FromJitter(Body.Velocity);
-        set {
+        
+        get => Body == null ? Vector3.Zero : Conversion.FromJitter(Body.Velocity); set {
+            
             if (Body == null) return;
             Body.Velocity = Conversion.ToJitter(value);
             Body.SetActivationState(true);
@@ -43,8 +44,9 @@ internal class Rigidbody(Obj obj) : Component(obj) {
     }
 
     public Vector3 AngularVelocity {
-        get => Body == null ? Vector3.Zero : Conversion.FromJitter(Body.AngularVelocity);
-        set {
+        
+        get => Body == null ? Vector3.Zero : Conversion.FromJitter(Body.AngularVelocity); set {
+            
             if (Body == null) return;
             Body.AngularVelocity = Conversion.ToJitter(value);
             Body.SetActivationState(true);
@@ -52,14 +54,16 @@ internal class Rigidbody(Obj obj) : Component(obj) {
     }
 
     public void AddForce(Vector3 force) {
+        
         if (Body == null) return;
+        
         Body.AddForce(Conversion.ToJitter(force));
         Body.SetActivationState(true);
     }
 
     public override bool Load() {
         
-        if (CommandLine.Editor) return true;
+        if (CommandLine.Editor && !Core.IsPlaying) return true;
 
         Body = Physics.World.CreateRigidBody();
         
@@ -110,7 +114,7 @@ internal class Rigidbody(Obj obj) : Component(obj) {
 
     public override void Logic() {
         
-        if (CommandLine.Editor || Body == null) return;
+        if ((CommandLine.Editor && !Core.IsPlaying) || Body == null) return;
 
         // Check for manual transform changes (Script or Teleport)
         if (Obj.Transform.Pos != _lastSyncedPos) {

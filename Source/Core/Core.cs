@@ -8,8 +8,10 @@ internal static class Core {
     public static int ActiveLevelIndex = -1;
     public static Level? ActiveLevel => ActiveLevelIndex >= 0 && ActiveLevelIndex < OpenLevels.Count ? OpenLevels[ActiveLevelIndex] : null;
     public static Camera3D? ActiveCamera;
+    public static Camera3D? GameCamera;
     public static bool ShouldFocusActiveLevel;
     public static bool IsPreviewRender;
+    public static bool IsPlaying;
 
     public static readonly RenderSettings RenderSettings = new();
 
@@ -45,7 +47,11 @@ internal static class Core {
         }
 
         // Level & camera
-        if (!CommandLine.Editor) OpenLevel("Main");
+        if (!CommandLine.Editor) {
+            
+            IsPlaying = true;
+            OpenLevel("Main");
+        }
         
         _shadowMap = LoadShadowmapRenderTexture(ShadowMapResolution, ShadowMapResolution);
         
@@ -133,7 +139,7 @@ internal static class Core {
         Load();
     }
 
-    public static void SetActiveLevel(int index) {
+    public static void SetActiveLevel(int index, bool clearHistory = true) {
         
         if (index < 0 || index >= OpenLevels.Count) return;
         
@@ -141,15 +147,14 @@ internal static class Core {
         
         if (ActiveLevel == null) return;
         
-        History.Clear(); // Clear history when switching levels to avoid cross-level undo
+        // Clear history when switching levels to avoid cross-level undo
+        if (clearHistory) History.Clear(); 
         ActiveLevel.Root.Transform.UpdateTransform();
         
-        if (!CommandLine.Editor) {
-            
-            if (ActiveLevel.Root.Children.TryGetValue("Camera", out var cameraObj) && cameraObj.Components.TryGetValue("Camera", out var camComp))
-                 ActiveCamera = (camComp as Camera)?.Cam;
-            else ActiveCamera = FindFirstCamera(ActiveLevel.Root);
-        }
+        GameCamera = RootCamera(ActiveLevel.Root);
+
+        if (!CommandLine.Editor || IsPlaying)
+            ActiveCamera = GameCamera;
         
         else ActiveCamera = new Camera3D();
 
@@ -162,16 +167,22 @@ internal static class Core {
         }
             
         else FreeCam.SetFromTarget(ActiveCamera);
+    }
 
-        return;
-
-        static Camera3D? FindFirstCamera(Obj obj) {
+    private static Camera3D? RootCamera(Obj obj) {
             
-            if (obj.Components.Values.FirstOrDefault(c => c is Camera) is Camera found)
-                return found.Cam;
+        if (obj.Children.TryGetValue("Camera", out var cameraObj) && cameraObj.Components.TryGetValue("Camera", out var camComp))
+             return (camComp as Camera)?.Cam;
+        
+        return FindFirstCamera(obj);
+    }
 
-            return obj.Children.Values.Select(FindFirstCamera).OfType<Camera3D>().FirstOrDefault();
-        }
+    private static Camera3D? FindFirstCamera(Obj obj) {
+            
+        if (obj.Components.Values.FirstOrDefault(c => c is Camera) is Camera found)
+            return found.Cam;
+
+        return obj.Children.Values.Select(FindFirstCamera).OfType<Camera3D>().FirstOrDefault();
     }
 
     public static void CloseLevel(int index) {
@@ -213,11 +224,13 @@ internal static class Core {
         AssetManager.Update();
         
         if (ActiveLevel == null) return;
+
+        if (IsPlaying) LuaMouse.Loop();
         
         Lights.Clear();
         TransparentRenderQueue.Clear();
         
-        if (!CommandLine.Editor) Physics.Update();
+        if (IsPlaying || !CommandLine.Editor) Physics.Update();
         
         // Behavior & Logic (Scripts, Tweens, Physics Sync) This pass determines WHERE objects want to be in this frame.
         RunLogic(ActiveLevel.Root);
@@ -229,81 +242,82 @@ internal static class Core {
         var pbr = AssetManager.Get<ShaderAsset>("pbr");
         if (pbr != null)
             SetShaderValue(pbr.Shader, pbr.GetLoc("view_pos"), ActiveCamera?.Position ?? Vector3.Zero, ShaderUniformDataType.Vec3);
-        
-        return;
-
-        void RunLogic(Obj obj) {
-            
-            // Priority: Rigidbodies must sync physics to transform before scripts run
-            if (obj.Components.TryGetValue("Rigidbody", out var rb) && rb.IsLoaded)
-                rb.Logic();
-
-            foreach (var component in obj.Components.Values) {
-                
-                if (component is Rigidbody) continue;
-                if (component.IsLoaded) component.Logic();
-            }
-
-            foreach (var child in obj.Children.Values.ToArray()) RunLogic(child);
-        }
-
-        void SyncHierarchy(Obj obj) {
-            
-            // Physical World Sync (Top-Down)
-            if (obj.Parent != null) {
-                
-                obj.WorldMatrix = obj.Parent.WorldMatrix * obj.Matrix;
-                obj.WorldRotMatrix = obj.Parent.WorldRotMatrix * obj.RotMatrix;
-                
-            } else {
-                
-                obj.WorldMatrix = obj.Matrix;
-                obj.WorldRotMatrix = obj.RotMatrix;
-            }
-
-            // Visual State Sync
-            if (!CommandLine.Editor) {
-                
-                // Runtime: Instant sync for zero lag (Physics etc.)
-                obj.VisualWorldMatrix = obj.WorldMatrix;
-                
-            } else {
-                
-                // Handle Cartoon Bounce Start with a clean inherited baseline
-                obj.VisualWorldMatrix = obj.Parent != null
-                    ? obj.Parent.VisualWorldMatrix * obj.Matrix
-                    : obj.WorldMatrix;
-
-                // If this is the selected object or undergoing local bounce, UpdateCartoon will override it
-                obj.Transform.UpdateCartoon();
-            }
-
-            // 3. Collection & Preparation
-            foreach (var component in obj.Components.Values) {
-                
-                if (!component.IsLoaded) continue;
-
-                switch (component) {
-                    
-                    case Light light: Lights.Add(light); break;
-                    
-                    case Model { IsTransparent: true } model: {
-                        
-                        var worldPos = new Vector3(obj.WorldMatrix.M41, obj.WorldMatrix.M42, obj.WorldMatrix.M43);
-                        var distance = Vector3.Distance(ActiveCamera?.Position ?? Vector3.Zero, worldPos);
-                        TransparentRenderQueue.Add(new TransparentDrawCall { Model = model, Distance = distance });
-                        break;
-                    }
-                }
-            }
-
-            foreach (var child in obj.Children.Values.ToArray()) SyncHierarchy(child);
-        }
     }
 
-    public static void ShadowPass() {
+    private static void RunLogic(Obj obj) {
+        
+        // Priority: Rigidbodies must sync physics to transform before scripts run
+        if (obj.Components.TryGetValue("Rigidbody", out var rb) && rb.IsLoaded)
+            rb.Logic();
+
+        foreach (var component in obj.Components.Values) {
+            
+            if (component is Rigidbody) continue;
+            if (component.IsLoaded) component.Logic();
+        }
+
+        foreach (var child in obj.Children.Values.ToArray()) RunLogic(child);
+    }
+
+    private static void SyncHierarchy(Obj obj) {
+        
+        // Physical World Sync (Top-Down)
+        if (obj.Parent != null) {
+            
+            obj.WorldMatrix = obj.Parent.WorldMatrix * obj.Matrix;
+            obj.WorldRotMatrix = obj.Parent.WorldRotMatrix * obj.RotMatrix;
+            
+        } else {
+            
+            obj.WorldMatrix = obj.Matrix;
+            obj.WorldRotMatrix = obj.RotMatrix;
+        }
+
+        // Visual State Sync
+        if (IsPlaying || !CommandLine.Editor) {
+            
+            // Runtime: Instant sync for zero lag (Physics etc.)
+            obj.VisualWorldMatrix = obj.WorldMatrix;
+            
+        } else {
+            
+            // Handle Cartoon Bounce Start with a clean inherited baseline
+            obj.VisualWorldMatrix = obj.Parent != null
+                ? obj.Parent.VisualWorldMatrix * obj.Matrix
+                : obj.WorldMatrix;
+
+            // If this is the selected object or undergoing local bounce, UpdateCartoon will override it
+            obj.Transform.UpdateCartoon();
+        }
+
+        // 3. Collection & Preparation
+        foreach (var component in obj.Components.Values) {
+            
+            if (!component.IsLoaded) continue;
+
+            switch (component) {
+                
+                case Light light: Lights.Add(light); break;
+                
+                case Model { IsTransparent: true } model: {
+                    
+                    var worldPos = new Vector3(obj.WorldMatrix.M41, obj.WorldMatrix.M42, obj.WorldMatrix.M43);
+                    var distance = Vector3.Distance(ActiveCamera?.Position ?? Vector3.Zero, worldPos);
+                    TransparentRenderQueue.Add(new TransparentDrawCall { Model = model, Distance = distance });
+                    break;
+                }
+            }
+        }
+
+        foreach (var child in obj.Children.Values.ToArray()) SyncHierarchy(child);
+    }
+
+    public static void ShadowPass(Camera3D? overrideCamera = null) {
         
         if (ActiveLevel == null) return;
+        
+        var renderCamera = overrideCamera ?? ActiveCamera;
+        if (renderCamera == null) return;
         
         var pbr = AssetManager.Get<ShaderAsset>("pbr");
         if (pbr == null) return;
@@ -438,17 +452,25 @@ internal static class Core {
         foreach (var child in obj.Children.Values.ToArray()) RenderHierarchy(child, is2D, isShadowPass);
     }
 
-    public static void Loop(bool is2D) {
+    public static void Step() {
         
-        if (is2D) Render(true);
+        Logic();
+        ShadowPass();
+        RenderAll();
+    }
+
+    public static void RenderAll(Camera3D? overrideCamera = null) {
         
-        else {
+        var renderCamera = overrideCamera ?? ActiveCamera;
+        
+        if (renderCamera != null) {
             
-            Logic();
-            ShadowPass();
-            
+            BeginMode3D(renderCamera.Raylib);
             Render(false);
+            EndMode3D();
         }
+        
+        Render(true);
     }
 
     public static void Quit() {

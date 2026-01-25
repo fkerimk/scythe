@@ -6,8 +6,8 @@ function loop()
 
     local moveInput = f2.new(
 
-        (kb.down("D") and 1 or 0) - (kb.down("A") and 1 or 0),
-        (kb.down("W") and 1 or 0) - (kb.down("S") and 1 or 0)
+        (kb:down("D") and 1 or 0) - (kb:down("A") and 1 or 0),
+        (kb:down("W") and 1 or 0) - (kb:down("S") and 1 or 0)
     )
 
     local vel = - moveInput.x * speed * cam.rightFlat

@@ -26,14 +26,16 @@ internal static class Window {
 
     public static void Clear(Color color) => ClearBackground(color);
 
-    public static void DrawFps() {
+    public static string GetFpsText() => $"{GetFPS()}";
+
+    public static void DrawFps(System.Numerics.Vector2 pos) {
         
         if (CommandLine.Editor ? !Config.Editor.DrawFps : !Config.Runtime.DrawFps) return;
         
-        var fpsText = $"{GetFPS()}";
+        var fpsText = GetFpsText();
 
-        DrawTextEx(Fonts.RlMontserratRegular, fpsText, new System.Numerics.Vector2(11, 10), 20, 1, Color.Black);
-        DrawTextEx(Fonts.RlMontserratRegular, fpsText, new System.Numerics.Vector2(10, 10), 20, 1, Colors.Primary);
+        DrawTextEx(Fonts.RlMontserratRegular, fpsText, pos + new System.Numerics.Vector2(1, 0), 26, 1, Color.Black);
+        DrawTextEx(Fonts.RlMontserratRegular, fpsText, pos, 26, 1, Colors.Primary);
     }
 
     private static void CenterWindow() => SetWindowPosition((Screen.Width - Width) / 2, (Screen.Height - Height) / 2);

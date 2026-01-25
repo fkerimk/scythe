@@ -97,10 +97,8 @@ internal class EditorRender() : Viewport("Render (Editor)") {
                 var isSelected = (Core.ActiveLevelIndex == i);
                 var flags = ImGuiTabItemFlags.None;
                 
-                if (Core.ShouldFocusActiveLevel && isSelected) {
+                if (Core.ShouldFocusActiveLevel && isSelected)
                     flags |= ImGuiTabItemFlags.SetSelected;
-                    // Only clear the flag after we've processed all tabs or at least the one we want to focus
-                }
 
                 if (ImGui.BeginTabItem(label, ref open, flags)) {
 
@@ -134,6 +132,23 @@ internal class EditorRender() : Viewport("Render (Editor)") {
             }
 
             ImGui.EndTabBar();
+        }
+        
+        // Draw FPS in top-right corner of the viewport using ImGui DrawList (so it stays on top)
+        if (Rt.Texture is { Width: > 0, Height: > 0 }) {
+            
+            const float fontSize = 26f;
+            
+            var fpsText = Window.GetFpsText();
+            var textSize = ImGui.CalcTextSize(fpsText) * (fontSize / ImGui.GetFontSize());
+            var padding = new Vector2(10, 5);
+            
+            // Draw on top of everything in this window
+            var drawList = ImGui.GetWindowDrawList();
+            var pos = WindowPos + new Vector2(ContentRegion.X - textSize.X - padding.X, ImGui.GetFrameHeight() + padding.Y);
+            
+            drawList.AddText(ImGui.GetFont(), fontSize, pos + new Vector2(1, 1), ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 1)), fpsText); // Shadow
+            drawList.AddText(ImGui.GetFont(), fontSize, pos, ImGui.ColorConvertFloat4ToU32(Colors.Primary.ToVector4()), fpsText);
         }
         
         Core.ShouldFocusActiveLevel = false;

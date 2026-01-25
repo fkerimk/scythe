@@ -1,8 +1,7 @@
 {
   "OpenTabs": [
-    "Scripts/PlayerRotation.lua",
-    "Scripts/PlayerMovement.lua",
-    "Scripts/PistolAnimation.lua"
+    "Scripts/PistolAnimation.lua",
+    "Scripts/PlayerMovement.lua"
   ],
-  "ActiveTabIndex": 0
+  "ActiveTabIndex": 1
 }

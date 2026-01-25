@@ -5,7 +5,7 @@ internal abstract class Viewport(string title) {
 
     public string Title { get; } = title;
     public CustomStyle? CustomStyle;
-    protected ImGuiWindowFlags WindowFlags { get; set; } = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoNav;
+    protected ImGuiWindowFlags WindowFlags { get; init; } = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoNav;
     
     public Vector2 WindowPos;
     public Vector2 ContentRegion;
@@ -14,6 +14,7 @@ internal abstract class Viewport(string title) {
     public bool IsOpen = true;
     public bool IsHovered;
     public bool IsFocused;
+    public bool ShouldFocus;
     
     public void Draw() {
 
@@ -21,6 +22,12 @@ internal abstract class Viewport(string title) {
 
         ImGui.PushStyleVar(ImGuiStyleVar.WindowBorderSize, 0.0f);
         if (CustomStyle != null) Style.Push(CustomStyle);
+
+        if (ShouldFocus) {
+            
+            ImGui.SetNextWindowFocus();
+            ShouldFocus = false;
+        }
         
         if (!ImGui.Begin(Title, ref IsOpen, WindowFlags)) {
 

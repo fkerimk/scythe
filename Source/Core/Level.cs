@@ -20,11 +20,11 @@ internal class Level {
             if (PathUtil.BestPath(val, out var fullPath)) return fullPath;
             
             // Try asset lookup
-            if (!Path.IsPathRooted(val)) {
-                // If it's relative, assume it's relative to Mod Root or Resources
-                if (PathUtil.BestPath(val, out var bestPath)) return bestPath;
-            }
+            if (Path.IsPathRooted(val)) return val;
             
+            // If it's relative, assume it's relative to Mod Root or Resources
+            if (PathUtil.BestPath(val, out var bestPath)) return bestPath;
+
             return val; 
         }
 
@@ -65,6 +65,14 @@ internal class Level {
         public Vector2 Rotation;
     }
 
+    [JsonConstructor]
+    private Level() {
+        
+        Root = new Obj("Root", null);
+        Name = "New Level";
+        JsonPath = "";
+    }
+
     public Level(string? name) {
 
         if (name == null) return;
@@ -92,11 +100,19 @@ internal class Level {
         if (load) LoadInternal();
     }
 
-    private void LoadInternal() {
+    public Level(string name, string path, string jsonBody) {
+
+        Name = name;
+        JsonPath = path;
+        Root = new Obj("Root", null);
+        LoadInternal(jsonBody);
+    }
+
+    private void LoadInternal(string? jsonOverride = null) {
 
         SafeExec.Try(() => {
             
-            var jsonText = File.ReadAllText(JsonPath);
+            var jsonText = jsonOverride ?? File.ReadAllText(JsonPath);
             var rawData = JObject.Parse(jsonText);
 
             if (rawData["Root"]?["Children"] is JObject children) {
@@ -109,21 +125,27 @@ internal class Level {
             if (CommandLine.Editor && rawData["EditorCamera"] is JObject cameraJson) {
                 
                 EditorCamera = cameraJson.ToObject<CameraData>();
+
+                if (EditorCamera == null) return;
                 
-                if (EditorCamera != null) {
-                    
-                    FreeCam.Pos = EditorCamera.Position;
-                    FreeCam.Rot = EditorCamera.Rotation;
-                }
+                FreeCam.Pos = EditorCamera.Position;
+                FreeCam.Rot = EditorCamera.Rotation;
             }
         });
     }
 
     public void Save() {
         
+        File.WriteAllText(JsonPath, ToSnapshot(true));
+        IsDirty = false;
+    }
+
+    public string ToSnapshot(bool pretty = false) {
+        
         if (CommandLine.Editor) {
             
             EditorCamera = new CameraData {
+                
                 Position = FreeCam.Pos,
                 Rotation = FreeCam.Rot
             };
@@ -137,13 +159,12 @@ internal class Level {
             Converters = { new RelativePathConverter() }
         };
 
-        if (!Enum.TryParse(Config.Level.Formatting, out Formatting formatting))
+        var formatting = pretty ? Formatting.Indented : Formatting.None;
+        
+        if (pretty && !Enum.TryParse(Config.Level.Formatting, out formatting))
             formatting = Formatting.None;
         
-        var json = JsonConvert.SerializeObject(this, formatting, settings);
-
-        File.WriteAllText(JsonPath, json);
-        IsDirty = false;
+        return JsonConvert.SerializeObject(this, formatting, settings);
     }
     
     private static void BuildHierarchy(KeyValuePair<string, JToken> dataPair, Obj parent) {

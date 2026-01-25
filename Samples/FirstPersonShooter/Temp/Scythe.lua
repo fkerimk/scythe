@@ -116,6 +116,10 @@ local Level = {}
 ---@return void
 function Level:save() end
 
+---@param pretty boolean
+---@return string
+function Level:toSnapshot(pretty) end
+
 ---@param name string
 ---@param parent Obj
 ---@return Obj
@@ -237,19 +241,19 @@ local LuaTime = {}
 local LuaKb = {}
 ---@param keyName string
 ---@return boolean
-function LuaKb.down(keyName) end
+function LuaKb:down(keyName) end
 
 ---@param keyName string
 ---@return boolean
-function LuaKb.pressed(keyName) end
+function LuaKb:pressed(keyName) end
 
 ---@param keyName string
 ---@return boolean
-function LuaKb.released(keyName) end
+function LuaKb:released(keyName) end
 
 ---@param keyName string
 ---@return boolean
-function LuaKb.up(keyName) end
+function LuaKb:up(keyName) end
 
 ---@class LuaMouse
 ---@field scroll number

@@ -84,6 +84,20 @@ internal static class Style {
     }
     
     private static void Set(ImGuiCol id, Color color) {
+
+        if (Core.IsPlaying) {
+            
+            // Apply subtle red tint in play mode
+            var tint = Colors.PlayModeTint;
+            
+            // Blend original color with tint (20% tint strength)
+            // Raylib's ColorLerp is nice but let's do it manually for precision with alpha
+            var r = (byte)Raymath.Lerp(color.R, tint.R, 0.15f);
+            var g = (byte)Raymath.Lerp(color.G, tint.G, 0.15f);
+            var b = (byte)Raymath.Lerp(color.B, tint.B, 0.15f);
+            
+            color = new Color(r, g, b, color.A);
+        }
         
         PushStyleColor(id, color.ToVector4());
         PushedColors[_pushes]++;

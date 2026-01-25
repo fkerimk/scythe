@@ -10,6 +10,7 @@ internal static class Colors {
     public static Color Back => new(18, 18, 26, 255);
     public static Color Game => new(12, 12, 14, 255);
     public static Color Grid => new(80, 100, 200, 20);
+    public static Color PlayModeTint => new(Primary.R / 2, Primary.G / 2, Primary.B / 2, 255);
     
     // ImGui
     public static Color GuiText => new(230, 230, 245, 255);

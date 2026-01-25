@@ -1622,8 +1622,10 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         BeginTextureMode(_rt);
-        ClearBackground(new Color(15, 15, 20, 255));
+        ClearBackground(Core.IsPlaying ? new Color(35, 18, 18, 255) : new Color(15, 15, 20, 255));
+        
         foreach (var p in Particles) {
+            
             var sP = p.Position - ActiveTab.CameraPos + _shakeOffset;
             DrawCircleV(sP, p.Size * ActiveTab.Zoom, p.Color);
             if (p.Size * ActiveTab.Zoom > 2)
