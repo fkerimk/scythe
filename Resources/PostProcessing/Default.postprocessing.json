@@ -1,0 +1,63 @@
+{
+  "Settings": {
+    "Bloom": {
+      "Enabled": true,
+      "Intensity": 0.1
+    },
+    "Blur": {
+      "Enabled": false,
+      "Radius": 1.0
+    },
+    "Grayscale": {
+      "Enabled": false
+    },
+    "Posterization": {
+      "Enabled": false,
+      "Levels": 10.0
+    },
+    "DreamVision": {
+      "Enabled": false
+    },
+    "Pixelizer": {
+      "Enabled": false,
+      "Size": 4.0
+    },
+    "CrossHatching": {
+      "Enabled": false
+    },
+    "CrossStitching": {
+      "Enabled": false,
+      "Size": 6.0
+    },
+    "Predator": {
+      "Enabled": false
+    },
+    "Sobel": {
+      "Enabled": false
+    },
+    "Scanlines": {
+      "Enabled": false
+    },
+    "Fisheye": {
+      "Enabled": false
+    },
+    "Ssao": {
+      "Enabled": true,
+      "Radius": 0.25,
+      "Bias": 0.025,
+      "Intensity": 1.0
+    },
+    "Fxaa": {
+      "Enabled": false
+    },
+    "Smaa": {
+      "Enabled": false
+    },
+    "Taa": {
+      "Enabled": true,
+      "BlendFactor": 0.1,
+      "VarianceClip": true,
+      "Scale": 1.0
+    }
+  }
+}

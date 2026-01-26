@@ -1,5 +1,5 @@
 ﻿internal enum TokenType {
-    
+
     Normal,
     Keyword,
     String,

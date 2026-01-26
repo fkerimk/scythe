@@ -26,7 +26,6 @@
         },
         "Components": {
           "Light": {
-            "Enabled": true,
             "Type": 0,
             "ScytheColor": {
               "R": 223,
@@ -35,7 +34,6 @@
             },
             "Intensity": 10.0,
             "Range": 50.0,
-            "Shadows": true,
             "ShadowStrength": 1.0
           }
         }
@@ -49,9 +47,9 @@
             "Z": 1.8000001
           },
           "Euler": {
-            "X": -127.986275,
-            "Y": 69.92011,
-            "Z": -146.06642
+            "X": -164.54074,
+            "Y": 77.33563,
+            "Z": 176.01686
           },
           "Scale": {
             "X": 1.0,
@@ -59,14 +57,18 @@
             "Z": 1.0
           },
           "Rot": {
-            "X": 0.02537226,
-            "Y": -0.7778247,
-            "Z": 0.1934334,
-            "W": 0.5974348
+            "X": 0.11087227,
+            "Y": -0.77030045,
+            "Z": 0.12646726,
+            "W": 0.61510265
           }
         },
         "Components": {
-          "Camera": {}
+          "Camera": {
+            "Fov": 60.0,
+            "NearClip": 0.01,
+            "FarClip": 1000.0
+          }
         }
       },
       "Ground": {
@@ -94,9 +96,7 @@
               "B": 255,
               "A": 255
             },
-            "AlphaCutoff": 0.5,
-            "CastShadows": true,
-            "ReceiveShadows": true
+            "AlphaCutoff": 0.5
           },
           "BoxCollider": {
             "Size": {
@@ -139,9 +139,7 @@
               "B": 255,
               "A": 255
             },
-            "AlphaCutoff": 0.5,
-            "CastShadows": true,
-            "ReceiveShadows": true
+            "AlphaCutoff": 0.5
           },
           "BoxCollider": {
             "Size": {
@@ -186,9 +184,7 @@
               "B": 255,
               "A": 255
             },
-            "AlphaCutoff": 0.5,
-            "CastShadows": true,
-            "ReceiveShadows": true
+            "AlphaCutoff": 0.5
           },
           "BoxCollider": {
             "Size": {
@@ -233,9 +229,7 @@
               "B": 255,
               "A": 255
             },
-            "AlphaCutoff": 0.5,
-            "CastShadows": true,
-            "ReceiveShadows": true
+            "AlphaCutoff": 0.5
           },
           "BoxCollider": {
             "Size": {
@@ -280,9 +274,7 @@
               "B": 255,
               "A": 255
             },
-            "AlphaCutoff": 0.5,
-            "CastShadows": true,
-            "ReceiveShadows": true
+            "AlphaCutoff": 0.5
           },
           "BoxCollider": {
             "Size": {
@@ -327,9 +319,7 @@
               "B": 255,
               "A": 255
             },
-            "AlphaCutoff": 0.5,
-            "CastShadows": true,
-            "ReceiveShadows": true
+            "AlphaCutoff": 0.5
           },
           "BoxCollider": {
             "Size": {
@@ -374,9 +364,7 @@
               "B": 255,
               "A": 255
             },
-            "AlphaCutoff": 0.5,
-            "CastShadows": true,
-            "ReceiveShadows": true
+            "AlphaCutoff": 0.5
           },
           "BoxCollider": {
             "Size": {
@@ -409,13 +397,13 @@
   },
   "EditorCamera": {
     "Position": {
-      "X": 10.867926,
-      "Y": 6.2860107,
-      "Z": -3.0241623
+      "X": 12.384245,
+      "Y": 5.296686,
+      "Z": 3.8126516
     },
     "Rotation": {
-      "X": -0.318838,
-      "Y": -1.2641934
+      "X": -0.21083783,
+      "Y": -1.9241939
     }
   }
 }

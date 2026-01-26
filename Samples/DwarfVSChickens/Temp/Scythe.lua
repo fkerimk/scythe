@@ -173,6 +173,7 @@ function Camera:render3D() end
 ---@field ambientColor Color
 ---@field shadowFovScale number
 ---@field shadowBias number
+---@field postProcessing PostProcessingSettings
 local RenderSettings = {}
 ---@class LuaF2
 ---@field new fun(arg0: number, arg1: number): Vector2
@@ -238,6 +239,9 @@ function LuaMt.sign(value) end
 ---@field delta number
 ---@field passed number
 local LuaTime = {}
+---@return void
+function LuaTime.reset() end
+
 ---@class LuaKb
 local LuaKb = {}
 ---@param keyName string
@@ -550,12 +554,10 @@ function Transform:addEuler(x, y, z) end
 ---@field gravity boolean
 ---@field friction number
 ---@field bounciness number
----@field freezePosX boolean
----@field freezePosY boolean
----@field freezePosZ boolean
----@field freezeRotX boolean
----@field freezeRotY boolean
----@field freezeRotZ boolean
+---@field frictionCombine PhysicsCombineMode
+---@field bounceCombine PhysicsCombineMode
+---@field freezePos Bool3
+---@field freezeRot Bool3
 ---@field velocity Vector3
 ---@field angularVelocity Vector3
 ---@field isSelected boolean
@@ -2113,6 +2115,24 @@ function Matrix4x4:withRow(index, value) end
 ---@field right Vector3
 ---@field raylib Camera3D
 local Camera3D = {}
+---@class PostProcessingSettings
+---@field bloom BloomSettings
+---@field blur BlurSettings
+---@field grayscale GrayscaleSettings
+---@field posterization PosterizationSettings
+---@field dreamVision DreamVisionSettings
+---@field pixelizer PixelizerSettings
+---@field crossHatching CrossHatchingSettings
+---@field crossStitching CrossStitchingSettings
+---@field predator PredatorSettings
+---@field sobel SobelSettings
+---@field scanlines ScanlinesSettings
+---@field fisheye FisheyeSettings
+---@field ssao SsaoSettings
+---@field fxaa FxaaSettings
+---@field smaa SmaaSettings
+---@field taa TaaSettings
+local PostProcessingSettings = {}
 ---@class ModelAsset : Asset
 ---@field isLoaded boolean
 ---@field file string
@@ -2152,6 +2172,21 @@ function ModelAsset:applyMaterialState(index, force) end
 
 ---@return void
 function ModelAsset:unload() end
+
+---@class PhysicsCombineMode
+---@field value__ number
+---@field average PhysicsCombineMode
+---@field minimum PhysicsCombineMode
+---@field multiply PhysicsCombineMode
+---@field maximum PhysicsCombineMode
+local PhysicsCombineMode = {}
+---@class Bool3
+---@field x boolean
+---@field y boolean
+---@field z boolean
+local Bool3 = {}
+---@return string
+function Bool3:toString() end
 
 ---@class RigidBody
 ---@field data RigidBodyData
@@ -3251,6 +3286,65 @@ function Plane:toString() end
 ---@field perspective CameraProjection
 ---@field orthographic CameraProjection
 local CameraProjection = {}
+---@class BloomSettings
+---@field enabled boolean
+---@field intensity number
+local BloomSettings = {}
+---@class BlurSettings
+---@field enabled boolean
+---@field radius number
+local BlurSettings = {}
+---@class GrayscaleSettings
+---@field enabled boolean
+local GrayscaleSettings = {}
+---@class PosterizationSettings
+---@field enabled boolean
+---@field levels number
+local PosterizationSettings = {}
+---@class DreamVisionSettings
+---@field enabled boolean
+local DreamVisionSettings = {}
+---@class PixelizerSettings
+---@field enabled boolean
+---@field size number
+local PixelizerSettings = {}
+---@class CrossHatchingSettings
+---@field enabled boolean
+local CrossHatchingSettings = {}
+---@class CrossStitchingSettings
+---@field enabled boolean
+---@field size number
+local CrossStitchingSettings = {}
+---@class PredatorSettings
+---@field enabled boolean
+local PredatorSettings = {}
+---@class SobelSettings
+---@field enabled boolean
+local SobelSettings = {}
+---@class ScanlinesSettings
+---@field enabled boolean
+local ScanlinesSettings = {}
+---@class FisheyeSettings
+---@field enabled boolean
+local FisheyeSettings = {}
+---@class SsaoSettings
+---@field enabled boolean
+---@field radius number
+---@field bias number
+---@field intensity number
+local SsaoSettings = {}
+---@class FxaaSettings
+---@field enabled boolean
+local FxaaSettings = {}
+---@class SmaaSettings
+---@field enabled boolean
+local SmaaSettings = {}
+---@class TaaSettings
+---@field enabled boolean
+---@field blendFactor number
+---@field varianceClip boolean
+---@field scale number
+local TaaSettings = {}
 ---@class Asset
 ---@field isLoaded boolean
 ---@field file string

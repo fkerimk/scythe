@@ -4,19 +4,20 @@ using static Raylib_cs.Raylib;
 internal static class Shortcuts {
 
     public static void Check() {
-        
+
         // Always allow F5 to toggle play mode
         if (IsKeyPressed(KeyboardKey.F5)) {
-            
+
             RunPlayMode();
+
             return;
         }
 
         // Ignore other shortcuts if playing or if text inputs are active
         if (Core.IsPlaying || Editor.IsScriptEditorFocused) return;
-        
+
         if (IsKeyDown(KeyboardKey.LeftControl)) {
-            
+
             if (IsKeyPressed(KeyboardKey.Q)) Editor.Quit();
             if (IsKeyPressed(KeyboardKey.D)) DuplicateSelectedObject();
             if (IsKeyPressed(KeyboardKey.S)) SaveActiveLevel();
@@ -28,19 +29,20 @@ internal static class Shortcuts {
     }
 
     private static void DuplicateSelectedObject() {
-        
+
         if (LevelBrowser.SelectedObject == null) return;
+
         LevelBrowser.SelectObject(LevelBrowser.SelectedObject.CloneRecorded());
     }
-    
+
     private static void SaveActiveLevel() {
-        
+
         Core.ActiveLevel?.Save();
         Notifications.Show("Saved");
     }
-    
+
     private static void RunPlayMode() {
-        
+
         var center = Editor.RuntimeRender.ScreenPos + Editor.RuntimeRender.TexSize / 2f;
         Editor.TogglePlayMode(center);
     }

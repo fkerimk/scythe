@@ -4,49 +4,40 @@ using Raylib_cs;
 using rlImGui_cs;
 
 internal static class Fonts {
-    
-    private const int
-        SmallSize = 11,
-        NormalSize = 16,
-        LargeSize = 32;
-    
-    public static ImFontPtr
-        ImMontserratRegular,
-        ImFontAwesomeSmall,
-        ImFontAwesomeNormal,
-        ImFontAwesomeLarge ;
-    
-    public static Font
-        RlMontserratRegular,
-        RlCascadiaCode;
+
+    private const int SmallSize = 11, NormalSize = 16, LargeSize = 32;
+
+    public static ImFontPtr ImMontserratRegular, ImFontAwesomeSmall, ImFontAwesomeNormal, ImFontAwesomeLarge;
+
+    public static Font RlMontserratRegular, RlCascadiaCode;
 
     private static ImFontConfigPtr _imFontConfigPtr;
-    private static IntPtr _iconRanges;
-    
+    private static IntPtr          _iconRanges;
+
     public static unsafe void Init() {
-        
+
         if (CommandLine.Editor) {
-        
+
             _iconRanges = GCHandle.Alloc(new ushort[] { 0xE000, 0xF8FF, 0 }, GCHandleType.Pinned).AddrOfPinnedObject();
-        
-            _imFontConfigPtr = ImGuiNative.ImFontConfig_ImFontConfig();
+
+            _imFontConfigPtr             = ImGuiNative.ImFontConfig_ImFontConfig();
             _imFontConfigPtr.OversampleH = 3;
             _imFontConfigPtr.OversampleV = 3;
-            
+
             ImMontserratRegular = LoadFont<ImFontPtr>("Fonts/montserrat-regular.otf");
-            ImFontAwesomeSmall  = LoadFont<ImFontPtr>("Fonts/fa7-free-solid.otf", SmallSize , true);
+            ImFontAwesomeSmall  = LoadFont<ImFontPtr>("Fonts/fa7-free-solid.otf", SmallSize,  true);
             ImFontAwesomeNormal = LoadFont<ImFontPtr>("Fonts/fa7-free-solid.otf", NormalSize, true);
-            ImFontAwesomeLarge  = LoadFont<ImFontPtr>("Fonts/fa7-free-solid.otf", LargeSize , true);
-            
+            ImFontAwesomeLarge  = LoadFont<ImFontPtr>("Fonts/fa7-free-solid.otf", LargeSize,  true);
+
             rlImGui.ReloadFonts();
         }
-        
+
         RlMontserratRegular = LoadFont<Font>("Fonts/montserrat-regular.otf");
-        RlCascadiaCode = LoadFont<Font>("Fonts/CascadiaCode-Regular.ttf");
+        RlCascadiaCode      = LoadFont<Font>("Fonts/CascadiaCode-Regular.ttf");
     }
-    
+
     public static void UnloadRlFonts() {
-        
+
         Raylib.UnloadFont(RlMontserratRegular);
         Raylib.UnloadFont(RlCascadiaCode);
     }
@@ -59,33 +50,28 @@ internal static class Fonts {
 
             var codepoints = new List<int>();
             for (var i = 32; i < 127; i++) codepoints.Add(i); // Basic ASCII
-            
-            int[] turkishChars = [
 
-                0x00c7, 0x00e7, 0x011e, 0x011f, 0x0130, 0x0131, 
-                0x00d6, 0x00f6, 0x015e, 0x015f, 0x00dc, 0x00fc
-            ];
-            
+            int[] turkishChars = [0x00c7, 0x00e7, 0x011e, 0x011f, 0x0130, 0x0131, 0x00d6, 0x00f6, 0x015e, 0x015f, 0x00dc, 0x00fc];
+
             codepoints.AddRange(turkishChars);
 
             fixed (int* pCodepoints = codepoints.ToArray()) {
-                    
+
                 var bytes = System.Text.Encoding.UTF8.GetBytes(bestPath);
-                    
+
                 fixed (byte* pBytes = bytes) {
-                        
+
                     var font = Raylib.LoadFontEx((sbyte*)pBytes, 96, pCodepoints, codepoints.Count);
                     Raylib.SetTextureFilter(font.Texture, TextureFilter.Bilinear);
+
                     return (T)(object)font;
                 }
             }
         }
-        
+
         if (typeof(T) == typeof(ImFontPtr)) {
 
-            return (T)(object) (useIconRanges ?
-                Editor.ImGuiIoPtr.Fonts.AddFontFromFileTTF(bestPath, size, _imFontConfigPtr, _iconRanges) :
-                Editor.ImGuiIoPtr.Fonts.AddFontFromFileTTF(bestPath, size, _imFontConfigPtr));
+            return (T)(object)(useIconRanges ? Editor.ImGuiIoPtr.Fonts.AddFontFromFileTTF(bestPath, size, _imFontConfigPtr, _iconRanges) : Editor.ImGuiIoPtr.Fonts.AddFontFromFileTTF(bestPath, size, _imFontConfigPtr));
         }
 
         throw new NotSupportedException($"Unsupported font type: {typeof(T)}");

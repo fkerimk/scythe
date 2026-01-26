@@ -9,7 +9,7 @@ self:setParent(level.root, true)
 
 function loop(dt)
 
-    rot.x = rot.x + mouse.delta.y * sensitivity
+    rot.x = mt.clamp(rot.x + mouse.delta.y * sensitivity, -89, 89)
     rot.y = rot.y - mouse.delta.x * sensitivity
 
     self.transform.rot = quat.fromEuler(rot.x, rot.y, 0)

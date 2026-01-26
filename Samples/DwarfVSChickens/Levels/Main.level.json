@@ -30,13 +30,10 @@
               "B": 255,
               "A": 255
             },
-            "AlphaCutoff": 0.5,
-            "CastShadows": true,
-            "ReceiveShadows": true
+            "AlphaCutoff": 0.5
           },
           "Animation": {
             "Path": "Models/WizardGnome/WizardGnome.fbx",
-            "Track": 5,
             "IsPlaying": true,
             "Looping": true
           },
@@ -46,9 +43,13 @@
           "Rigidbody": {
             "Friction": 0.0,
             "Bounciness": 0.0,
-            "FreezeRotX": true,
-            "FreezeRotY": true,
-            "FreezeRotZ": true
+            "FrictionCombine": 1,
+            "BounceCombine": 1,
+            "FreezeRot": {
+              "X": true,
+              "Y": true,
+              "Z": true
+            }
           },
           "SphereCollider": {
             "Radius": 0.3,
@@ -87,9 +88,7 @@
                       "B": 255,
                       "A": 255
                     },
-                    "AlphaCutoff": 0.5,
-                    "CastShadows": true,
-                    "ReceiveShadows": true
+                    "AlphaCutoff": 0.5
                   },
                   "BoxCollider": {
                     "Size": {
@@ -157,7 +156,11 @@
           }
         },
         "Components": {
-          "Camera": {}
+          "Camera": {
+            "Fov": 60.0,
+            "NearClip": 0.01,
+            "FarClip": 1000.0
+          }
         }
       },
       "Directional Light": {
@@ -184,7 +187,6 @@
         },
         "Components": {
           "Light": {
-            "Enabled": true,
             "Type": 0,
             "ScytheColor": {
               "R": 255,
@@ -194,7 +196,6 @@
             },
             "Intensity": 10.0,
             "Range": 10.0,
-            "Shadows": true,
             "ShadowStrength": 1.0
           }
         }
