@@ -231,6 +231,18 @@
               "A": 255
             },
             "AlphaCutoff": 0.5
+          },
+          "BoxCollider": {
+            "Size": {
+              "X": 1.0,
+              "Y": 1.0,
+              "Z": 1.0
+            }
+          },
+          "Rigidbody": {
+            "IsStatic": true,
+            "Gravity": false,
+            "Bounciness": 0.0
           }
         }
       },

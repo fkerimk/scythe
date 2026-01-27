@@ -1,6 +1,6 @@
 # SCYTHE 
 
-SCYTHE is a lightweight, C#-based game engine focused on modifiability and rapid iteration using Raylib.
+SCYTHE is a lightweight, C#-based game engine focused on modifiability and rapid iteration using [Raylib](https://github.com/raysan5/raylib).
 
 ## 🎯 Who is this for?
 
@@ -10,13 +10,13 @@ SCYTHE is a lightweight, C#-based game engine focused on modifiability and rapid
 
 ## 🛠️ License
 
-Scythe is licensed under the [LGPL-2.1 license](./LICENSE).
+Scythe is licensed under the [MIT license](./LICENSE).
 
 This project uses:
 
 - [C# bindings of Raylib](https://github.com/raylib-cs/raylib-cs?tab=Zlib-1-ov-file#readme) and [C# bindings of ImGui](https://github.com/ocornut/imgui), both licensed under zlib/libpng.
 
-- [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json?tab=MIT-1-ov-file#readme) and [Jitter Physics 2 *(Jitter2)*](https://github.com/notgiven688/jitterphysics2?tab=MIT-1-ov-file#readme) both licensed under MIT.
+- [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json?tab=MIT-1-ov-file#readme), [Jitter Physics 2 *(Jitter2)*](https://github.com/notgiven688/jitterphysics2?tab=MIT-1-ov-file#readme) and [NLayer](https://github.com/naudio/NLayer?tab=MIT-1-ov-file#readme) all licensed under MIT.
 
 - [MoonSharp](https://github.com/moonsharp-devs/moonsharp/?tab=License-1-ov-file#readme) licensed under the BSD 3-Clause.
 

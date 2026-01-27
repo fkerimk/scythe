@@ -282,11 +282,11 @@ internal class ObjectBrowser : Viewport {
 
             var val   = (Enum)(value ?? Activator.CreateInstance(type)!);
             var names = Enum.GetNames(type);
-            int index = Array.IndexOf(names, val.ToString()!);
+            var index = Array.IndexOf(names, val.ToString());
 
             if (Combo($"##{id}", ref index, names, names.Length)) {
 
-                value   = Enum.Parse(type, names[index]!);
+                value   = Enum.Parse(type, names[index]);
                 changed = true;
             }
         }
