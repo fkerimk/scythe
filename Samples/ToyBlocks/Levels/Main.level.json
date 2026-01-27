@@ -32,7 +32,7 @@
               "G": 206,
               "B": 255
             },
-            "Intensity": 10.0,
+            "Intensity": 5.0,
             "Range": 50.0,
             "ShadowStrength": 1.0
           }
@@ -48,7 +48,7 @@
           },
           "Euler": {
             "X": -164.54074,
-            "Y": 77.33563,
+            "Y": 77.33564,
             "Z": 176.01686
           },
           "Scale": {
@@ -89,7 +89,7 @@
         },
         "Components": {
           "Model": {
-            "Path": "D:/Projects/scythe/Resources/Models/Cube.fbx",
+            "Path": "Resources/Models/Cube.fbx",
             "Color": {
               "R": 255,
               "G": 255,
@@ -397,13 +397,13 @@
   },
   "EditorCamera": {
     "Position": {
-      "X": 12.384245,
-      "Y": 5.296686,
-      "Z": 3.8126516
+      "X": 15.353649,
+      "Y": 6.310353,
+      "Z": 4.5639467
     },
     "Rotation": {
-      "X": -0.21083783,
-      "Y": -1.9241939
+      "X": -0.3488378,
+      "Y": -1.7831937
     }
   }
 }

@@ -230,35 +230,35 @@ internal class ObjectBrowser : Viewport {
 
             var val = (Bool3)(value ?? new Bool3(false, false, false));
 
-            ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 0));
+            PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 0));
 
             if (Checkbox($"##{id}_x", ref val.X)) {
                 value   = val;
                 changed = true;
             }
 
-            ImGui.SameLine();
-            ImGui.Text("X");
-            ImGui.SameLine();
+            SameLine();
+            Text("X");
+            SameLine();
 
             if (Checkbox($"##{id}_y", ref val.Y)) {
                 value   = val;
                 changed = true;
             }
 
-            ImGui.SameLine();
-            ImGui.Text("Y");
-            ImGui.SameLine();
+            SameLine();
+            Text("Y");
+            SameLine();
 
             if (Checkbox($"##{id}_z", ref val.Z)) {
                 value   = val;
                 changed = true;
             }
 
-            ImGui.SameLine();
-            ImGui.Text("Z");
+            SameLine();
+            Text("Z");
 
-            ImGui.PopStyleVar();
+            PopStyleVar();
         } else if (type == typeof(Vector2)) {
 
             var val = (Vector2)(value ?? Vector2.Zero);

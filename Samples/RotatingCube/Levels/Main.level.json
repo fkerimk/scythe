@@ -52,7 +52,7 @@
         },
         "Components": {
           "Model": {
-            "Path": "D:/Projects/scythe/Resources/Models/Cube.fbx",
+            "Path": "Resources/Models/Cube.fbx",
             "Color": {
               "R": 255,
               "G": 255,
@@ -116,7 +116,7 @@
         },
         "Components": {
           "Model": {
-            "Path": "D:/Projects/scythe/Resources/Models/Cube.fbx",
+            "Path": "Resources/Models/Cube.fbx",
             "Color": {
               "R": 255,
               "G": 255,

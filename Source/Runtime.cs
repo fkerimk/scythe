@@ -29,8 +29,8 @@ internal static class Runtime {
             Core.Step();
 
             var fpsText  = Window.GetFpsText();
-            var textSize = Raylib.MeasureTextEx(Fonts.RlMontserratRegular, fpsText, 20, 1);
-            Window.DrawFps(new System.Numerics.Vector2(Window.Width - textSize.X - 15, 15));
+            var textSize = MeasureTextEx(Fonts.RlMontserratRegular, fpsText, 20, 1);
+            Window.DrawFps(new System.Numerics.Vector2(GetScreenWidth() - textSize.X - 15, 15));
             EndDrawing();
 
             if (_scheduledQuit) break;

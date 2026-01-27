@@ -3,9 +3,6 @@ using static Raylib_cs.Raylib;
 
 internal static class Window {
 
-    public static int Width  => GetScreenWidth();
-    public static int Height => GetScreenHeight();
-
     private static int _lastFps = -2;
 
     public static void UpdateFps() {
@@ -35,9 +32,9 @@ internal static class Window {
         DrawTextEx(Fonts.RlMontserratRegular, fpsText, pos,                                     26, 1, Colors.Primary);
     }
 
-    private static void CenterWindow() => SetWindowPosition((Screen.Width - Width) / 2, (Screen.Height - Height) / 2);
+    private static void CenterWindow() => SetWindowPosition((Screen.Width - GetScreenWidth()) / 2, (Screen.Height - GetScreenHeight()) / 2);
 
-    public static void Show(int width = 0, int height = 0, float scale = 0.75f, bool maximize = false, bool fullscreen = false, bool borderless = true, string title = "SCYTHE", bool isSplash = false, params ConfigFlags[] flags) {
+    public static void Show(int width = 1600, int height = 900, bool maximize = false, bool fullscreen = false, bool borderless = true, string title = "SCYTHE", bool isSplash = false, params ConfigFlags[] flags) {
 
         // Close old window
         if (IsWindowReady()) CloseWindow();
@@ -46,17 +43,9 @@ internal static class Window {
         Flags.Set(flags);
 
         // New window     
-        InitWindow(0, 0, title);
-
-        if (width  == 0) width  = Screen.Width;
-        if (height == 0) height = Screen.Height;
-        width  = (int)Math.Floor(width  * scale);
-        height = (int)Math.Floor(height * scale);
-
-        SetWindowSize(width, height);
-
+        InitWindow(width, height, title);
+        SetWindowMonitor(0);
         SetExitKey(KeyboardKey.Null);
-
         CenterWindow();
 
         // Fullscreen & maximizing 

@@ -184,8 +184,8 @@ internal static unsafe class Editor {
             if (Core.GameCamera != null) {
                 BeginMode3D(Core.GameCamera.Raylib);
                 PostProcessing.ApplyJitter(Core.GameCamera);
-                Core.LastProjectionMatrix = Rlgl.GetMatrixProjection();
-                Core.LastViewMatrix       = Rlgl.GetMatrixModelview();
+                Core.LastProjectionMatrix = GetMatrixProjection();
+                Core.LastViewMatrix       = GetMatrixModelview();
                 Core.Render(false);
                 EndMode3D();
             }
@@ -210,8 +210,8 @@ internal static unsafe class Editor {
 
             Camera.ApplySettings(_editorCamera, 0.01f, 2000.0f);
             BeginMode3D(_editorCamera.Raylib);
-            Core.LastProjectionMatrix = Rlgl.GetMatrixProjection();
-            Core.LastViewMatrix       = Rlgl.GetMatrixModelview();
+            Core.LastProjectionMatrix = GetMatrixProjection();
+            Core.LastViewMatrix       = GetMatrixModelview();
             Core.Render(false);
             Grid.Draw(_editorCamera);
             EndMode3D();
