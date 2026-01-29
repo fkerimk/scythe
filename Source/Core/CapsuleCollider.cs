@@ -5,8 +5,8 @@ using Jitter2.Collision.Shapes;
 
 internal class CapsuleCollider(Obj obj) : Component(obj) {
 
-    public override Color  LabelColor => Colors.GuiTypePhysics;
-    public override string LabelIcon  => Icons.FaDotCircleO;
+    public override Color LabelColor => Colors.GuiTypePhysics;
+    public override string LabelIcon => Icons.FaDotCircleO;
 
     [Label("Height"), JsonProperty, RecordHistory]
     public float Height { get; set; } = 1.0f;
@@ -37,17 +37,17 @@ internal class CapsuleCollider(Obj obj) : Component(obj) {
 
         // Physics logic
         var maxScale = MathF.Max(scale.X, scale.Z);
-        var h        = Height * scale.Y;
-        var r        = Radius * maxScale;
+        var h = Height * scale.Y;
+        var r = Radius * maxScale;
 
         // Transform Center to world
-        var scaledCenter  = Center * scale;
+        var scaledCenter = Center * scale;
         var rotatedCenter = Vector3.Transform(scaledCenter, rot);
-        var worldCenter   = pos + rotatedCenter;
+        var worldCenter = pos + rotatedCenter;
 
         var up = Vector3.TransformNormal(Vector3.UnitY, Obj.WorldMatrix);
 
-        var offsetDist                 = (Height * scale.Y) / 2.0f - (Radius * maxScale);
+        var offsetDist = (Height * scale.Y) / 2.0f - (Radius * maxScale);
         if (offsetDist < 0) offsetDist = 0;
 
         // Local UP is (0,1,0). Rotated UP is Vector3.Transform(Vector3.UnitY, Rot);
@@ -57,7 +57,7 @@ internal class CapsuleCollider(Obj obj) : Component(obj) {
         var botPos = worldCenter - worldUp * offsetDist;
 
         var colorVisible = Color.Lime;
-        var colorHidden  = Raylib.ColorAlpha(Color.Lime, 0.15f);
+        var colorHidden = Raylib.ColorAlpha(Color.Lime, 0.15f);
 
         // Hidden
         Rlgl.DrawRenderBatchActive();

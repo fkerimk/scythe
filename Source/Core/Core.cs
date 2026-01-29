@@ -43,10 +43,10 @@ internal static class Core {
 
         if (pbr != null) {
 
-            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_albedo"),   CommandLine.Editor ? Config.Editor.PbrAlbedo : Config.Runtime.PbrAlbedo,     ShaderUniformDataType.Int);
-            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_normal"),   CommandLine.Editor ? Config.Editor.PbrNormal : Config.Runtime.PbrNormal,     ShaderUniformDataType.Int);
-            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_mra"),      CommandLine.Editor ? Config.Editor.PbrMra : Config.Runtime.PbrMra,           ShaderUniformDataType.Int);
-            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_emissive"), CommandLine.Editor ? Config.Editor.PbrEmissive : Config.Runtime.PbrEmissive, ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_albedo"),   CommandLine.Editor ? OldConfig.Editor.PbrAlbedo : OldConfig.Runtime.PbrAlbedo,     ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_normal"),   CommandLine.Editor ? OldConfig.Editor.PbrNormal : OldConfig.Runtime.PbrNormal,     ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_mra"),      CommandLine.Editor ? OldConfig.Editor.PbrMra : OldConfig.Runtime.PbrMra,           ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_emissive"), CommandLine.Editor ? OldConfig.Editor.PbrEmissive : OldConfig.Runtime.PbrEmissive, ShaderUniformDataType.Int);
         }
 
         // Level & camera
@@ -147,8 +147,8 @@ internal static class Core {
 
         if (path == null) {
 
-            if (PathUtil.BestPath($"Levels/{name}.level.json", out var foundPath) || PathUtil.BestPath($"{name}.level.json", out foundPath) || PathUtil.BestPath($"Levels/{name}.json", out foundPath) || PathUtil.BestPath($"{name}.json", out foundPath))
-                level = new Level(name, foundPath);
+            if (PathUtil.GetPath($"Levels/{name}.level.json", out var levelPath) || PathUtil.GetPath($"{name}.level.json", out levelPath) || PathUtil.GetPath($"Levels/{name}.json", out levelPath) || PathUtil.GetPath($"{name}.json", out levelPath))
+                level = new Level(name, levelPath);
 
             else {
 

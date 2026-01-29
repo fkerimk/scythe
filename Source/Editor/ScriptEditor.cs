@@ -29,22 +29,22 @@ internal unsafe class ScriptEditor : Viewport {
 
     private static KeyboardKey _lastRepeatedKey = KeyboardKey.Null;
 
-    private static          Font                 EditorFont => Fonts.RlCascadiaCode;
-    private static          List<CompletionItem> _acItems = [];
-    private static readonly Random               Rng      = new();
+    private static Font EditorFont => Fonts.RlCascadiaCode;
+    private static List<CompletionItem> _acItems = [];
+    private static readonly Random Rng = new();
 
-    private                          RenderTexture2D _rt;
-    [RecordHistory] private readonly List<ScriptTab> _tabs           = [];
-    [RecordHistory] private          int             _activeTabIndex = -1;
-    private                          ScriptTab       ActiveTab => _tabs[_activeTabIndex];
-    private                          LuaLspClient?   _lsp;
-    private                          int             _hoverLine = -1, _hoverChar = -1, _combo;
-    private                          float           _comboTimer,     _hoverTimer;
-    private                          bool            _showDropChoice, _isExtendingHistory, _scrollToTab;
-    private                          Component?      _dropChoiceComp;
-    private                          int             _dropChoiceLine, _dropChoiceChar;
-    private                          Vector2         _dropChoicePos;
-    private                          HistoryStack    History => ActiveTab.History;
+    private RenderTexture2D _rt;
+    [RecordHistory] private readonly List<ScriptTab> _tabs = [];
+    [RecordHistory] private int _activeTabIndex = -1;
+    private ScriptTab ActiveTab => _tabs[_activeTabIndex];
+    private LuaLspClient? _lsp;
+    private int _hoverLine = -1, _hoverChar = -1, _combo;
+    private float _comboTimer, _hoverTimer;
+    private bool _showDropChoice, _isExtendingHistory, _scrollToTab;
+    private Component? _dropChoiceComp;
+    private int _dropChoiceLine, _dropChoiceChar;
+    private Vector2 _dropChoicePos;
+    private HistoryStack History => ActiveTab.History;
 
     public ScriptEditor() : base("Script Editor") {
 
@@ -57,7 +57,7 @@ internal unsafe class ScriptEditor : Viewport {
         InitLsp();
     }
 
-    private static string GetPath() => PathUtil.ProjectRelative("ScriptEditor.json");
+    private static string GetPath() => Path.Join(ScytheConfig.Current.Project, "Project", "ScriptEditor.json");
 
     public void Load() {
 
@@ -74,7 +74,7 @@ internal unsafe class ScriptEditor : Viewport {
                 foreach (var relTabPath in settings.OpenTabs) {
 
                     var normalized = relTabPath.Replace('\\', '/');
-                    var absPath    = PathUtil.ModRelative(normalized);
+                    var absPath = Path.Join(ScytheConfig.Current.Project, normalized);
 
                     if (File.Exists(absPath)) NewTab(absPath);
                 }
@@ -88,17 +88,18 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     public void Save() {
+
         var path = GetPath();
-        var dir  = Path.GetDirectoryName(path);
+        var dir = Path.GetDirectoryName(path);
         if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
-        var settings = new ScriptEditorSettings { OpenTabs = _tabs.Where(t => t.FilePath != null).Select(t => Path.GetRelativePath(Config.Mod.Path, t.FilePath!).Replace('\\', '/')).ToList(), ActiveTabIndex = _activeTabIndex };
+        var settings = new ScriptEditorSettings { OpenTabs = _tabs.Where(t => t.FilePath != null).Select(t => Path.GetRelativePath(ScytheConfig.Current.Project, t.FilePath!).Replace('\\', '/')).ToList(), ActiveTabIndex = _activeTabIndex };
         File.WriteAllText(path, JsonConvert.SerializeObject(settings, Formatting.Indented));
     }
 
     private class ScriptEditorSettings {
 
-        public List<string> OpenTabs       { get; init; } = [];
-        public int          ActiveTabIndex { get; init; } = -1;
+        public List<string> OpenTabs { get; init; } = [];
+        public int ActiveTabIndex { get; init; } = -1;
     }
 
     public void Open(string path) {
@@ -115,7 +116,7 @@ internal unsafe class ScriptEditor : Viewport {
 
         _tabs.Add(tab);
         _activeTabIndex = _tabs.Count - 1;
-        _scrollToTab    = true;
+        _scrollToTab = true;
 
         if (_lsp is not { IsAlive: true }) return;
 
@@ -208,7 +209,7 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         ActiveTab.CurrentHistoryAction = a;
-        ActiveTab.LastRecordTime       = Raylib.GetTime();
+        ActiveTab.LastRecordTime = Raylib.GetTime();
     }
 
     private void EndHistoryAction() {
@@ -242,9 +243,9 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         _showAutoComplete = _acItems.Count != 0;
-        _acSelectedIndex  = 0;
-        _acLine           = ActiveTab.CursorLine;
-        _acStartChar      = ActiveTab.CursorChar;
+        _acSelectedIndex = 0;
+        _acLine = ActiveTab.CursorLine;
+        _acStartChar = ActiveTab.CursorChar;
     }
 
     private void UpdateSignatureHelp(JToken r) {
@@ -282,11 +283,11 @@ internal unsafe class ScriptEditor : Viewport {
 
             newDiags.Add(
                 new DiagnosticInfo {
-                    Message   = msg,
-                    Severity  = (int)diagnostic["severity"]!,
-                    Line      = (int)r!["start"]!["line"]!,
+                    Message = msg,
+                    Severity = (int)diagnostic["severity"]!,
+                    Line = (int)r!["start"]!["line"]!,
                     StartChar = (int)r["start"]!["character"]!,
-                    EndChar   = (int)r["end"]!["character"]!
+                    EndChar = (int)r["end"]!["character"]!
                 }
             );
         }
@@ -334,17 +335,17 @@ internal unsafe class ScriptEditor : Viewport {
 
         if (_restartTimer > 0 && (_restartTimer -= dt) <= 0) InitLsp();
 
-        var fSize  = _tabs.Count != 0 ? 20                  * ActiveTab.Zoom : 20;
-        var lSpace = _tabs.Count != 0 ? 26                  * ActiveTab.Zoom : 26;
+        var fSize = _tabs.Count != 0 ? 20 * ActiveTab.Zoom : 20;
+        var lSpace = _tabs.Count != 0 ? 26 * ActiveTab.Zoom : 26;
         var margin = _tabs.Count != 0 ? new Vector2(60, 40) * ActiveTab.Zoom : new Vector2(60, 40);
 
-        PushStyleVar(ImGuiStyleVar.ItemSpacing,  Vector2.Zero);
+        PushStyleVar(ImGuiStyleVar.ItemSpacing, Vector2.Zero);
         PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(10, 7));
-        Dummy(new Vector2(4,                                     0));
+        Dummy(new Vector2(4, 0));
         SameLine();
-        PushStyleColor(ImGuiCol.Tab,                 Colors.GuiTab.ToVector4());
-        PushStyleColor(ImGuiCol.TabHovered,          Colors.GuiTabHovered.ToVector4());
-        PushStyleColor(ImGuiCol.TabSelected,         Colors.GuiTabSelected.ToVector4());
+        PushStyleColor(ImGuiCol.Tab, Colors.GuiTab.ToVector4());
+        PushStyleColor(ImGuiCol.TabHovered, Colors.GuiTabHovered.ToVector4());
+        PushStyleColor(ImGuiCol.TabSelected, Colors.GuiTabSelected.ToVector4());
         PushStyleColor(ImGuiCol.TabSelectedOverline, Colors.Primary.ToVector4());
 
         if (BeginTabBar("ScriptTabs", ImGuiTabBarFlags.Reorderable | ImGuiTabBarFlags.AutoSelectNewTabs | ImGuiTabBarFlags.FittingPolicyScroll)) {
@@ -373,7 +374,7 @@ internal unsafe class ScriptEditor : Viewport {
         if (_tabs.Count > 0 && _activeTabIndex >= 0) {
 
             var origin = GetCursorScreenPos();
-            var avail  = GetContentRegionAvail();
+            var avail = GetContentRegionAvail();
 
             if (_rt.Texture.Width != (int)avail.X || _rt.Texture.Height != (int)avail.Y) {
 
@@ -402,7 +403,7 @@ internal unsafe class ScriptEditor : Viewport {
 
                     _showDropChoice = true;
                     _dropChoiceComp = c;
-                    _dropChoicePos  = GetIO().MousePos;
+                    _dropChoicePos = GetIO().MousePos;
 
                     if (GetCursorFromMouse(margin, fSize, lSpace, origin, out var tL, out var tC)) {
 
@@ -423,7 +424,7 @@ internal unsafe class ScriptEditor : Viewport {
             // Handle Picking Drag Drop
             if (Picking.DragSource != null && Picking.IsDragging && IsHovered && IsMouseButtonReleased(MouseButton.Left)) {
 
-                var o       = Picking.DragSource;
+                var o = Picking.DragSource;
                 var varName = char.ToLower(o.Name[0]) + o.Name[1..];
 
                 InsertSnippetAtMouse($"local {varName} = level:find({{\"{string.Join("\", \"", o.GetPathFromRoot())}\"}})", margin, fSize, lSpace, origin, "drop_object");
@@ -434,8 +435,8 @@ internal unsafe class ScriptEditor : Viewport {
         } else {
 
             var center = GetCursorScreenPos() + ContentRegion / 2;
-            var text   = "No Open Files";
-            var tSize  = MeasureTextEx(Fonts.RlMontserratRegular, text, 24, 1);
+            var text = "No Open Files";
+            var tSize = MeasureTextEx(Fonts.RlMontserratRegular, text, 24, 1);
             SetCursorScreenPos(center - tSize / 2);
             PushFont(Fonts.ImMontserratRegular);
             TextColored(Colors.TextDisabled.ToVector4(), text);
@@ -452,24 +453,24 @@ internal unsafe class ScriptEditor : Viewport {
         BeginHistoryAction("autocomplete");
 
         var line = ActiveTab.Lines[ActiveTab.CursorLine];
-        var sW   = ActiveTab.CursorChar;
+        var sW = ActiveTab.CursorChar;
 
         while (sW > 0 && (char.IsLetterOrDigit(line[sW - 1]) || line[sW - 1] == '_')) sW--;
 
-        var txt  = item.InsertText.Replace("\t", "    ");
+        var txt = item.InsertText.Replace("\t", "    ");
         var fOff = -1;
 
         if (item.InsertTextFormat == 2) {
 
-            var m               = Regex.Match(txt, @"\$\{\d+:?([^}]*)\}|\$\d+");
+            var m = Regex.Match(txt, @"\$\{\d+:?([^}]*)\}|\$\d+");
             if (m.Success) fOff = m.Index;
             txt = Regex.Replace(txt, @"\$\{\d+:?([^}]*)\}", "$1");
-            txt = Regex.Replace(txt, @"\$\d+",              "");
+            txt = Regex.Replace(txt, @"\$\d+", "");
 
         } else if ((item.Kind == 2 || item.Kind == 3) && !txt.Contains('(')) {
 
-            txt  += "()";
-            fOff =  txt.Length - 1;
+            txt += "()";
+            fOff = txt.Length - 1;
         }
 
         var sLines = txt.Replace("\r", "").Split('\n');
@@ -480,7 +481,7 @@ internal unsafe class ScriptEditor : Viewport {
         if (sLines.Length > 1) {
 
             for (var i = 1; i < sLines.Length; i++) ActiveTab.Lines.Insert(ActiveTab.CursorLine + i, sLines[i]);
-            ActiveTab.Lines[ActiveTab.CursorLine + sLines.Length                                - 1] += suffix;
+            ActiveTab.Lines[ActiveTab.CursorLine + sLines.Length - 1] += suffix;
 
         } else
             ActiveTab.Lines[ActiveTab.CursorLine] += suffix;
@@ -494,7 +495,7 @@ internal unsafe class ScriptEditor : Viewport {
                 if (fOff <= len + sLines[i].Length) {
 
                     ActiveTab.CursorLine += i;
-                    ActiveTab.CursorChar =  (i == 0 ? sW : 0) + (fOff - len);
+                    ActiveTab.CursorChar = (i == 0 ? sW : 0) + (fOff - len);
 
                     break;
                 }
@@ -504,8 +505,8 @@ internal unsafe class ScriptEditor : Viewport {
 
         } else {
 
-            ActiveTab.CursorLine += sLines.Length                 - 1;
-            ActiveTab.CursorChar =  (sLines.Length == 1 ? sW : 0) + sLines[^1].Length;
+            ActiveTab.CursorLine += sLines.Length - 1;
+            ActiveTab.CursorChar = (sLines.Length == 1 ? sW : 0) + sLines[^1].Length;
         }
 
         _showAutoComplete = false;
@@ -516,7 +517,7 @@ internal unsafe class ScriptEditor : Viewport {
 
     private void OnType(bool major = false, bool backspace = false, bool isEnter = false, bool fromAc = false) {
 
-        ActiveTab.IsDirty           = true;
+        ActiveTab.IsDirty = true;
         ActiveTab.FollowCursorTimer = 1;
 
         _combo++;
@@ -524,7 +525,7 @@ internal unsafe class ScriptEditor : Viewport {
 
         if (major || isEnter || backspace) {
 
-            _shakeTime  = major ? 0.16f : 0.08f;
+            _shakeTime = major ? 0.16f : 0.08f;
             _shakePower = (major ? 7.0f : 3.5f) * (backspace ? 0.6f : 1);
         }
 
@@ -535,11 +536,11 @@ internal unsafe class ScriptEditor : Viewport {
 
         if (_lsp is not { IsAlive: true }) return;
 
-        var l      = ActiveTab.Lines[ActiveTab.CursorLine];
-        var pref   = GetCurrentWordPrefix();
-        var cB     = ActiveTab.CursorChar > 0 ? l[ActiveTab.CursorChar - 1] : ' ';
-        var cA     = ActiveTab.CursorChar < l.Length ? l[ActiveTab.CursorChar] : ' ';
-        var isT    = cB is '.' or ':';
+        var l = ActiveTab.Lines[ActiveTab.CursorLine];
+        var pref = GetCurrentWordPrefix();
+        var cB = ActiveTab.CursorChar > 0 ? l[ActiveTab.CursorChar - 1] : ' ';
+        var cA = ActiveTab.CursorChar < l.Length ? l[ActiveTab.CursorChar] : ' ';
+        var isT = cB is '.' or ':';
         var should = !backspace && !isEnter && !fromAc && (char.IsLetterOrDigit(cB) || cB == '_' || isT) && !(major && char.IsLetterOrDigit(cA));
 
         if (should && (pref.Length >= 1 || isT)) {
@@ -588,7 +589,7 @@ internal unsafe class ScriptEditor : Viewport {
 
     private void UpdateSemanticTokens(JToken data) {
 
-        var res  = data["data"] ?? data["result"]?["data"];
+        var res = data["data"] ?? data["result"]?["data"];
         var ints = res?.ToObject<int[]>();
 
         if (ints == null) return;
@@ -614,7 +615,7 @@ internal unsafe class ScriptEditor : Viewport {
 
         SetNextWindowPos(_dropChoicePos + new Vector2(10, 10));
         PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(8, 8));
-        PushStyleVar(ImGuiStyleVar.ItemSpacing,   new Vector2(4, 6));
+        PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 6));
 
         if (BeginPopup("DropChoicePopup", ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoTitleBar)) {
 
@@ -647,14 +648,14 @@ internal unsafe class ScriptEditor : Viewport {
 
         if (useSelf) {
 
-            var     = char.ToLower(name[0]) + name[1..];
+            var = char.ToLower(name[0]) + name[1..];
             snippet = $"local {var} = self:findComponent({{\"{name}\"}}) --[[@as {name}]]";
 
         } else {
 
             var path = new List<string>(comp.Obj.GetPathFromRoot()) { name };
             var objP = Regex.Replace(comp.Obj.Name, @"(?:^|[\s_-])(.)", m => m.Groups[1].Value.ToUpper());
-            var     = char.ToLower(objP[0]) + objP[1..] + name;
+            var = char.ToLower(objP[0]) + objP[1..] + name;
             snippet = $"local {var} = level:findComponent({{\"{string.Join("\", \"", path)}\"}}) --[[@as {name}]]";
         }
 
@@ -692,10 +693,10 @@ internal unsafe class ScriptEditor : Viewport {
     private void UpdateCursorFromMouse(Vector2 m, float f, float l, Vector2 o) {
 
         ActiveTab.FollowCursorTimer = 1.0f;
-        var wM = GetIO().MousePos                                                           - o + ActiveTab.CameraPos;
+        var wM = GetIO().MousePos - o + ActiveTab.CameraPos;
         ActiveTab.CursorLine = Math.Clamp((int)((wM.Y - m.Y) / l), 0, ActiveTab.Lines.Count - 1);
         var line = ActiveTab.Lines[ActiveTab.CursorLine];
-        var bC   = 0;
+        var bC = 0;
         var minD = float.MaxValue;
 
         for (var i = 0; i <= line.Length; i++) {
@@ -705,7 +706,7 @@ internal unsafe class ScriptEditor : Viewport {
             if (!(d < minD)) continue;
 
             minD = d;
-            bC   = i;
+            bC = i;
         }
 
         ActiveTab.CursorChar = bC;
@@ -715,17 +716,17 @@ internal unsafe class ScriptEditor : Viewport {
 
         if (IsKeyPressed(KeyboardKey.Escape) && (LevelBrowser.DragObject != null || _isDraggingSelection)) {
 
-            LevelBrowser.DragObject      = LevelBrowser.DragTarget = null;
-            LevelBrowser.DragComponent   = null;
+            LevelBrowser.DragObject = LevelBrowser.DragTarget = null;
+            LevelBrowser.DragComponent = null;
             LevelBrowser.IsDragCancelled = true;
-            _isDraggingSelection         = _isLeftClickPotentialDrag = false;
+            _isDraggingSelection = _isLeftClickPotentialDrag = false;
         }
 
         if (!IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows)) return;
 
-        var dt    = GetFrameTime();
-        var shift = IsKeyDown(KeyboardKey.LeftShift)   || IsKeyDown(KeyboardKey.RightShift);
-        var ctrl  = IsKeyDown(KeyboardKey.LeftControl) || IsKeyDown(KeyboardKey.RightControl);
+        var dt = GetFrameTime();
+        var shift = IsKeyDown(KeyboardKey.LeftShift) || IsKeyDown(KeyboardKey.RightShift);
+        var ctrl = IsKeyDown(KeyboardKey.LeftControl) || IsKeyDown(KeyboardKey.RightControl);
 
         switch (ctrl) {
 
@@ -755,9 +756,9 @@ internal unsafe class ScriptEditor : Viewport {
 
             case true when IsKeyPressed(KeyboardKey.A):
                 ActiveTab.SelectionStartLine = ActiveTab.SelectionStartChar = 0;
-                ActiveTab.CursorLine         = ActiveTab.Lines.Count - 1;
-                ActiveTab.CursorChar         = ActiveTab.Lines.Last().Length;
-                _showAutoComplete            = false;
+                ActiveTab.CursorLine = ActiveTab.Lines.Count - 1;
+                ActiveTab.CursorChar = ActiveTab.Lines.Last().Length;
+                _showAutoComplete = false;
 
                 return;
 
@@ -818,7 +819,7 @@ internal unsafe class ScriptEditor : Viewport {
                     ActiveTab.CursorLine = eL;
                     ActiveTab.CursorChar = eC;
                     InsertTextAtCursor("\n" + txt);
-                    var c = eL      - sL    + 1;
+                    var c = eL - sL + 1;
                     for (var i = eL + 1; i <= eL + c; i++) ActiveTab.LineYOffsets[i] = -lS * c;
 
                 } else {
@@ -844,8 +845,8 @@ internal unsafe class ScriptEditor : Viewport {
 
                 BeginHistoryAction("swap");
                 (ActiveTab.Lines[ActiveTab.CursorLine], ActiveTab.Lines[ActiveTab.CursorLine - 1]) = (ActiveTab.Lines[ActiveTab.CursorLine - 1], ActiveTab.Lines[ActiveTab.CursorLine]);
-                ActiveTab.LineYOffsets[ActiveTab.CursorLine]                                       = -lS;
-                ActiveTab.LineYOffsets[ActiveTab.CursorLine - 1]                                   = lS;
+                ActiveTab.LineYOffsets[ActiveTab.CursorLine] = -lS;
+                ActiveTab.LineYOffsets[ActiveTab.CursorLine - 1] = lS;
                 ActiveTab.CursorLine--;
                 if (HasSelection()) ActiveTab.SelectionStartLine--;
                 EndHistoryAction();
@@ -857,8 +858,8 @@ internal unsafe class ScriptEditor : Viewport {
 
                 BeginHistoryAction("swap");
                 (ActiveTab.Lines[ActiveTab.CursorLine], ActiveTab.Lines[ActiveTab.CursorLine + 1]) = (ActiveTab.Lines[ActiveTab.CursorLine + 1], ActiveTab.Lines[ActiveTab.CursorLine]);
-                ActiveTab.LineYOffsets[ActiveTab.CursorLine]                                       = lS;
-                ActiveTab.LineYOffsets[ActiveTab.CursorLine + 1]                                   = -lS;
+                ActiveTab.LineYOffsets[ActiveTab.CursorLine] = lS;
+                ActiveTab.LineYOffsets[ActiveTab.CursorLine + 1] = -lS;
                 ActiveTab.CursorLine++;
                 if (HasSelection()) ActiveTab.SelectionStartLine++;
                 EndHistoryAction();
@@ -896,8 +897,8 @@ internal unsafe class ScriptEditor : Viewport {
 
             PerformAction(k, shift);
             _lastRepeatedKey = k;
-            _repeatTimer     = 0;
-            hit              = true;
+            _repeatTimer = 0;
+            hit = true;
 
             break;
         }
@@ -912,8 +913,8 @@ internal unsafe class ScriptEditor : Viewport {
 
             PerformAction(KeyboardKey.Enter, shift);
             _lastRepeatedKey = KeyboardKey.Enter;
-            _repeatTimer     = 0;
-            hit              = true;
+            _repeatTimer = 0;
+            hit = true;
         }
 
         if (!hit && _lastRepeatedKey != KeyboardKey.Null) {
@@ -931,7 +932,7 @@ internal unsafe class ScriptEditor : Viewport {
             } else {
 
                 _lastRepeatedKey = KeyboardKey.Null;
-                _repeatTimer     = 0;
+                _repeatTimer = 0;
             }
         }
 
@@ -979,12 +980,12 @@ internal unsafe class ScriptEditor : Viewport {
 
         if (k == KeyboardKey.Escape) {
 
-            _showAutoComplete       = _showSig = false;
-            _acSelectedIndex        = -1;
-            _hoverTimer             = 0;
-            _tooltipText            = "";
-            _isDraggingSelection    = _isLeftClickPotentialDrag = false;
-            LevelBrowser.DragObject = LevelBrowser.DragTarget   = null;
+            _showAutoComplete = _showSig = false;
+            _acSelectedIndex = -1;
+            _hoverTimer = 0;
+            _tooltipText = "";
+            _isDraggingSelection = _isLeftClickPotentialDrag = false;
+            LevelBrowser.DragObject = LevelBrowser.DragTarget = null;
 
             return;
         }
@@ -1048,8 +1049,8 @@ internal unsafe class ScriptEditor : Viewport {
                         MoveCursorWordLeft();
                         ActiveTab.SelectionStartLine = ActiveTab.CursorLine;
                         ActiveTab.SelectionStartChar = ActiveTab.CursorChar;
-                        ActiveTab.CursorLine         = oL;
-                        ActiveTab.CursorChar         = oC;
+                        ActiveTab.CursorLine = oL;
+                        ActiveTab.CursorChar = oC;
                         DeleteSelection();
 
                     } else
@@ -1170,16 +1171,16 @@ internal unsafe class ScriptEditor : Viewport {
 
                     if (ActiveTab.Lines[i].StartsWith("    ")) {
                         ActiveTab.Lines[i] = ActiveTab.Lines[i][4..];
-                        if (i == ActiveTab.CursorLine) ActiveTab.CursorChar                 = Math.Max(0, ActiveTab.CursorChar         - 4);
+                        if (i == ActiveTab.CursorLine) ActiveTab.CursorChar = Math.Max(0, ActiveTab.CursorChar - 4);
                         if (i == ActiveTab.SelectionStartLine) ActiveTab.SelectionStartChar = Math.Max(0, ActiveTab.SelectionStartChar - 4);
                     } else if (ActiveTab.Lines[i].StartsWith("\t")) {
                         ActiveTab.Lines[i] = ActiveTab.Lines[i][1..];
-                        if (i == ActiveTab.CursorLine) ActiveTab.CursorChar                 = Math.Max(0, ActiveTab.CursorChar         - 1);
+                        if (i == ActiveTab.CursorLine) ActiveTab.CursorChar = Math.Max(0, ActiveTab.CursorChar - 1);
                         if (i == ActiveTab.SelectionStartLine) ActiveTab.SelectionStartChar = Math.Max(0, ActiveTab.SelectionStartChar - 1);
                     }
                 } else {
                     ActiveTab.Lines[i] = "    " + ActiveTab.Lines[i];
-                    if (i == ActiveTab.CursorLine) ActiveTab.CursorChar                 += 4;
+                    if (i == ActiveTab.CursorLine) ActiveTab.CursorChar += 4;
                     if (i == ActiveTab.SelectionStartLine) ActiveTab.SelectionStartChar += 4;
                 }
             }
@@ -1189,14 +1190,14 @@ internal unsafe class ScriptEditor : Viewport {
             if (s) {
                 if (ActiveTab.Lines[ActiveTab.CursorLine].StartsWith("    ")) {
                     ActiveTab.Lines[ActiveTab.CursorLine] = ActiveTab.Lines[ActiveTab.CursorLine][4..];
-                    ActiveTab.CursorChar                  = Math.Max(0, ActiveTab.CursorChar - 4);
+                    ActiveTab.CursorChar = Math.Max(0, ActiveTab.CursorChar - 4);
                 } else if (ActiveTab.Lines[ActiveTab.CursorLine].StartsWith("\t")) {
                     ActiveTab.Lines[ActiveTab.CursorLine] = ActiveTab.Lines[ActiveTab.CursorLine][1..];
-                    ActiveTab.CursorChar                  = Math.Max(0, ActiveTab.CursorChar - 1);
+                    ActiveTab.CursorChar = Math.Max(0, ActiveTab.CursorChar - 1);
                 }
             } else {
-                ActiveTab.Lines[ActiveTab.CursorLine] =  ActiveTab.Lines[ActiveTab.CursorLine].Insert(ActiveTab.CursorChar, "    ");
-                ActiveTab.CursorChar                  += 4;
+                ActiveTab.Lines[ActiveTab.CursorLine] = ActiveTab.Lines[ActiveTab.CursorLine].Insert(ActiveTab.CursorChar, "    ");
+                ActiveTab.CursorChar += 4;
             }
 
             OnType();
@@ -1284,8 +1285,8 @@ internal unsafe class ScriptEditor : Viewport {
 
         var s = p;
         var e = p;
-        while (s > 0        && (char.IsLetterOrDigit(l[s - 1]) || l[s - 1] == '_')) s--;
-        while (e < l.Length && (char.IsLetterOrDigit(l[e])     || l[e]     == '_')) e++;
+        while (s > 0 && (char.IsLetterOrDigit(l[s - 1]) || l[s - 1] == '_')) s--;
+        while (e < l.Length && (char.IsLetterOrDigit(l[e]) || l[e] == '_')) e++;
 
         if (s == e) {
             if (e < l.Length)
@@ -1295,7 +1296,7 @@ internal unsafe class ScriptEditor : Viewport {
 
         ActiveTab.SelectionStartLine = ActiveTab.CursorLine;
         ActiveTab.SelectionStartChar = s;
-        ActiveTab.CursorChar         = e;
+        ActiveTab.CursorChar = e;
     }
 
     private void DeleteSelection() {
@@ -1317,9 +1318,9 @@ internal unsafe class ScriptEditor : Viewport {
     private void HandleEnter() {
         if (HasSelection()) DeleteSelection();
         ClampCursor();
-        var l      = ActiveTab.Lines[ActiveTab.CursorLine];
-        var left   = l[..ActiveTab.CursorChar];
-        var right  = l[ActiveTab.CursorChar..];
+        var l = ActiveTab.Lines[ActiveTab.CursorLine];
+        var left = l[..ActiveTab.CursorChar];
+        var right = l[ActiveTab.CursorChar..];
         var indent = "";
 
         foreach (var c in left)
@@ -1345,7 +1346,7 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         if (ActiveTab.CursorChar > 0) {
-            var l  = ActiveTab.Lines[ActiveTab.CursorLine];
+            var l = ActiveTab.Lines[ActiveTab.CursorLine];
             var pD = false;
 
             if (ActiveTab.CursorChar < l.Length) {
@@ -1366,7 +1367,7 @@ internal unsafe class ScriptEditor : Viewport {
 
             OnType(false, true);
         } else if (ActiveTab.CursorLine > 0) {
-            ActiveTab.CursorChar                      =  ActiveTab.Lines[ActiveTab.CursorLine - 1].Length;
+            ActiveTab.CursorChar = ActiveTab.Lines[ActiveTab.CursorLine - 1].Length;
             ActiveTab.Lines[ActiveTab.CursorLine - 1] += ActiveTab.Lines[ActiveTab.CursorLine];
             ActiveTab.Lines.RemoveAt(ActiveTab.CursorLine);
             ActiveTab.CursorLine--;
@@ -1410,17 +1411,17 @@ internal unsafe class ScriptEditor : Viewport {
         if (string.IsNullOrEmpty(t)) return;
 
         ClampCursor();
-        var l      = t.Replace("\r", "").Split('\n');
+        var l = t.Replace("\r", "").Split('\n');
         var suffix = ActiveTab.Lines[ActiveTab.CursorLine][ActiveTab.CursorChar..];
         ActiveTab.Lines[ActiveTab.CursorLine] = ActiveTab.Lines[ActiveTab.CursorLine][..ActiveTab.CursorChar] + l[0];
 
         if (l.Length > 1) {
             for (var i = 1; i < l.Length; i++) ActiveTab.Lines.Insert(ActiveTab.CursorLine + i, l[i]);
-            ActiveTab.CursorLine                  += l.Length - 1;
-            ActiveTab.CursorChar                  =  l[^1].Length;
+            ActiveTab.CursorLine += l.Length - 1;
+            ActiveTab.CursorChar = l[^1].Length;
             ActiveTab.Lines[ActiveTab.CursorLine] += suffix;
         } else {
-            ActiveTab.CursorChar                  += l[0].Length;
+            ActiveTab.CursorChar += l[0].Length;
             ActiveTab.Lines[ActiveTab.CursorLine] += suffix;
         }
 
@@ -1456,15 +1457,15 @@ internal unsafe class ScriptEditor : Viewport {
     private void HandleMouseSelection(Vector2 o) {
         if (!IsHovered) return;
 
-        var f  = 20                  * ActiveTab.Zoom;
-        var l  = 26                  * ActiveTab.Zoom;
-        var m  = new Vector2(60, 40) * ActiveTab.Zoom;
+        var f = 20 * ActiveTab.Zoom;
+        var l = 26 * ActiveTab.Zoom;
+        var m = new Vector2(60, 40) * ActiveTab.Zoom;
         var wM = GetIO().MousePos - o + ActiveTab.CameraPos;
 
         if (IsMouseDoubleClicked(ImGuiMouseButton.Left)) {
             UpdateCursorFromMouse(m, f, l, o);
             SelectWordAtCursor();
-            ActiveTab.IsSelecting     = false;
+            ActiveTab.IsSelecting = false;
             _isLeftClickPotentialDrag = false;
 
             return;
@@ -1476,24 +1477,24 @@ internal unsafe class ScriptEditor : Viewport {
             else {
                 UpdateCursorFromMouse(m, f, l, o);
                 _showAutoComplete = _showSig = false;
-                _hoverTimer       = 0;
-                _tooltipText      = "";
+                _hoverTimer = 0;
+                _tooltipText = "";
 
                 if (!IsKeyDown(KeyboardKey.LeftShift) && !IsKeyDown(KeyboardKey.RightShift)) {
                     ActiveTab.SelectionStartLine = ActiveTab.CursorLine;
                     ActiveTab.SelectionStartChar = ActiveTab.CursorChar;
                 }
 
-                ActiveTab.IsSelecting     = true;
+                ActiveTab.IsSelecting = true;
                 _isLeftClickPotentialDrag = false;
             }
         }
 
         if (IsMouseButtonDown(MouseButton.Left)) {
             if (_isLeftClickPotentialDrag && Vector2.Distance(GetIO().MouseDelta, Vector2.Zero) > 0.1f) {
-                _isDraggingSelection      = true;
+                _isDraggingSelection = true;
                 _isLeftClickPotentialDrag = false;
-                _dragText                 = GetSelectionText();
+                _dragText = GetSelectionText();
             }
 
             if (ActiveTab.IsSelecting) UpdateCursorFromMouse(m, f, l, o);
@@ -1533,16 +1534,16 @@ internal unsafe class ScriptEditor : Viewport {
                 ClearSelection();
             }
 
-            _isDraggingSelection  = false;
-            _dragText             = "";
+            _isDraggingSelection = false;
+            _dragText = "";
             ActiveTab.IsSelecting = false;
             if (ActiveTab.SelectionStartLine == ActiveTab.CursorLine && ActiveTab.SelectionStartChar == ActiveTab.CursorChar) ClearSelection();
             _isLeftClickPotentialDrag = false;
         }
 
         if (_isLeftClickPotentialDrag && IsMouseButtonDown(MouseButton.Left) && Vector2.Distance(GetIO().MouseDelta, Vector2.Zero) > 0.1f) {
-            _isDraggingSelection      = true;
-            _dragText                 = GetSelectionText();
+            _isDraggingSelection = true;
+            _dragText = GetSelectionText();
             _isLeftClickPotentialDrag = false;
         }
     }
@@ -1553,19 +1554,19 @@ internal unsafe class ScriptEditor : Viewport {
 
     private void DrawEditorContent(Vector2 m, float fS, float lS, Vector2 sO) {
         if (_comboTimer > 0 && (_comboTimer -= GetFrameTime()) <= 0) _combo = 0;
-        var hM                                                              = GetIO().MousePos;
+        var hM = GetIO().MousePos;
 
         if (Vector2.Distance(hM, _lastMousePos) > 5) {
-            _hoverTimer   = 0;
-            _tooltipText  = "";
+            _hoverTimer = 0;
+            _tooltipText = "";
             _lastMousePos = hM;
         } else if (IsHovered && (_hoverTimer += GetFrameTime()) > 0.05f && string.IsNullOrEmpty(_tooltipText)) {
             var wM = hM - sO + ActiveTab.CameraPos;
             var hL = (int)Math.Max(0, (wM.Y - m.Y) / lS);
 
             if (hL >= 0 && hL < ActiveTab.Lines.Count) {
-                var l    = ActiveTab.Lines[hL];
-                var hC   = -1;
+                var l = ActiveTab.Lines[hL];
+                var hC = -1;
                 var minD = 30 * ActiveTab.Zoom;
 
                 for (var i = 0; i <= l.Length; i++) {
@@ -1574,17 +1575,17 @@ internal unsafe class ScriptEditor : Viewport {
 
                     if (d < minD) {
                         minD = d;
-                        hC   = i;
+                        hC = i;
                     }
                 }
 
                 if (hC != -1 && (hL != _hoverLine || hC != _hoverChar)) {
-                    _hoverLine   = hL;
-                    _hoverChar   = hC;
+                    _hoverLine = hL;
+                    _hoverChar = hC;
                     _tooltipText = "";
                     var diag = ActiveTab.Diagnostics.FirstOrDefault(d => d.Line == hL && hC >= d.StartChar && hC <= d.EndChar);
                     if (diag.Message != null)
-                        _tooltipText                                    = diag.Message;
+                        _tooltipText = diag.Message;
                     else if (_lsp is { IsAlive: true }) _hoverRequestId = _lsp.SendRequest("textDocument/hover", new { textDocument = new { uri = ActiveTab.Uri }, position = new { line = hL, character = hC } });
                 }
             }
@@ -1605,9 +1606,9 @@ internal unsafe class ScriptEditor : Viewport {
         DrawSelection(fS, lS, bP);
 
         if ((int)(_timer * 2.4f) % 2 == 0 || ActiveTab.IsSelecting || _wedgeAnim < 0.9f) {
-            var cp  = GetCursorWorldPosition(m, fS, lS);
+            var cp = GetCursorWorldPosition(m, fS, lS);
             var sCp = cp - ActiveTab.CameraPos + _shakeOffset;
-            DrawCircleGradient((int)sCp.X      + 1, (int)(sCp.Y + fS / 2), (int)(15 * ActiveTab.Zoom), Fade(GetComboColor(_combo), 0.4f), Color.Blank);
+            DrawCircleGradient((int)sCp.X + 1, (int)(sCp.Y + fS / 2), (int)(15 * ActiveTab.Zoom), Fade(GetComboColor(_combo), 0.4f), Color.Blank);
         }
 
         for (var i = 0; i < ActiveTab.Lines.Count; i++) {
@@ -1615,11 +1616,11 @@ internal unsafe class ScriptEditor : Viewport {
 
             if (yO + bP.Y + lS < 0 || yO + bP.Y > ContentRegion.Y) continue;
 
-            var lNt   = (i + 1).ToString();
-            var lNs   = MeasureTextEx(EditorFont, lNt, fS, 1);
-            var lNp   = new Vector2(m.X - lNs.X - 15 * ActiveTab.Zoom, bP.Y + yO);
+            var lNt = (i + 1).ToString();
+            var lNs = MeasureTextEx(EditorFont, lNt, fS, 1);
+            var lNp = new Vector2(m.X - lNs.X - 15 * ActiveTab.Zoom, bP.Y + yO);
             var diags = ActiveTab.Diagnostics.Where(d => d.Line == i).ToList();
-            var lNc   = i == ActiveTab.CursorLine ? new Color(180, 180, 255, 255) : new Color(70, 70, 90, 255);
+            var lNc = i == ActiveTab.CursorLine ? new Color(180, 180, 255, 255) : new Color(70, 70, 90, 255);
 
             if (diags.Count != 0) {
                 var w = diags.OrderBy(d => d.Severity).First();
@@ -1636,9 +1637,9 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         if (_isDraggingSelection) DrawDragSelectionGhost(m, fS, lS, bP, sO);
-        if (LevelBrowser.DragObject    != null) DrawLevelDragGhost(m,               fS, lS, bP, sO, LevelBrowser.DragObject,        false);
-        if (LevelBrowser.DragComponent != null) DrawLevelDragGhost(m,               fS, lS, bP, sO, LevelBrowser.DragComponent.Obj, true);
-        if (Picking.DragSource != null && Picking.IsDragging) DrawLevelDragGhost(m, fS, lS, bP, sO, Picking.DragSource,             false);
+        if (LevelBrowser.DragObject != null) DrawLevelDragGhost(m, fS, lS, bP, sO, LevelBrowser.DragObject, false);
+        if (LevelBrowser.DragComponent != null) DrawLevelDragGhost(m, fS, lS, bP, sO, LevelBrowser.DragComponent.Obj, true);
+        if (Picking.DragSource != null && Picking.IsDragging) DrawLevelDragGhost(m, fS, lS, bP, sO, Picking.DragSource, false);
         if (_showSig) DrawSignatureHelp(m, fS, lS);
         if (_showAutoComplete) DrawAutocompletePopup(m, fS, lS, sO);
         DrawTooltip(hM - sO);
@@ -1648,13 +1649,13 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private void DrawDragSelectionGhost(Vector2 m, float fS, float lS, Vector2 bP, Vector2 sO) {
-        var dP    = GetMousePosition() - sO;
+        var dP = GetMousePosition() - sO;
         var lines = _dragText.Replace("\r", "").Split('\n');
-        var gM    = 20.0f;
-        var gW    = lines.Select(l => MeasureTextEx(EditorFont, l, fS, 1).X).Max() + gM * 2;
-        var gH    = lines.Length                                                        * fS + gM;
-        var gP    = dP                                                                       + new Vector2(25, 10);
-        DrawRectangleRounded(new Rectangle(gP.X,      gP.Y, gW, gH), 0.1f, 8, new Color(20,  20,  30,  200));
+        var gM = 20.0f;
+        var gW = lines.Select(l => MeasureTextEx(EditorFont, l, fS, 1).X).Max() + gM * 2;
+        var gH = lines.Length * fS + gM;
+        var gP = dP + new Vector2(25, 10);
+        DrawRectangleRounded(new Rectangle(gP.X, gP.Y, gW, gH), 0.1f, 8, new Color(20, 20, 30, 200));
         DrawRectangleRoundedLines(new Rectangle(gP.X, gP.Y, gW, gH), 0.1f, 8, new Color(100, 100, 120, 150));
         for (var i = 0; i < lines.Length; i++) DrawTextEx(EditorFont, lines[i], gP + new Vector2(gM, gM / 2 + i * fS), fS, 1, Color.White);
 
@@ -1666,14 +1667,14 @@ internal unsafe class ScriptEditor : Viewport {
 
     private void DrawLevelDragGhost(Vector2 m, float fS, float lS, Vector2 bP, Vector2 sO, Obj obj, bool comp) {
         var txt = comp ? $"level:findComponent({{\"{string.Join("\", \"", obj.GetPathFromRoot().Append(LevelBrowser.DragComponent?.GetType().Name ?? ""))}\"}})" : $"level:find({{\"{string.Join("\", \"", obj.GetPathFromRoot())}\"}})";
-        var dP  = GetMousePosition() - sO;
-        var gP  = dP                 + new Vector2(25, 10);
-        var gS  = MeasureTextEx(EditorFont, txt, fS, 1);
+        var dP = GetMousePosition() - sO;
+        var gP = dP + new Vector2(25, 10);
+        var gS = MeasureTextEx(EditorFont, txt, fS, 1);
         var gPa = 12.0f;
-        var c   = new Color(130,                                                                                200, 255, 255);
-        DrawRectangleRounded(new Rectangle(gP.X,      gP.Y, gS.X + gPa * 2, gS.Y + gPa), 0.2f, 8, new Color(25, 25,  40,  220));
+        var c = new Color(130, 200, 255, 255);
+        DrawRectangleRounded(new Rectangle(gP.X, gP.Y, gS.X + gPa * 2, gS.Y + gPa), 0.2f, 8, new Color(25, 25, 40, 220));
         DrawRectangleRoundedLines(new Rectangle(gP.X, gP.Y, gS.X + gPa * 2, gS.Y + gPa), 0.2f, 8, Fade(c, 0.6f));
-        DrawRectangleV(gP, new Vector2(4, gS.Y                   + gPa), c);
+        DrawRectangleV(gP, new Vector2(4, gS.Y + gPa), c);
         DrawTextEx(EditorFont, txt, gP + new Vector2(gPa + 4, gPa / 2), fS, 1, Color.White);
         DrawCircleV(dP, 5 * ActiveTab.Zoom, c);
         if (GetCursorFromMouse(m, fS, lS, sO, out var tL, out var tC)) DrawDropMarker(bP + new Vector2(tL < ActiveTab.Lines.Count ? MeasureTextEx(EditorFont, ActiveTab.Lines[tL][..Math.Min(tC, ActiveTab.Lines[tL].Length)], fS, 1).X : 0, tL * lS), fS, c);
@@ -1681,24 +1682,24 @@ internal unsafe class ScriptEditor : Viewport {
 
     private void DrawDropMarker(Vector2 p, float fS, Color c) {
         DrawRectangleV(p, new Vector2(2, fS), c);
-        DrawCircleV(p,                      3, c);
+        DrawCircleV(p, 3, c);
         DrawCircleV(p + new Vector2(0, fS), 3, c);
     }
 
     private void DrawBackgroundGrid() {
-        var s  = 40;
-        var c  = new Color(25, 25, 30, 255);
+        var s = 40;
+        var c = new Color(25, 25, 30, 255);
         var oX = -(int)(ActiveTab.CameraPos.X * 0.2f) % s;
         var oY = -(int)(ActiveTab.CameraPos.Y * 0.2f) % s;
-        for (var x = oX; x < ContentRegion.X; x += s) DrawRectangle(x, 0, 1,                    (int)ContentRegion.Y, c);
-        for (var y = oY; y < ContentRegion.Y; y += s) DrawRectangle(0, y, (int)ContentRegion.X, 1,                    c);
+        for (var x = oX; x < ContentRegion.X; x += s) DrawRectangle(x, 0, 1, (int)ContentRegion.Y, c);
+        for (var y = oY; y < ContentRegion.Y; y += s) DrawRectangle(0, y, (int)ContentRegion.X, 1, c);
     }
 
     private void DrawSelection(float fS, float lS, Vector2 bP) {
         if (!HasSelection()) return;
 
         var (sL, sC, eL, eC) = GetSelectionRange();
-        var c  = new Color(100, 180, 255, 80);
+        var c = new Color(100, 180, 255, 80);
         var wW = WedgeWidth * ActiveTab.Zoom * _wedgeAnim;
 
         for (var i = sL; i <= eL; i++) {
@@ -1709,16 +1710,16 @@ internal unsafe class ScriptEditor : Viewport {
 
             if (y + lS < 0 || y > ContentRegion.Y) continue;
 
-            var x1                                                         = bP.X + (i == sL ? MeasureTextEx(EditorFont, l[..Math.Clamp(sC, 0, l.Length)], fS, 1).X : 0);
+            var x1 = bP.X + (i == sL ? MeasureTextEx(EditorFont, l[..Math.Clamp(sC, 0, l.Length)], fS, 1).X : 0);
             if (ActiveTab.CursorLine == i && sC > ActiveTab.CursorChar) x1 += wW;
-            var x2                                                         = bP.X + (i == eL ? MeasureTextEx(EditorFont, l[..Math.Clamp(eC, 0, l.Length)], fS, 1).X : MeasureTextEx(EditorFont, l, fS, 1).X + MeasureTextEx(EditorFont, " ", fS, 1).X);
+            var x2 = bP.X + (i == eL ? MeasureTextEx(EditorFont, l[..Math.Clamp(eC, 0, l.Length)], fS, 1).X : MeasureTextEx(EditorFont, l, fS, 1).X + MeasureTextEx(EditorFont, " ", fS, 1).X);
             if (ActiveTab.CursorLine == i && eC > ActiveTab.CursorChar) x2 += wW;
             DrawRectangleV(new Vector2(x1, y), new Vector2(Math.Max(5, x2 - x1), fS), c);
         }
     }
 
     private void DrawHybridHighlightedLine(int lI, Vector2 p, float fS, bool a) {
-        var l    = ActiveTab.Lines[lI];
+        var l = ActiveTab.Lines[lI];
         var curX = p.X;
 
         if (string.IsNullOrEmpty(l)) {
@@ -1728,7 +1729,7 @@ internal unsafe class ScriptEditor : Viewport {
         }
 
         var tokens = ActiveTab.SemanticTokens.Where(t => t.Line == lI).OrderBy(t => t.StartChar).ToList();
-        var last   = 0;
+        var last = 0;
 
         foreach (var token in tokens) {
             var s = Math.Clamp(token.StartChar, last, l.Length);
@@ -1755,15 +1756,15 @@ internal unsafe class ScriptEditor : Viewport {
 
         foreach (var d in diags) {
             var x1 = p.X + MeasureTextEx(EditorFont, l[..Math.Min(l.Length, d.StartChar)], fS, 1).X;
-            var x2 = p.X + MeasureTextEx(EditorFont, l[..Math.Min(l.Length, d.EndChar)],   fS, 1).X;
+            var x2 = p.X + MeasureTextEx(EditorFont, l[..Math.Min(l.Length, d.EndChar)], fS, 1).X;
             DrawWavyLine(new Vector2(x1, p.Y + fS + 2 * ActiveTab.Zoom), new Vector2(x2, p.Y + fS + 2 * ActiveTab.Zoom), d.Severity == 1 ? Color.Red : (d.Severity == 2 ? Color.Orange : Color.SkyBlue));
         }
     }
 
     private void DrawWavyLine(Vector2 s, Vector2 e, Color c) {
-        var wL       = 12f  * ActiveTab.Zoom;
-        var wA       = 1.5f * ActiveTab.Zoom;
-        var t        = 2f   * ActiveTab.Zoom;
+        var wL = 12f * ActiveTab.Zoom;
+        var wA = 1.5f * ActiveTab.Zoom;
+        var t = 2f * ActiveTab.Zoom;
         var segments = (int)Math.Max(1, (e.X - s.X) / 2f);
 
         for (var i = 0; i < segments; i++) {
@@ -1786,13 +1787,13 @@ internal unsafe class ScriptEditor : Viewport {
 
     private void DrawFormattedText(string t, ref float cX, float y, float f, Color c, bool a, int lI, int sC, float lS) {
         if (a) c = ColorAlphaBlend(c, Color.White, Fade(Color.White, 0.2f));
-        var lF   = ActiveTab.Lines[lI];
-        var wW   = WedgeWidth * ActiveTab.Zoom * _wedgeAnim;
-        var cC   = GetComboColor(_combo);
+        var lF = ActiveTab.Lines[lI];
+        var wW = WedgeWidth * ActiveTab.Zoom * _wedgeAnim;
+        var cC = GetComboColor(_combo);
 
         for (var i = 0; i <= t.Length; i++) {
             var idx = sC + i;
-            var tX  = lS + MeasureTextEx(EditorFont, lF[..idx], f, 1f).X + (ActiveTab.CursorLine == lI && idx > ActiveTab.CursorChar ? wW : 0);
+            var tX = lS + MeasureTextEx(EditorFont, lF[..idx], f, 1f).X + (ActiveTab.CursorLine == lI && idx > ActiveTab.CursorChar ? wW : 0);
 
             if (ActiveTab.CursorLine == lI && ActiveTab.CursorChar == idx) {
                 if (((int)(_timer * 2.4f) % 2 == 0 || ActiveTab.IsSelecting || _wedgeAnim < 0.9f) && (i < t.Length || idx == lF.Length)) DrawRectangleV(new Vector2(tX, y), new Vector2(2.5f * ActiveTab.Zoom, f), cC);
@@ -1806,8 +1807,8 @@ internal unsafe class ScriptEditor : Viewport {
             }
 
             var rot = (ActiveTab.CursorLine == lI && ActiveTab.CursorChar == idx) ? WedgeWidth * _wedgeAnim : 0;
-            var s   = t[i].ToString();
-            var p   = new Vector2(tX, y);
+            var s = t[i].ToString();
+            var p = new Vector2(tX, y);
             if (_combo > 50 && c.R > 100) DrawTextPro(EditorFont, s, p + new Vector2(1, 1), Vector2.Zero, rot, f, 1f, Fade(c, 0.3f));
             DrawTextPro(EditorFont, s, p, Vector2.Zero, rot, f, 1f, c);
             cX = tX + MeasureTextEx(EditorFont, s, f, 1f).X;
@@ -1816,9 +1817,9 @@ internal unsafe class ScriptEditor : Viewport {
 
     private void DrawLspStatus() {
         if (_lsp != null) {
-            var c   = _lsp.Status == "Connected" ? Color.Lime : (_lsp.Status.StartsWith("Error") ? Color.Red : Color.Gold);
+            var c = _lsp.Status == "Connected" ? Color.Lime : (_lsp.Status.StartsWith("Error") ? Color.Red : Color.Gold);
             var txt = $"LSP: {_lsp.Status}";
-            var s   = MeasureTextEx(EditorFont, txt, 14, 1);
+            var s = MeasureTextEx(EditorFont, txt, 14, 1);
             DrawTextEx(EditorFont, txt, new Vector2(ContentRegion.X - s.X - 10, ContentRegion.Y - 20), 14, 1, c);
         }
     }
@@ -1845,38 +1846,38 @@ internal unsafe class ScriptEditor : Viewport {
                 continue;
             }
 
-            p.Position   += p.Velocity * dt;
-            p.Velocity.Y += 350        * dt * ActiveTab.Zoom;
-            Particles[i] =  p;
+            p.Position += p.Velocity * dt;
+            p.Velocity.Y += 350 * dt * ActiveTab.Zoom;
+            Particles[i] = p;
         }
     }
 
     private void UpdateShake() {
         if (_shakeTime > 0) {
-            _shakeTime   -= GetFrameTime();
-            _shakeOffset =  new Vector2((float)(Rng.NextDouble() * 2 - 1) * _shakePower, (float)(Rng.NextDouble() * 2 - 1) * _shakePower) * ActiveTab.Zoom;
+            _shakeTime -= GetFrameTime();
+            _shakeOffset = new Vector2((float)(Rng.NextDouble() * 2 - 1) * _shakePower, (float)(Rng.NextDouble() * 2 - 1) * _shakePower) * ActiveTab.Zoom;
         } else
             _shakeOffset = Vector2.Zero;
     }
 
     private void SpawnParticlesAtCursor(bool m) {
-        var f     = 20                  * ActiveTab.Zoom;
-        var l     = 26                  * ActiveTab.Zoom;
-        var ma    = new Vector2(60, 40) * ActiveTab.Zoom;
-        var p     = GetCursorWorldPosition(ma, f, l);
+        var f = 20 * ActiveTab.Zoom;
+        var l = 26 * ActiveTab.Zoom;
+        var ma = new Vector2(60, 40) * ActiveTab.Zoom;
+        var p = GetCursorWorldPosition(ma, f, l);
         var count = m ? 12 : 3;
-        var c     = GetComboColor(_combo);
+        var c = GetComboColor(_combo);
 
         for (var i = 0; i < count; i++) {
             var a = (float)(Rng.NextDouble() * Math.PI * 2);
             var s = (float)(Rng.NextDouble() * 100 + (m ? 120 : 40)) * ActiveTab.Zoom;
             Particles.Add(
                 new Particle {
-                    Position = p + new Vector2(0, f                                   * 0.5f),
+                    Position = p + new Vector2(0, f * 0.5f),
                     Velocity = new Vector2((float)Math.Cos(a) * s, (float)Math.Sin(a) * s - 40 * ActiveTab.Zoom),
-                    Color    = c,
-                    Size     = (float)Rng.NextDouble() * 3     + 1,
-                    Life     = (float)Rng.NextDouble() * 0.45f + 0.25f
+                    Color = c,
+                    Size = (float)Rng.NextDouble() * 3 + 1,
+                    Life = (float)Rng.NextDouble() * 0.45f + 0.25f
                 }
             );
         }
@@ -1886,44 +1887,44 @@ internal unsafe class ScriptEditor : Viewport {
         if (_combo <= 5) return;
 
         var txt = $"COMBO x{_combo}";
-        var c   = GetComboColor(_combo);
-        var s   = MeasureTextEx(EditorFont, txt, 24, 1);
-        var p   = new Vector2(ContentRegion.X - s.X - 30, 30);
+        var c = GetComboColor(_combo);
+        var s = MeasureTextEx(EditorFont, txt, 24, 1);
+        var p = new Vector2(ContentRegion.X - s.X - 30, 30);
         DrawTextEx(EditorFont, txt, p + new Vector2(2, 2), 24, 1, Fade(c, 0.3f));
-        DrawTextEx(EditorFont, txt, p,                     24, 1, Color.White);
-        var bP = new Vector2(p.X,                                          p.Y + s.Y + 6);
-        DrawRectangleV(bP, new Vector2(s.X,                                3f), Fade(Color.Gray, 0.2f));
+        DrawTextEx(EditorFont, txt, p, 24, 1, Color.White);
+        var bP = new Vector2(p.X, p.Y + s.Y + 6);
+        DrawRectangleV(bP, new Vector2(s.X, 3f), Fade(Color.Gray, 0.2f));
         DrawRectangleV(bP, new Vector2(s.X * (_comboTimer / ComboTimeout), 3f), c);
     }
 
     private void UpdateCamera() {
-        var dt                                                           = GetFrameTime();
+        var dt = GetFrameTime();
         if (ActiveTab.FollowCursorTimer > 0) ActiveTab.FollowCursorTimer -= dt;
-        var f                                                            = 20                  * ActiveTab.Zoom;
-        var l                                                            = 26                  * ActiveTab.Zoom;
-        var m                                                            = new Vector2(60, 40) * ActiveTab.Zoom;
-        var wC                                                           = GetCursorWorldPosition(m, f, l);
-        var vW                                                           = ContentRegion.X;
-        var vH                                                           = ContentRegion.Y;
-        var v                                                            = ActiveTab.ViewPos;
+        var f = 20 * ActiveTab.Zoom;
+        var l = 26 * ActiveTab.Zoom;
+        var m = new Vector2(60, 40) * ActiveTab.Zoom;
+        var wC = GetCursorWorldPosition(m, f, l);
+        var vW = ContentRegion.X;
+        var vH = ContentRegion.Y;
+        var v = ActiveTab.ViewPos;
 
         if (ActiveTab.FollowCursorTimer > 0) {
-            if (wC.X < v.X + m.X + 20 * ActiveTab.Zoom) v.X = wC.X - m.X                                       - 20 * ActiveTab.Zoom;
-            if (wC.X       + 20 > v.X                              + vW - 40 * ActiveTab.Zoom) v.X = wC.X + 20 - (vW - 40 * ActiveTab.Zoom);
-            if (wC.Y            < v.Y                                   + m.Y) v.Y                 = wC.Y      - m.Y;
-            if (wC.Y                                                    + l > v.Y                              + vH - m.Y) v.Y = wC.Y + l - (vH - m.Y);
+            if (wC.X < v.X + m.X + 20 * ActiveTab.Zoom) v.X = wC.X - m.X - 20 * ActiveTab.Zoom;
+            if (wC.X + 20 > v.X + vW - 40 * ActiveTab.Zoom) v.X = wC.X + 20 - (vW - 40 * ActiveTab.Zoom);
+            if (wC.Y < v.Y + m.Y) v.Y = wC.Y - m.Y;
+            if (wC.Y + l > v.Y + vH - m.Y) v.Y = wC.Y + l - (vH - m.Y);
             ActiveTab.ViewPos = v;
         }
 
         ActiveTab.CameraPos = Vector2.Lerp(ActiveTab.CameraPos, ActiveTab.ViewPos, dt * 12f);
-        ActiveTab.Zoom      = Lerp(ActiveTab.Zoom, ActiveTab.TargetZoom, dt           * 12f);
+        ActiveTab.Zoom = Lerp(ActiveTab.Zoom, ActiveTab.TargetZoom, dt * 12f);
     }
 
     private void HandleCameraInput() {
         if (!IsHovered) return;
 
         if (IsMouseButtonDown(MouseButton.Middle)) ActiveTab.ViewPos -= GetMouseDelta();
-        var w                                                        = GetMouseWheelMove();
+        var w = GetMouseWheelMove();
 
         if (w == 0) return;
 
@@ -1935,7 +1936,7 @@ internal unsafe class ScriptEditor : Viewport {
                 v.X -= w * 80 * ActiveTab.Zoom;
             else
                 v.Y -= w * 80 * ActiveTab.Zoom;
-            ActiveTab.ViewPos           = v;
+            ActiveTab.ViewPos = v;
             ActiveTab.FollowCursorTimer = 0;
         }
     }
@@ -1947,28 +1948,28 @@ internal unsafe class ScriptEditor : Viewport {
             return;
         }
 
-        var cW                                  = GetCursorWorldPosition(m, fS, lS);
-        var pP                                  = cW - ActiveTab.CameraPos + new Vector2(0, fS + 5);
-        var w                                   = 320 * ActiveTab.Zoom;
-        var iH                                  = 24  * ActiveTab.Zoom;
-        var mV                                  = 10;
-        var h                                   = Math.Min(mV * iH + 10 * ActiveTab.Zoom, _acItems.Count * iH + 10 * ActiveTab.Zoom);
-        if (pP.X + w > _rt.Texture.Width) pP.X  = _rt.Texture.Width - w                     - 10;
-        if (pP.Y + h > _rt.Texture.Height) pP.Y = cW.Y              - ActiveTab.CameraPos.Y - h - 10;
+        var cW = GetCursorWorldPosition(m, fS, lS);
+        var pP = cW - ActiveTab.CameraPos + new Vector2(0, fS + 5);
+        var w = 320 * ActiveTab.Zoom;
+        var iH = 24 * ActiveTab.Zoom;
+        var mV = 10;
+        var h = Math.Min(mV * iH + 10 * ActiveTab.Zoom, _acItems.Count * iH + 10 * ActiveTab.Zoom);
+        if (pP.X + w > _rt.Texture.Width) pP.X = _rt.Texture.Width - w - 10;
+        if (pP.Y + h > _rt.Texture.Height) pP.Y = cW.Y - ActiveTab.CameraPos.Y - h - 10;
         pP.X = Math.Max(10, pP.X);
         pP.Y = Math.Max(10, pP.Y);
-        if (_acSelectedIndex < _acScrollIndex) _acScrollIndex       = _acSelectedIndex;
+        if (_acSelectedIndex < _acScrollIndex) _acScrollIndex = _acSelectedIndex;
         if (_acSelectedIndex >= _acScrollIndex + mV) _acScrollIndex = _acSelectedIndex - mV + 1;
-        DrawRectangleRounded(new Rectangle(pP.X,      pP.Y, w, h), 0.15f, 8, new Color(20, 20, 30,  245));
+        DrawRectangleRounded(new Rectangle(pP.X, pP.Y, w, h), 0.15f, 8, new Color(20, 20, 30, 245));
         DrawRectangleRoundedLines(new Rectangle(pP.X, pP.Y, w, h), 0.15f, 8, new Color(80, 80, 100, 150));
         var mR = GetIO().MousePos - sO;
 
         for (var i = _acScrollIndex; i < Math.Min(_acScrollIndex + mV, _acItems.Count); i++) {
-            var item                                                                               = _acItems[i];
-            var iY                                                                                 = pP.Y + 5 * ActiveTab.Zoom + (i - _acScrollIndex) * iH;
-            var iR                                                                                 = new Rectangle(pP.X             + 5 * ActiveTab.Zoom, iY, w - 10 * ActiveTab.Zoom, iH);
-            var hov                                                                                = CheckCollisionPointRec(mR, iR);
-            var sel                                                                                = i == _acSelectedIndex;
+            var item = _acItems[i];
+            var iY = pP.Y + 5 * ActiveTab.Zoom + (i - _acScrollIndex) * iH;
+            var iR = new Rectangle(pP.X + 5 * ActiveTab.Zoom, iY, w - 10 * ActiveTab.Zoom, iH);
+            var hov = CheckCollisionPointRec(mR, iR);
+            var sel = i == _acSelectedIndex;
             if (hov && Vector2.Distance(GetIO().MouseDelta, Vector2.Zero) > 0.1f) _acSelectedIndex = i;
 
             if (hov && IsMouseButtonPressed(MouseButton.Left)) {
@@ -1979,9 +1980,9 @@ internal unsafe class ScriptEditor : Viewport {
 
             if (sel) DrawRectangleRounded(iR, 0.2f, 8, hov ? new Color(100, 130, 255, 150) : new Color(80, 110, 230, 100));
             var iCv = GetAcIconColor(item.Kind);
-            var iC  = new Color((byte)(iCv.X * 255), (byte)(iCv.Y * 255), (byte)(iCv.Z * 255), (byte)255);
+            var iC = new Color((byte)(iCv.X * 255), (byte)(iCv.Y * 255), (byte)(iCv.Z * 255), (byte)255);
             DrawCircleV(new Vector2(pP.X + 15 * ActiveTab.Zoom, iY + iH / 2), 4 * ActiveTab.Zoom, iC);
-            var l   = item.Label;
+            var l = item.Label;
             var mTw = w - 40 * ActiveTab.Zoom;
 
             if (MeasureTextEx(EditorFont, l, 18 * ActiveTab.Zoom, 1).X > mTw) {
@@ -2002,26 +2003,26 @@ internal unsafe class ScriptEditor : Viewport {
 
         var cW = GetCursorWorldPosition(m, fS, lS);
         var sP = cW - ActiveTab.CameraPos + new Vector2(0, -fS - 15 * ActiveTab.Zoom);
-        var s  = MeasureTextEx(EditorFont, _sigText, 18 * ActiveTab.Zoom, 1);
-        var p  = 8 * ActiveTab.Zoom;
-        DrawRectangleRounded(new Rectangle(sP.X      - p, sP.Y - p, s.X + p * 2, s.Y + p * 2), 0.2f, 8, new Color(25,  25,  40,  240));
+        var s = MeasureTextEx(EditorFont, _sigText, 18 * ActiveTab.Zoom, 1);
+        var p = 8 * ActiveTab.Zoom;
+        DrawRectangleRounded(new Rectangle(sP.X - p, sP.Y - p, s.X + p * 2, s.Y + p * 2), 0.2f, 8, new Color(25, 25, 40, 240));
         DrawRectangleRoundedLines(new Rectangle(sP.X - p, sP.Y - p, s.X + p * 2, s.Y + p * 2), 0.2f, 8, new Color(100, 200, 255, 100));
-        DrawTextEx(EditorFont, _sigText, sP, 18 * ActiveTab.Zoom, 1, new Color(100,                                    200, 255, 255));
+        DrawTextEx(EditorFont, _sigText, sP, 18 * ActiveTab.Zoom, 1, new Color(100, 200, 255, 255));
     }
 
     private void DrawTooltip(Vector2 mO) {
         if (string.IsNullOrEmpty(_tooltipText) || _hoverTimer < 0.05f) return;
 
-        var tP                                   = mO + new Vector2(15, 15);
-        var f                                    = 16 * ActiveTab.Zoom;
-        var lines                                = _tooltipText.Split('\n');
-        var mW                                   = Math.Min(600 * ActiveTab.Zoom, lines.Select(l => MeasureTextEx(EditorFont, l.Replace("```lua", "").Replace("```", ""), f, 1).X).Prepend(0).Max() + 24 * ActiveTab.Zoom);
-        var h                                    = lines.Length * (f                                                                                                                                + 6) + 16 * ActiveTab.Zoom;
-        if (tP.X + mW > _rt.Texture.Width) tP.X  = mO.X - mW - 10;
-        if (tP.Y + h  > _rt.Texture.Height) tP.Y = mO.Y - h  - 10;
+        var tP = mO + new Vector2(15, 15);
+        var f = 16 * ActiveTab.Zoom;
+        var lines = _tooltipText.Split('\n');
+        var mW = Math.Min(600 * ActiveTab.Zoom, lines.Select(l => MeasureTextEx(EditorFont, l.Replace("```lua", "").Replace("```", ""), f, 1).X).Prepend(0).Max() + 24 * ActiveTab.Zoom);
+        var h = lines.Length * (f + 6) + 16 * ActiveTab.Zoom;
+        if (tP.X + mW > _rt.Texture.Width) tP.X = mO.X - mW - 10;
+        if (tP.Y + h > _rt.Texture.Height) tP.Y = mO.Y - h - 10;
         tP.X = Math.Max(2, tP.X);
         tP.Y = Math.Max(2, tP.Y);
-        DrawRectangleRounded(new Rectangle(tP.X,      tP.Y, mW, h), 0.1f, 8, new Color(20, 20, 28,  252));
+        DrawRectangleRounded(new Rectangle(tP.X, tP.Y, mW, h), 0.1f, 8, new Color(20, 20, 28, 252));
         DrawRectangleRoundedLines(new Rectangle(tP.X, tP.Y, mW, h), 0.1f, 8, new Color(80, 80, 110, 150));
         DrawRectangleV(tP, new Vector2(mW, 3 * ActiveTab.Zoom), GetComboColor(_combo));
 
@@ -2078,9 +2079,9 @@ internal unsafe class ScriptEditor : Viewport {
     }
 
     private bool GetCursorFromMouse(Vector2 m, float f, float l, Vector2 sO, out int line, out int chars) {
-        var wM = GetIO().MousePos                                           - sO + ActiveTab.CameraPos;
+        var wM = GetIO().MousePos - sO + ActiveTab.CameraPos;
         line = Math.Clamp((int)((wM.Y - m.Y) / l), 0, ActiveTab.Lines.Count - 1);
-        var lT   = ActiveTab.Lines[line];
+        var lT = ActiveTab.Lines[line];
         var minD = float.MaxValue;
         chars = lT.Length;
 
@@ -2088,7 +2089,7 @@ internal unsafe class ScriptEditor : Viewport {
             var d = Math.Abs(wM.X - (m.X + MeasureTextEx(EditorFont, lT[..i], f, 1).X));
 
             if (d < minD) {
-                minD  = d;
+                minD = d;
                 chars = i;
             }
         }
@@ -2107,12 +2108,12 @@ internal unsafe class ScriptEditor : Viewport {
 
     private static Vector4 GetAcIconColor(int k) => k switch {
 
-        2 or 3         => new Vector4(1f,  .8f, .2f, 1f),
-        6              => new Vector4(.2f, .7f, 1f,  1f),
-        12 or 13 or 21 => new Vector4(.4f, 1f,  .6f, 1f),
-        5 or 7 or 9    => new Vector4(1f,  .6f, .4f, 1f),
-        14             => new Vector4(1f,  .4f, .7f, 1f),
-        _              => new Vector4(.7f, .8f, 1f,  1f)
+        2 or 3         => new Vector4(1f, .8f, .2f, 1f),
+        6              => new Vector4(.2f, .7f, 1f, 1f),
+        12 or 13 or 21 => new Vector4(.4f, 1f, .6f, 1f),
+        5 or 7 or 9    => new Vector4(1f, .6f, .4f, 1f),
+        14             => new Vector4(1f, .4f, .7f, 1f),
+        _              => new Vector4(.7f, .8f, 1f, 1f)
     };
 
     #endregion

@@ -5,11 +5,11 @@ using MoonSharp.Interpreter;
 internal static class LuaDefinitionGenerator {
 
     private static readonly HashSet<string> ProcessedTypeNames = [];
-    private static readonly HashSet<Type>   ProcessedTypes     = [];
+    private static readonly HashSet<Type> ProcessedTypes = [];
 
     public static void Generate(MoonSharp.Interpreter.Script lua, string outputPath) {
 
-        var sb    = new StringBuilder();
+        var sb = new StringBuilder();
         var queue = new Queue<Type>();
 
         ProcessedTypeNames.Clear();
@@ -95,7 +95,7 @@ internal static class LuaDefinitionGenerator {
             var ns = type.BaseType.Namespace;
 
             var isForbiddenSystem = ns != null && ns.StartsWith("System") && !ns.StartsWith("System.Numerics");
-            var isMoonSharp       = ns != null && ns.StartsWith("MoonSharp");
+            var isMoonSharp = ns != null && ns.StartsWith("MoonSharp");
 
             if (!isForbiddenSystem && !isMoonSharp) {
 
@@ -167,7 +167,7 @@ internal static class LuaDefinitionGenerator {
             sb.AppendLine($"---@return {returnType}");
 
             var argString = string.Join(", ", paramNames);
-            var sep       = method.IsStatic ? "." : ":";
+            var sep = method.IsStatic ? "." : ":";
 
             sb.AppendLine($"function {className}{sep}{safeMethodName}({argString}) end");
             sb.AppendLine();
@@ -186,12 +186,12 @@ internal static class LuaDefinitionGenerator {
         if (t == null) return "any";
 
         if (t == typeof(void) || t.Name == "Void") return "void";
-        if (t.IsPrimitive     || t      == typeof(decimal)) return "number";
+        if (t.IsPrimitive || t == typeof(decimal)) return "number";
 
         // Handle delegates
         if (t.IsGenericType && (t.Name.StartsWith("Func") || t.Name.StartsWith("Action"))) {
-            var args       = t.GetGenericArguments();
-            var isFunc     = t.Name.StartsWith("Func");
+            var args = t.GetGenericArguments();
+            var isFunc = t.Name.StartsWith("Func");
             var paramCount = isFunc ? args.Length - 1 : args.Length;
             var paramNames = new List<string>();
             for (var i = 0; i < paramCount; i++) paramNames.Add($"arg{i}: {MapType(args[i], queue)}");
@@ -222,7 +222,7 @@ internal static class LuaDefinitionGenerator {
 
         if (string.IsNullOrEmpty(name)) return "";
 
-        var tick  = name.IndexOf('`');
+        var tick = name.IndexOf('`');
         var clean = tick != -1 ? name[..tick] : name;
 
         clean = clean.Replace("&", "");

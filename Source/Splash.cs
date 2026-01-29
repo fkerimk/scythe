@@ -6,12 +6,12 @@ internal static class Splash {
 
     private const float Duration = 1;
 
-    private static float     _time;
+    private static float _time;
     private static Texture2D _art;
 
     public static void Show() {
 
-        if (!PathUtil.BestPath("Images/Splash.png", out var splashPath)) return;
+        if (!PathUtil.GetPath("Images/Splash.png", out var splashPath)) return;
 
         Window.Show(width: 320, height: 190, flags: ConfigFlags.UndecoratedWindow, isSplash: true);
 
@@ -38,14 +38,14 @@ internal static class Splash {
                 if (LspInstaller.Progress > 0) DrawRectangle(10, GetScreenHeight() - 14, (int)((GetScreenWidth() - 20) * LspInstaller.Progress), 4, Color.SkyBlue);
 
                 var spinnerTime = (float)GetTime() * 10;
-                var cx          = GetScreenWidth()  - 20;
-                var cy          = GetScreenHeight() - 20;
+                var cx = GetScreenWidth() - 20;
+                var cy = GetScreenHeight() - 20;
 
                 for (var i = 0; i < 8; i++) {
                     var angle = spinnerTime + i * (360f / 8f);
-                    var rad   = angle * (Math.PI / 180f);
-                    var x     = cx + Math.Cos(rad) * 8;
-                    var y     = cy + Math.Sin(rad) * 8;
+                    var rad = angle * (Math.PI / 180f);
+                    var x = cx + Math.Cos(rad) * 8;
+                    var y = cy + Math.Sin(rad) * 8;
                     DrawCircle((int)x, (int)y, 2, Fade(Color.White, i / 8f));
                 }
 

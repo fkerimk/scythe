@@ -3,8 +3,8 @@ using ImGuiNET;
 
 internal abstract class Viewport(string title) {
 
-    public    string           Title { get; } = title;
-    public    CustomStyle?     CustomStyle;
+    public string Title { get; } = title;
+    public CustomStyle? CustomStyle;
     protected ImGuiWindowFlags WindowFlags { get; init; } = ImGuiWindowFlags.NoCollapse | ImGuiWindowFlags.NoNav;
 
     public Vector2 WindowPos;
@@ -40,11 +40,11 @@ internal abstract class Viewport(string title) {
             return;
         }
 
-        WindowPos     = ImGui.GetWindowPos();
+        WindowPos = ImGui.GetWindowPos();
         ContentRegion = ImGui.GetContentRegionAvail();
         RelativeMouse = ImGui.GetMousePos() - WindowPos - ImGui.GetCursorStartPos();
-        IsHovered     = ImGui.IsWindowHovered();
-        IsFocused     = ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows);
+        IsHovered = ImGui.IsWindowHovered();
+        IsFocused = ImGui.IsWindowFocused(ImGuiFocusedFlags.RootAndChildWindows);
 
         OnDraw();
 

@@ -5,8 +5,8 @@ using Jitter2.Collision.Shapes;
 
 internal class SphereCollider(Obj obj) : Component(obj) {
 
-    public override Color  LabelColor => Colors.GuiTypePhysics;
-    public override string LabelIcon  => Icons.FaDotCircleO;
+    public override Color LabelColor => Colors.GuiTypePhysics;
+    public override string LabelIcon => Icons.FaDotCircleO;
 
     [RecordHistory]
     [JsonProperty]
@@ -36,16 +36,16 @@ internal class SphereCollider(Obj obj) : Component(obj) {
         Obj.DecomposeWorldMatrix(out var pos, out var rot, out var scale);
 
         // Physics logic re-calculation
-        var maxScale    = MathF.Max(scale.X, MathF.Max(scale.Y, scale.Z));
+        var maxScale = MathF.Max(scale.X, MathF.Max(scale.Y, scale.Z));
         var worldRadius = Radius * maxScale;
 
         // Manual Transform: (Center * Scale) * Rot + Pos
-        var scaledCenter  = Center * scale;
+        var scaledCenter = Center * scale;
         var rotatedCenter = Vector3.Transform(scaledCenter, rot);
-        var worldCenter   = pos + rotatedCenter;
+        var worldCenter = pos + rotatedCenter;
 
         var colorVisible = Color.Lime;
-        var colorHidden  = Raylib.ColorAlpha(Color.Lime, 0.15f);
+        var colorHidden = Raylib.ColorAlpha(Color.Lime, 0.15f);
 
         // Hidden
         Rlgl.DrawRenderBatchActive();

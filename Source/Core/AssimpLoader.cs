@@ -6,7 +6,7 @@ using Quaternion = System.Numerics.Quaternion;
 
 internal struct VertexBoneData {
 
-    public int   Bone0,   Bone1,   Bone2,   Bone3;
+    public int Bone0, Bone1, Bone2, Bone3;
     public float Weight0, Weight1, Weight2, Weight3;
 
     public void AddBoneData(int id, float weight) {
@@ -15,22 +15,22 @@ internal struct VertexBoneData {
 
         if (Weight0 <= 0) {
 
-            Bone0   = id;
+            Bone0 = id;
             Weight0 = weight;
 
         } else if (Weight1 <= 0) {
 
-            Bone1   = id;
+            Bone1 = id;
             Weight1 = weight;
 
         } else if (Weight2 <= 0) {
 
-            Bone2   = id;
+            Bone2 = id;
             Weight2 = weight;
 
         } else if (Weight3 <= 0) {
 
-            Bone3   = id;
+            Bone3 = id;
             Weight3 = weight;
         }
     }
@@ -38,59 +38,59 @@ internal struct VertexBoneData {
 
 internal class BoneInfo {
 
-    public string    Name = "";
-    public int       Index;
+    public string Name = "";
+    public int Index;
     public Matrix4x4 Offset;
     public Matrix4x4 FinalTransformation;
 }
 
 internal class ModelNode {
 
-    public          string          Name = "";
-    public          Matrix4x4       Transformation;
+    public string Name = "";
+    public Matrix4x4 Transformation;
     public readonly List<ModelNode> Children = [];
 }
 
 internal class AssimpMesh {
 
-    public string           Name      = "";
-    public Vector3[]        Vertices  = null!;
-    public Vector3[]        Normals   = null!;
-    public Vector2[]        TexCoords = null!;
-    public uint[]           Indices   = null!;
-    public VertexBoneData[] BoneData  = null!;
-    public Raylib_cs.Mesh   RlMesh;
-    public int              MaterialIndex;
+    public string Name = "";
+    public Vector3[] Vertices = null!;
+    public Vector3[] Normals = null!;
+    public Vector2[] TexCoords = null!;
+    public uint[] Indices = null!;
+    public VertexBoneData[] BoneData = null!;
+    public Raylib_cs.Mesh RlMesh;
+    public int MaterialIndex;
 
     public Vector3[] AnimatedVertices = null!;
-    public Vector3[] AnimatedNormals  = null!;
+    public Vector3[] AnimatedNormals = null!;
 
     public unsafe AssimpMesh Clone() {
 
         var am = new AssimpMesh {
-            Name             = Name,
-            Vertices         = (Vector3[])Vertices.Clone(),
-            Normals          = (Vector3[])Normals.Clone(),
+            Name = Name,
+            Vertices = (Vector3[])Vertices.Clone(),
+            Normals = (Vector3[])Normals.Clone(),
             AnimatedVertices = (Vector3[])AnimatedVertices.Clone(),
-            AnimatedNormals  = (Vector3[])AnimatedNormals.Clone(),
-            TexCoords        = (Vector2[])TexCoords.Clone(),
-            Indices          = (uint[])Indices.Clone(),
-            BoneData         = (VertexBoneData[])BoneData.Clone(),
-            MaterialIndex    = MaterialIndex,
+            AnimatedNormals = (Vector3[])AnimatedNormals.Clone(),
+            TexCoords = (Vector2[])TexCoords.Clone(),
+            Indices = (uint[])Indices.Clone(),
+            BoneData = (VertexBoneData[])BoneData.Clone(),
+            MaterialIndex = MaterialIndex,
 
             // Initialize unique RlMesh for this instance
             RlMesh = new Raylib_cs.Mesh {
-                VertexCount   = Vertices.Length,
+                VertexCount = Vertices.Length,
                 TriangleCount = Indices.Length / 3,
-                Vertices      = (float*)Raylib.MemAlloc((uint)(Vertices.Length * 3 * sizeof(float))),
-                Normals       = (float*)Raylib.MemAlloc((uint)(Vertices.Length * 3 * sizeof(float))),
-                TexCoords     = (float*)Raylib.MemAlloc((uint)(Vertices.Length * 2 * sizeof(float))),
-                Indices       = (ushort*)Raylib.MemAlloc((uint)(Indices.Length * sizeof(ushort)))
+                Vertices = (float*)Raylib.MemAlloc((uint)(Vertices.Length * 3 * sizeof(float))),
+                Normals = (float*)Raylib.MemAlloc((uint)(Vertices.Length * 3 * sizeof(float))),
+                TexCoords = (float*)Raylib.MemAlloc((uint)(Vertices.Length * 2 * sizeof(float))),
+                Indices = (ushort*)Raylib.MemAlloc((uint)(Indices.Length * sizeof(ushort)))
             }
         };
 
-        fixed (Vector3* v = Vertices) Buffer.MemoryCopy(v,  am.RlMesh.Vertices,  (long)Vertices.Length * 3 * sizeof(float), (long)Vertices.Length * 3 * sizeof(float));
-        fixed (Vector3* n = Normals) Buffer.MemoryCopy(n,   am.RlMesh.Normals,   (long)Vertices.Length * 3 * sizeof(float), (long)Vertices.Length * 3 * sizeof(float));
+        fixed (Vector3* v = Vertices) Buffer.MemoryCopy(v, am.RlMesh.Vertices, (long)Vertices.Length * 3 * sizeof(float), (long)Vertices.Length * 3 * sizeof(float));
+        fixed (Vector3* n = Normals) Buffer.MemoryCopy(n, am.RlMesh.Normals, (long)Vertices.Length * 3 * sizeof(float), (long)Vertices.Length * 3 * sizeof(float));
         fixed (Vector2* t = TexCoords) Buffer.MemoryCopy(t, am.RlMesh.TexCoords, (long)Vertices.Length * 2 * sizeof(float), (long)Vertices.Length * 2 * sizeof(float));
 
         for (var i = 0; i < Indices.Length; i++) am.RlMesh.Indices[i] = (ushort)Indices[i];
@@ -106,18 +106,18 @@ internal class AssimpMesh {
 
 internal class AnimationChannel {
 
-    public          string                                   NodeName     = "";
-    public readonly List<(double Time, Vector3 Position)>    PositionKeys = [];
+    public string NodeName = "";
+    public readonly List<(double Time, Vector3 Position)> PositionKeys = [];
     public readonly List<(double Time, Quaternion Rotation)> RotationKeys = [];
-    public readonly List<(double Time, Vector3 Scale)>       ScaleKeys    = [];
+    public readonly List<(double Time, Vector3 Scale)> ScaleKeys = [];
 }
 
 internal class AnimationClip {
 
-    public          string                               Name = "";
-    public          double                               Duration;
-    public          double                               TicksPerSecond;
-    public readonly List<AnimationChannel>               Channels   = [];
+    public string Name = "";
+    public double Duration;
+    public double TicksPerSecond;
+    public readonly List<AnimationChannel> Channels = [];
     public readonly Dictionary<string, AnimationChannel> ChannelMap = [];
 }
 
@@ -135,7 +135,7 @@ internal static class AssimpLoader {
 
         Matrix4x4.Invert(globalInverse, out globalInverse);
 
-        var bones       = new List<BoneInfo>();
+        var bones = new List<BoneInfo>();
         var boneMapping = new Dictionary<string, List<int>>();
 
         var meshes = scene.Meshes.Select(mesh => ProcessMesh(mesh, bones, boneMapping)).ToList();
@@ -150,21 +150,21 @@ internal static class AssimpLoader {
     private static unsafe AssimpMesh ProcessMesh(Assimp.Mesh mesh, List<BoneInfo> bones, Dictionary<string, List<int>> boneMapping) {
 
         var am = new AssimpMesh {
-            Name             = mesh.Name,
-            Vertices         = new Vector3[mesh.VertexCount],
-            Normals          = new Vector3[mesh.VertexCount],
+            Name = mesh.Name,
+            Vertices = new Vector3[mesh.VertexCount],
+            Normals = new Vector3[mesh.VertexCount],
             AnimatedVertices = new Vector3[mesh.VertexCount],
-            AnimatedNormals  = new Vector3[mesh.VertexCount],
-            TexCoords        = new Vector2[mesh.VertexCount],
-            Indices          = new uint[mesh.FaceCount * 3],
-            BoneData         = new VertexBoneData[mesh.VertexCount],
-            MaterialIndex    = mesh.MaterialIndex
+            AnimatedNormals = new Vector3[mesh.VertexCount],
+            TexCoords = new Vector2[mesh.VertexCount],
+            Indices = new uint[mesh.FaceCount * 3],
+            BoneData = new VertexBoneData[mesh.VertexCount],
+            MaterialIndex = mesh.MaterialIndex
         };
 
         for (var i = 0; i < mesh.VertexCount; i++) {
 
             am.Vertices[i] = mesh.Vertices[i].ToNumerics();
-            am.Normals[i]  = mesh.Normals[i].ToNumerics();
+            am.Normals[i] = mesh.Normals[i].ToNumerics();
 
             if (mesh.HasTextureCoords(0)) am.TexCoords[i] = new Vector2(mesh.TextureCoordinateChannels[0][i].X, mesh.TextureCoordinateChannels[0][i].Y);
         }
@@ -180,12 +180,12 @@ internal static class AssimpLoader {
 
             if (!boneMapping.TryGetValue(bone.Name, out var indices)) {
 
-                indices                = [];
+                indices = [];
                 boneMapping[bone.Name] = indices;
             }
 
             var boneIndex = -1;
-            var offset    = bone.OffsetMatrix.ToNumerics();
+            var offset = bone.OffsetMatrix.ToNumerics();
 
             foreach (var idx in indices.Where(idx => MatricesAreEqual(bones[idx].Offset, offset))) {
 
@@ -208,12 +208,12 @@ internal static class AssimpLoader {
 
         // Initialize RlMesh
         am.RlMesh = new Raylib_cs.Mesh {
-            VertexCount   = mesh.VertexCount,
+            VertexCount = mesh.VertexCount,
             TriangleCount = mesh.FaceCount,
-            Vertices      = (float*)Raylib.MemAlloc((uint)(mesh.VertexCount * 3 * sizeof(float))),
-            Normals       = (float*)Raylib.MemAlloc((uint)(mesh.VertexCount * 3 * sizeof(float))),
-            TexCoords     = (float*)Raylib.MemAlloc((uint)(mesh.VertexCount * 2 * sizeof(float))),
-            Indices       = (ushort*)Raylib.MemAlloc((uint)(mesh.FaceCount  * 3 * sizeof(ushort)))
+            Vertices = (float*)Raylib.MemAlloc((uint)(mesh.VertexCount * 3 * sizeof(float))),
+            Normals = (float*)Raylib.MemAlloc((uint)(mesh.VertexCount * 3 * sizeof(float))),
+            TexCoords = (float*)Raylib.MemAlloc((uint)(mesh.VertexCount * 2 * sizeof(float))),
+            Indices = (ushort*)Raylib.MemAlloc((uint)(mesh.FaceCount * 3 * sizeof(ushort)))
         };
 
         // Fill initial data
@@ -314,8 +314,8 @@ internal static class AssimpLoader {
 
         Matrix4x4.Decompose(bindPose, out var bScale, out var bRot, out var bPos);
 
-        var pos   = InterpolatePosition(channel.PositionKeys, time, bPos);
-        var rot   = InterpolateRotation(channel.RotationKeys, time, bRot);
+        var pos = InterpolatePosition(channel.PositionKeys, time, bPos);
+        var rot = InterpolateRotation(channel.RotationKeys, time, bRot);
         var scale = InterpolateScale(channel.ScaleKeys, time, bScale);
 
         return Matrix4x4.CreateScale(scale) * Matrix4x4.CreateFromQuaternion(rot) * Matrix4x4.CreateTranslation(pos);
@@ -324,37 +324,37 @@ internal static class AssimpLoader {
     private static Matrix4x4 GetBlendedTransform(AnimationChannel? channelA, double timeA, AnimationChannel? channelB, double timeB, float blend, Matrix4x4 bindPose) {
 
         Matrix4x4.Decompose(bindPose, out var bScale, out var bRot, out var bPos);
-        Vector3    posA, posB, scaleA, scaleB;
+        Vector3 posA, posB, scaleA, scaleB;
         Quaternion rotA, rotB;
 
         if (channelA != null) {
 
-            posA   = InterpolatePosition(channelA.PositionKeys, timeA, bPos);
-            rotA   = InterpolateRotation(channelA.RotationKeys, timeA, bRot);
+            posA = InterpolatePosition(channelA.PositionKeys, timeA, bPos);
+            rotA = InterpolateRotation(channelA.RotationKeys, timeA, bRot);
             scaleA = InterpolateScale(channelA.ScaleKeys, timeA, bScale);
 
         } else {
 
-            posA   = bPos;
-            rotA   = bRot;
+            posA = bPos;
+            rotA = bRot;
             scaleA = bScale;
         }
 
         if (channelB != null) {
 
-            posB   = InterpolatePosition(channelB.PositionKeys, timeB, bPos);
-            rotB   = InterpolateRotation(channelB.RotationKeys, timeB, bRot);
+            posB = InterpolatePosition(channelB.PositionKeys, timeB, bPos);
+            rotB = InterpolateRotation(channelB.RotationKeys, timeB, bRot);
             scaleB = InterpolateScale(channelB.ScaleKeys, timeB, bScale);
 
         } else {
 
-            posB   = bPos;
-            rotB   = bRot;
+            posB = bPos;
+            rotB = bRot;
             scaleB = bScale;
         }
 
-        var pos   = Vector3.Lerp(posA, posB, blend);
-        var rot   = Quaternion.Slerp(rotA, rotB, blend);
+        var pos = Vector3.Lerp(posA, posB, blend);
+        var rot = Quaternion.Slerp(rotA, rotB, blend);
         var scale = Vector3.Lerp(scaleA, scaleB, blend);
 
         return Matrix4x4.CreateScale(scale) * Matrix4x4.CreateFromQuaternion(rot) * Matrix4x4.CreateTranslation(pos);
@@ -375,8 +375,8 @@ internal static class AssimpLoader {
                 break;
 
         var next = (i + 1) % keys.Count;
-        var t1   = keys[i].Time;
-        var t2   = keys[next].Time;
+        var t1 = keys[i].Time;
+        var t2 = keys[next].Time;
 
         if (t2 <= t1) return keys[i].Position;
 
@@ -400,8 +400,8 @@ internal static class AssimpLoader {
                 break;
 
         var next = (i + 1) % keys.Count;
-        var t1   = keys[i].Time;
-        var t2   = keys[next].Time;
+        var t1 = keys[i].Time;
+        var t2 = keys[next].Time;
 
         if (t2 <= t1) return keys[i].Rotation;
 
@@ -425,8 +425,8 @@ internal static class AssimpLoader {
                 break;
 
         var next = (i + 1) % keys.Count;
-        var t1   = keys[i].Time;
-        var t2   = keys[next].Time;
+        var t1 = keys[i].Time;
+        var t2 = keys[next].Time;
 
         if (t2 <= t1) return keys[i].Scale;
 
@@ -450,7 +450,7 @@ internal static class AssimpLoader {
                 if (totalWeight < 0.001f) {
 
                     mesh.AnimatedVertices[i] = mesh.Vertices[i];
-                    mesh.AnimatedNormals[i]  = mesh.Normals[i];
+                    mesh.AnimatedNormals[i] = mesh.Normals[i];
 
                     return;
                 }
@@ -464,33 +464,33 @@ internal static class AssimpLoader {
                 if (bd.Weight0 > 0) {
 
                     var m = bones[bd.Bone0].FinalTransformation;
-                    finalV += Vector3.Transform(v, m)       * bd.Weight0;
+                    finalV += Vector3.Transform(v, m) * bd.Weight0;
                     finalN += Vector3.TransformNormal(n, m) * bd.Weight0;
                 }
 
                 if (bd.Weight1 > 0) {
 
                     var m = bones[bd.Bone1].FinalTransformation;
-                    finalV += Vector3.Transform(v, m)       * bd.Weight1;
+                    finalV += Vector3.Transform(v, m) * bd.Weight1;
                     finalN += Vector3.TransformNormal(n, m) * bd.Weight1;
                 }
 
                 if (bd.Weight2 > 0) {
 
                     var m = bones[bd.Bone2].FinalTransformation;
-                    finalV += Vector3.Transform(v, m)       * bd.Weight2;
+                    finalV += Vector3.Transform(v, m) * bd.Weight2;
                     finalN += Vector3.TransformNormal(n, m) * bd.Weight2;
                 }
 
                 if (bd.Weight3 > 0) {
 
                     var m = bones[bd.Bone3].FinalTransformation;
-                    finalV += Vector3.Transform(v, m)       * bd.Weight3;
+                    finalV += Vector3.Transform(v, m) * bd.Weight3;
                     finalN += Vector3.TransformNormal(n, m) * bd.Weight3;
                 }
 
                 mesh.AnimatedVertices[i] = finalV;
-                mesh.AnimatedNormals[i]  = Vector3.Normalize(finalN);
+                mesh.AnimatedNormals[i] = Vector3.Normalize(finalN);
             }
         );
 
@@ -499,7 +499,7 @@ internal static class AssimpLoader {
         fixed (Vector3* n = mesh.AnimatedNormals) Buffer.MemoryCopy(n, mesh.RlMesh.Normals, (long)mesh.AnimatedNormals.Length * 3 * sizeof(float), (long)mesh.AnimatedNormals.Length * 3 * sizeof(float));
 
         Raylib.UpdateMeshBuffer(mesh.RlMesh, 0, mesh.RlMesh.Vertices, mesh.AnimatedVertices.Length * 3 * sizeof(float), 0);
-        Raylib.UpdateMeshBuffer(mesh.RlMesh, 2, mesh.RlMesh.Normals,  mesh.AnimatedNormals.Length  * 3 * sizeof(float), 0);
+        Raylib.UpdateMeshBuffer(mesh.RlMesh, 2, mesh.RlMesh.Normals, mesh.AnimatedNormals.Length * 3 * sizeof(float), 0);
     }
 
     private static bool MatricesAreEqual(Matrix4x4 a, Matrix4x4 b) {
@@ -511,6 +511,6 @@ internal static class AssimpLoader {
 
     private static Matrix4x4 ToNumerics(this Assimp.Matrix4x4 m) { return new Matrix4x4(m.A1, m.B1, m.C1, m.D1, m.A2, m.B2, m.C2, m.D2, m.A3, m.B3, m.C3, m.D3, m.A4, m.B4, m.C4, m.D4); }
 
-    private static Vector3    ToNumerics(this Vector3D          v) => new(v.X, v.Y, v.Z);
+    private static Vector3 ToNumerics(this Vector3D v) => new(v.X, v.Y, v.Z);
     private static Quaternion ToNumerics(this Assimp.Quaternion q) => new(q.X, q.Y, q.Z, q.W);
 }

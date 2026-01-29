@@ -7,8 +7,8 @@ using Jitter2.Collision.Shapes;
 
 internal class Rigidbody(Obj obj) : Component(obj) {
 
-    public override Color  LabelColor => Colors.GuiTypePhysics;
-    public override string LabelIcon  => Icons.FaCrosshairs;
+    public override Color LabelColor => Colors.GuiTypePhysics;
+    public override string LabelIcon => Icons.FaCrosshairs;
 
     [Label("Static"), RecordHistory, JsonProperty, DefaultValue(false)]
     public bool IsStatic { get; set; }
@@ -21,7 +21,7 @@ internal class Rigidbody(Obj obj) : Component(obj) {
     public float Friction {
         get;
         set {
-            field          = value;
+            field = value;
             Body?.Friction = value;
         }
     } = 0.5f;
@@ -30,7 +30,7 @@ internal class Rigidbody(Obj obj) : Component(obj) {
     public float Bounciness {
         get;
         set {
-            field             = value;
+            field = value;
             Body?.Restitution = value;
         }
     }
@@ -50,7 +50,7 @@ internal class Rigidbody(Obj obj) : Component(obj) {
 
     [JsonIgnore] public RigidBody? Body;
 
-    private Vector3    _lastSyncedPos;
+    private Vector3 _lastSyncedPos;
     private Quaternion _lastSyncedRot;
 
     public Vector3 Velocity {
@@ -87,7 +87,7 @@ internal class Rigidbody(Obj obj) : Component(obj) {
 
         if (CommandLine.Editor && !Core.IsPlaying) return true;
 
-        Body     = Physics.World.CreateRigidBody();
+        Body = Physics.World.CreateRigidBody();
         Body.Tag = this;
 
         Obj.DecomposeWorldMatrix(out var pos, out var rot, out var scale);
@@ -146,12 +146,12 @@ internal class Rigidbody(Obj obj) : Component(obj) {
             }
         }
 
-        Body.Position          = Conversion.ToJitter(pos);
-        Body.Orientation       = Conversion.ToJitter(rot);
-        Body.MotionType        = IsStatic ? MotionType.Static : MotionType.Dynamic;
+        Body.Position = Conversion.ToJitter(pos);
+        Body.Orientation = Conversion.ToJitter(rot);
+        Body.MotionType = IsStatic ? MotionType.Static : MotionType.Dynamic;
         Body.AffectedByGravity = Gravity;
-        Body.Friction          = Friction;
-        Body.Restitution       = Bounciness;
+        Body.Friction = Friction;
+        Body.Restitution = Bounciness;
 
         Body.SetMassInertia();
 
@@ -170,14 +170,14 @@ internal class Rigidbody(Obj obj) : Component(obj) {
         // Check for manual transform changes (Script or Teleport)
         if (Obj.Transform.Pos != _lastSyncedPos) {
 
-            Body.Position  = Conversion.ToJitter(Obj.Transform.Pos);
+            Body.Position = Conversion.ToJitter(Obj.Transform.Pos);
             _lastSyncedPos = Obj.Transform.Pos;
         }
 
         if (Obj.Transform.Rot != _lastSyncedRot) {
 
             Body.Orientation = Conversion.ToJitter(Obj.Transform.Rot);
-            _lastSyncedRot   = Obj.Transform.Rot;
+            _lastSyncedRot = Obj.Transform.Rot;
         }
 
         if (Body.MotionType == MotionType.Dynamic) {
@@ -185,7 +185,7 @@ internal class Rigidbody(Obj obj) : Component(obj) {
             // Constraints
             if (FreezePos.X || FreezePos.Y || FreezePos.Z) {
 
-                var vel                = Body.Velocity;
+                var vel = Body.Velocity;
                 if (FreezePos.X) vel.X = 0;
                 if (FreezePos.Y) vel.Y = 0;
                 if (FreezePos.Z) vel.Z = 0;
@@ -194,7 +194,7 @@ internal class Rigidbody(Obj obj) : Component(obj) {
 
             if (FreezeRot.X || FreezeRot.Y || FreezeRot.Z) {
 
-                var angVel                = Body.AngularVelocity;
+                var angVel = Body.AngularVelocity;
                 if (FreezeRot.X) angVel.X = 0;
                 if (FreezeRot.Y) angVel.Y = 0;
                 if (FreezeRot.Z) angVel.Z = 0;

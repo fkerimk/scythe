@@ -5,8 +5,8 @@ using Jitter2.Collision.Shapes;
 
 internal class BoxCollider(Obj obj) : Component(obj) {
 
-    public override Color  LabelColor => Colors.GuiTypePhysics;
-    public override string LabelIcon  => Icons.FaCube;
+    public override Color LabelColor => Colors.GuiTypePhysics;
+    public override string LabelIcon => Icons.FaCube;
 
     [Label("Size"), JsonProperty, RecordHistory]
     public Vector3 Size { get; set; } = Vector3.One;
@@ -29,7 +29,7 @@ internal class BoxCollider(Obj obj) : Component(obj) {
         if (!IsSelected || !CommandLine.Editor) return;
 
         var colorVisible = Color.Lime;
-        var colorHidden  = Raylib.ColorAlpha(Color.Lime, 0.15f);
+        var colorHidden = Raylib.ColorAlpha(Color.Lime, 0.15f);
 
         // Box scale works correctly with WorldMatrix
         Rlgl.PushMatrix();

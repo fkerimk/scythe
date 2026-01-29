@@ -34,14 +34,14 @@ internal static class NativeResolver {
 
         } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
 
-            rid    = "linux-" + RuntimeInformation.ProcessArchitecture.ToString().ToLower();
-            ext    = ".so";
+            rid = "linux-" + RuntimeInformation.ProcessArchitecture.ToString().ToLower();
+            ext = ".so";
             prefix = "lib";
 
         } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
 
-            rid    = "osx-" + RuntimeInformation.ProcessArchitecture.ToString().ToLower();
-            ext    = ".dylib";
+            rid = "osx-" + RuntimeInformation.ProcessArchitecture.ToString().ToLower();
+            ext = ".dylib";
             prefix = "lib";
 
         } else

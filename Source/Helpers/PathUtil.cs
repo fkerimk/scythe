@@ -1,77 +1,61 @@
-internal abstract class PathUtil {
+internal static class PathUtil {
 
-    public static  string LaunchPath = Environment.CurrentDirectory;
-    private static string CurrentPath => Environment.CurrentDirectory;
-    public static  string ExePath     => AppContext.BaseDirectory;
-    public static  string TempPath    = Environment.CurrentDirectory;
-    public static  string ProjectPath = Environment.CurrentDirectory;
+    public static void ValidateFile(string path, out string validPath, string content = "", bool project = false) {
 
-    public static void Init() {
+        validPath = path;
 
-        LaunchPath                   = Environment.CurrentDirectory;
-        Environment.CurrentDirectory = ExePath;
+        if (File.Exists(validPath)) return;
+
+        validPath = Path.Join(ScytheConfig.Current.Project, path);
+
+        if (File.Exists(validPath)) return;
+
+        if (!project) {
+
+            validPath = Path.Join(AppContext.BaseDirectory, path);
+
+            if (File.Exists(validPath)) return;
+        }
+
+        ValidateDir(Path.GetDirectoryName(validPath)!, out _, project);
+
+        File.WriteAllText(validPath, content);
     }
 
-    public static void InitModPaths() {
+    public static void ValidateDir(string path, out string validPath, bool project = false) {
 
-        TempPath    = Path.GetFullPath(ModRelative("Temp"));
-        ProjectPath = Path.GetFullPath(ModRelative("Project"));
+        validPath = path;
+
+        if (Directory.Exists(validPath)) return;
+
+        validPath = Path.Join(ScytheConfig.Current.Project, path);
+
+        if (Directory.Exists(validPath)) return;
+
+        if (!project) {
+
+            validPath = Path.Join(AppContext.BaseDirectory, path);
+
+            if (Directory.Exists(validPath)) return;
+        }
+
+        Directory.CreateDirectory(validPath);
     }
 
-    private static string CurrentRelative(string path) => Path.GetFullPath(Path.Join(CurrentPath,     path));
-    private static string LaunchRelative(string  path) => Path.GetFullPath(Path.Join(LaunchPath,      path));
-    public static  string ModRelative(string     path) => Path.GetFullPath(Path.Join(Config.Mod.Path, path));
-    public static  string ExeRelative(string     path) => Path.GetFullPath(Path.Join(ExePath,         path));
-    public static  string ResRelative(string     path) => Path.GetFullPath(Path.Join(ExePath,         "Resources", path));
+    public static bool GetPath(string relativePath, out string fullPath) {
 
-    public static string TempRelative(string path) {
+        fullPath = Path.GetFullPath(relativePath);
 
-        if (!Directory.Exists(TempPath)) Directory.CreateDirectory(TempPath);
+        if (File.Exists(fullPath) || Directory.Exists(fullPath)) return true;
 
-        return Path.Join(TempPath, path);
-    }
+        fullPath = Path.Join(ScytheConfig.Current.Project, relativePath);
 
-    public static string ProjectRelative(string path) {
+        if (File.Exists(fullPath) || Directory.Exists(fullPath)) return true;
 
-        if (!Directory.Exists(ProjectPath)) Directory.CreateDirectory(ProjectPath);
+        fullPath = Path.Join(Path.GetFullPath("Resources"), relativePath);
 
-        return Path.Join(ProjectPath, path);
-    }
-
-    public static bool BestPath(string relativePath, out string path, bool isDirectory = false, bool resLock = false) {
-
-        path = CurrentRelative(relativePath);
-
-        if (CheckPath(path)) return true;
-
-        path = LaunchRelative(relativePath);
-
-        if (CheckPath(path)) return true;
-
-        path = ModRelative(relativePath);
-
-        if (CheckPath(path)) return true;
-
-        path = ExeRelative(relativePath);
-
-        if (CheckPath(path)) return true;
-
-        if (!resLock) return BestPath(Path.Join("Resources", relativePath), out path, isDirectory, true);
-
-        path = null!;
+        if (File.Exists(fullPath) || Directory.Exists(fullPath)) return true;
 
         return false;
-
-        bool CheckPath(string checkPath) {
-
-            switch (isDirectory) {
-
-                case false when File.Exists(checkPath):
-                case true when Directory.Exists(checkPath):
-                    return true;
-            }
-
-            return false;
-        }
     }
 }

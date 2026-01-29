@@ -1,33 +1,34 @@
-﻿NativeResolver.Init();
-PathUtil.Init();
-
-if (PathUtil.BestPath("Scythe.ini", out var scytheIniPath)) {
-    var iniFile = new Ini(scytheIniPath);
-    iniFile.ToConfig();
-} else
-    throw new FileNotFoundException("Scythe.ini not found");
-
-if (PathUtil.BestPath(Config.Mod.Path, out var newModPath, true)) Config.Mod.Path = newModPath;
-
-if (PathUtil.BestPath("Mod.ini", out var modIniPath)) {
-    var iniFile = new Ini(modIniPath);
-    iniFile.ToConfig();
-} else
-    throw new FileNotFoundException("Mod.ini not found");
-
-PathUtil.InitModPaths();
+﻿using Newtonsoft.Json;
 
 CommandLine.Init();
-
-Script.Register();
+NativeResolver.Init();
 
 if (CommandLine.Editor && !LspInstaller.CheckLspFiles()) CommandLine.NoSplash = false;
 
 if (!CommandLine.NoSplash) Splash.Show();
 
-if (CommandLine.Editor)
-    Editor.Show();
-else
-    Runtime.Show();
+PathUtil.ValidateFile("Scythe.json", out var scytheJson, "{}");
+JsonConvert.PopulateObject(File.ReadAllText(scytheJson), ScytheConfig.Current);
 
-return 0;
+if (!string.IsNullOrEmpty(ScytheConfig.Current.Project)) {
+
+    ScytheConfig.Current.Project = Path.GetFullPath(ScytheConfig.Current.Project);
+
+    if (!Directory.Exists(ScytheConfig.Current.Project)) throw new DirectoryNotFoundException(Ansi.ErrorMessage("Project not found"));
+
+    PathUtil.ValidateFile("Project.json", out var projectJson, "{}", true);
+    JsonConvert.PopulateObject(File.ReadAllText(projectJson), ProjectConfig.Current);
+
+    PathUtil.ValidateDir("Project", out _, true);
+
+    Script.Register();
+
+    if (CommandLine.Editor)
+        Editor.Show();
+    else
+        Runtime.Show();
+
+    return 0;
+}
+
+throw new NotImplementedException(Ansi.ErrorMessage("Welcome screen is not implemented yet!"));

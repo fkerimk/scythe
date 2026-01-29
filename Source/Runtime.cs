@@ -7,7 +7,7 @@ internal static class Runtime {
 
     public static void Show() {
 
-        Window.Show(fullscreen: false, flags: [ConfigFlags.Msaa4xHint, ConfigFlags.ResizableWindow], title: Config.Mod.Name);
+        Window.Show(fullscreen: false, flags: [ConfigFlags.Msaa4xHint, ConfigFlags.ResizableWindow], title: ProjectConfig.Current.Name);
 
         // Setup core
         Core.Init();
@@ -28,7 +28,7 @@ internal static class Runtime {
 
             Core.Step();
 
-            var fpsText  = Window.GetFpsText();
+            var fpsText = GetFPS().ToString();
             var textSize = MeasureTextEx(Fonts.RlMontserratRegular, fpsText, 20, 1);
             Window.DrawFps(new System.Numerics.Vector2(GetScreenWidth() - textSize.X - 15, 15));
             EndDrawing();

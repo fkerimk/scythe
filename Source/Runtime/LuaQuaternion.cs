@@ -16,13 +16,13 @@ internal class LuaQuat {
 
         if (forward.LengthSquared() < 0.000001f) return Quaternion.Identity;
 
-        var up    = Vector3.UnitY;
+        var up = Vector3.UnitY;
         var right = Vector3.Cross(up, forward);
 
         if (right.LengthSquared() < 0.000001f) right = Vector3.Cross(Vector3.UnitZ, forward);
 
         right = Vector3.Normalize(right);
-        up    = Vector3.Cross(forward, right);
+        up = Vector3.Cross(forward, right);
 
         var mat = new Matrix4x4(right.X, right.Y, right.Z, 0, up.X, up.Y, up.Z, 0, forward.X, forward.Y, forward.Z, 0, 0, 0, 0, 1);
 

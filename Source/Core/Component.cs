@@ -7,16 +7,16 @@ internal class Component(Obj obj) {
 
     public readonly Obj Obj = obj;
 
-    public virtual string LabelIcon  => Icons.FaDotCircleO;
-    public virtual Color  LabelColor => Colors.GuiTypeObject;
+    public virtual string LabelIcon => Icons.FaDotCircleO;
+    public virtual Color LabelColor => Colors.GuiTypeObject;
 
-    public virtual bool Load()                                       => true;
+    public virtual bool Load() => true;
     public virtual void Loop(bool is2D, bool isLogic, bool isRender) { }
-    public virtual void Logic()    { }
+    public virtual void Logic() { }
     public virtual void Render3D() { }
     public virtual void Render2D() { }
-    public virtual void Unload()   { }
-    public virtual void Quit()     { }
+    public virtual void Unload() { }
+    public virtual void Quit() { }
 
     public void UnloadAndQuit() {
 
@@ -28,11 +28,19 @@ internal class Component(Obj obj) {
     public bool IsLoaded;
     public bool IsSelected => Obj.IsSelected;
 
-    public Vector3    Up        => Obj.Up;
-    public Vector3    Fwd       => Obj.Fwd;
-    public Vector3    Right     => Obj.Right;
-    public Vector3    FwdFlat   => Obj.FwdFlat;
-    public Vector3    RightFlat => Obj.RightFlat;
-    public Vector3    Pos       { get => Obj.Transform.Pos; set => Obj.Transform.Pos = value; }
-    public Quaternion Rot       { get => Obj.Transform.Rot; set => Obj.Transform.Rot = value; }
+    public Vector3 Up => Obj.Up;
+    public Vector3 Fwd => Obj.Fwd;
+    public Vector3 Right => Obj.Right;
+    public Vector3 FwdFlat => Obj.FwdFlat;
+    public Vector3 RightFlat => Obj.RightFlat;
+
+    public Vector3 Pos {
+        get => Obj.Transform.Pos;
+        set => Obj.Transform.Pos = value;
+    }
+
+    public Quaternion Rot {
+        get => Obj.Transform.Rot;
+        set => Obj.Transform.Rot = value;
+    }
 }

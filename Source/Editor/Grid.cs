@@ -14,15 +14,15 @@ internal static class Grid {
         if (grid == null) return;
 
         Raylib.BeginShaderMode(grid.Shader);
-        Raylib.SetShaderValue(grid.Shader, grid.GetLoc("cameraPos"),  camera.Position, ShaderUniformDataType.Vec3);
-        Raylib.SetShaderValue(grid.Shader, grid.GetLoc("fadeRadius"), 50.0f,           ShaderUniformDataType.Float);
+        Raylib.SetShaderValue(grid.Shader, grid.GetLoc("cameraPos"), camera.Position, ShaderUniformDataType.Vec3);
+        Raylib.SetShaderValue(grid.Shader, grid.GetLoc("fadeRadius"), 50.0f, ShaderUniformDataType.Float);
 
         Rlgl.PushMatrix();
         Rlgl.Translatef(gridPos.X, gridPos.Y, gridPos.Z);
 
-        const int   slices  = 50;
+        const int slices = 50;
         const float spacing = 1f;
-        const float half    = slices * spacing;
+        const float half = slices * spacing;
 
         Raylib.BeginBlendMode(BlendMode.Alpha);
 
@@ -31,11 +31,11 @@ internal static class Grid {
             var pos = -half + i * spacing;
 
             var startX = new Vector3(-half, 0, pos);
-            var endX   = new Vector3(half,  0, pos);
+            var endX = new Vector3(half, 0, pos);
             Raylib.DrawLine3D(startX, endX, Colors.Grid);
 
             var startZ = new Vector3(pos, 0, -half);
-            var endZ   = new Vector3(pos, 0, half);
+            var endZ = new Vector3(pos, 0, half);
             Raylib.DrawLine3D(startZ, endZ, Colors.Grid);
         }
 

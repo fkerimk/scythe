@@ -6,8 +6,8 @@ using Raylib_cs;
 [MoonSharpUserData]
 internal class Animation(Obj obj) : Component(obj) {
 
-    public override string LabelIcon  => Icons.FaPlayCircle;
-    public override Color  LabelColor => Colors.GuiTypeAnimation;
+    public override string LabelIcon => Icons.FaPlayCircle;
+    public override Color LabelColor => Colors.GuiTypeAnimation;
 
     [Label("Path"), JsonProperty, RecordHistory, FindAsset("AnimationAsset")]
     public string Path { get; set; } = "";
@@ -36,13 +36,13 @@ internal class Animation(Obj obj) : Component(obj) {
     [Label("Looping"), JsonProperty, RecordHistory]
     public bool Looping { get; set; } = true;
 
-    private int   _track;
+    private int _track;
     private float _frameRaw;
     private float _prevFrameRaw;
 
     // Blending state
-    private int   _lastTrack     = -1;
-    private float _blendWeight   = 1.0f;
+    private int _lastTrack = -1;
+    private float _blendWeight = 1.0f;
     private float _blendDuration = 0.25f;
     private float _blendTimer;
 
@@ -66,20 +66,20 @@ internal class Animation(Obj obj) : Component(obj) {
 
         if (blendTime <= 0) {
 
-            _track       = trackIndex;
-            _lastTrack   = -1;
-            _frameRaw    = 0;
+            _track = trackIndex;
+            _lastTrack = -1;
+            _frameRaw = 0;
             _blendWeight = 1.0f;
 
         } else {
 
-            _lastTrack     = _track;
-            _prevFrameRaw  = _frameRaw;
-            _track         = trackIndex;
-            _frameRaw      = 0; // Start new track from beginning
-            _blendWeight   = 0.0f;
+            _lastTrack = _track;
+            _prevFrameRaw = _frameRaw;
+            _track = trackIndex;
+            _frameRaw = 0; // Start new track from beginning
+            _blendWeight = 0.0f;
             _blendDuration = blendTime;
-            _blendTimer    = 0f;
+            _blendTimer = 0f;
         }
 
         IsPlaying = true;
@@ -88,7 +88,7 @@ internal class Animation(Obj obj) : Component(obj) {
     public override void Logic() {
 
         if (_asset is not { IsLoaded: true } || _asset.Animations.Count == 0) return;
-        if (!IsPlaying                       || !Obj.Components.TryGetValue("Model", out var component) || component is not Model { IsLoaded: true } model) return;
+        if (!IsPlaying || !Obj.Components.TryGetValue("Model", out var component) || component is not Model { IsLoaded: true } model) return;
 
         var modelAsset = model.AssetRef;
 
@@ -116,7 +116,7 @@ internal class Animation(Obj obj) : Component(obj) {
 
     private void UpdateTimers() {
 
-        var dt          = Raylib.GetFrameTime();
+        var dt = Raylib.GetFrameTime();
         var currentClip = _asset.Animations[_track];
 
         // Update current frame
@@ -150,8 +150,8 @@ internal class Animation(Obj obj) : Component(obj) {
             }
 
             // Update blend weight
-            _blendTimer  += dt;
-            _blendWeight =  Math.Clamp(_blendTimer / _blendDuration, 0f, 1f);
+            _blendTimer += dt;
+            _blendWeight = Math.Clamp(_blendTimer / _blendDuration, 0f, 1f);
 
             if (_blendWeight >= 1.0f) _lastTrack = -1;
         }

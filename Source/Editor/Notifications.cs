@@ -3,11 +3,11 @@ using Raylib_cs;
 
 internal static class Notifications {
 
-    private const int   X         = 25;
-    private const int   Y         = 25;
-    private const int   Spacing   = 12;
-    private const int   Size      = 18;
-    private const float Fadeout   = 0.3f;
+    private const int X = 25;
+    private const int Y = 25;
+    private const int Spacing = 12;
+    private const int Size = 18;
+    private const float Fadeout = 0.3f;
     private const float EntryTime = 0.6f;
 
     private static readonly List<Notification> PendingNotifications = [];
@@ -26,7 +26,7 @@ internal static class Notifications {
             n.Timer += dt;
 
             // Stacking
-            float targetY = Y + i                             * (Notification.Height + Spacing);
+            float targetY = Y + i * (Notification.Height + Spacing);
             n.DrawPosY = Raymath.Lerp(n.DrawPosY, targetY, dt * 10.0f);
 
             // Entry Animation
@@ -43,7 +43,7 @@ internal static class Notifications {
             if (n.Timer > n.Duration) {
 
                 var exitProgress = (n.Timer - n.Duration) / Fadeout;
-                alpha      =  Math.Max(0, 1.0f - Ease.InCubic(exitProgress));
+                alpha = Math.Max(0, 1.0f - Ease.InCubic(exitProgress));
                 n.DrawPosX += exitProgress * 200 * dt; // Slide away
 
                 if (exitProgress >= 1.0f) {
@@ -61,7 +61,7 @@ internal static class Notifications {
 
     private static void DrawNotification(Notification n, float alpha) {
 
-        var bg     = new Color((byte)22, (byte)22, (byte)32, (byte)(248 * alpha));
+        var bg = new Color((byte)22, (byte)22, (byte)32, (byte)(248 * alpha));
         var border = new Color((byte)50, (byte)50, (byte)70, (byte)(150 * alpha));
         var accent = Colors.Primary;
         accent.A = (byte)(255 * alpha);
@@ -87,11 +87,11 @@ internal static class Notifications {
 
     private class Notification {
 
-        public const    int Height = 42;
+        public const int Height = 42;
         public readonly int Width;
 
         public readonly string Text;
-        public readonly float  Duration;
+        public readonly float Duration;
 
         public float Timer;
         public float DrawPosX;
@@ -99,11 +99,11 @@ internal static class Notifications {
 
         public Notification(string text, float duration) {
 
-            Text     = text;
+            Text = text;
             Duration = duration;
-            Timer    = 0;
+            Timer = 0;
             var size = Raylib.MeasureTextEx(Fonts.RlMontserratRegular, text, Size, 1.0f);
-            Width    = (int)size.X + 45;
+            Width = (int)size.X + 45;
             DrawPosX = -Width; // Start off-screen
             DrawPosY = Y + (PendingNotifications.Count * (Height + Spacing));
         }

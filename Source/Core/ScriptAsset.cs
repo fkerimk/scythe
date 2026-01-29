@@ -8,7 +8,7 @@ internal class ScriptAsset : Asset {
 
         try {
 
-            Content  = System.IO.File.ReadAllText(File);
+            Content = System.IO.File.ReadAllText(File);
             IsLoaded = true;
 
             return true;
@@ -19,7 +19,7 @@ internal class ScriptAsset : Asset {
 
     public override void Unload() {
 
-        Content  = "";
+        Content = "";
         IsLoaded = false;
     }
 }

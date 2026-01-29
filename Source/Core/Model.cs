@@ -5,8 +5,8 @@ using static Raylib_cs.Raylib;
 
 internal class Model(Obj obj) : Component(obj) {
 
-    public override string LabelIcon  => Icons.FaCube;
-    public override Color  LabelColor => Colors.GuiTypeModel;
+    public override string LabelIcon => Icons.FaCube;
+    public override Color LabelColor => Colors.GuiTypeModel;
 
     [Label("Path"), JsonProperty, RecordHistory, FindAsset("ModelAsset")]
     public string Path { get; set; } = "";
@@ -26,10 +26,10 @@ internal class Model(Obj obj) : Component(obj) {
     [Label("Receive Shadows"), JsonProperty, RecordHistory, DefaultValue(true)]
     public bool ReceiveShadows { get; set; } = true;
 
-    public List<AssimpMesh>                   Meshes   = [];
-    public List<BoneInfo>                     Bones    = [];
-    public Dictionary<string, List<BoneInfo>> BoneMap  = new();
-    public ModelAsset                         AssetRef = null!;
+    public List<AssimpMesh> Meshes = [];
+    public List<BoneInfo> Bones = [];
+    public Dictionary<string, List<BoneInfo>> BoneMap = new();
+    public ModelAsset AssetRef = null!;
 
     public override bool Load() {
 
@@ -53,7 +53,7 @@ internal class Model(Obj obj) : Component(obj) {
 
             if (!BoneMap.TryGetValue(newBone.Name, out var list)) {
 
-                list                  = [];
+                list = [];
                 BoneMap[newBone.Name] = list;
             }
 
@@ -89,9 +89,9 @@ internal class Model(Obj obj) : Component(obj) {
         // Global material update check (only if anything changed)
         AssetRef.UpdateMaterialsIfDirty();
 
-        MaterialAsset? lastMatAsset   = null;
-        uint           lastShaderId   = 0;
-        uint           lastMatVersion = 0;
+        MaterialAsset? lastMatAsset = null;
+        uint lastShaderId = 0;
+        uint lastMatVersion = 0;
 
         foreach (var mesh in Meshes) {
 
@@ -101,25 +101,25 @@ internal class Model(Obj obj) : Component(obj) {
 
             // 2. Resolve Material Asset parameters (only for shared shader values)
             var shader = material.Shader;
-            var locs   = UniformCache.Get(shader);
+            var locs = UniformCache.Get(shader);
 
             if (matAsset != lastMatAsset || shader.Id != lastShaderId || matAsset.Version != lastMatVersion) {
 
                 matAsset.ApplyUniforms(shader);
-                lastMatAsset   = matAsset;
+                lastMatAsset = matAsset;
                 lastMatVersion = matAsset.Version;
             }
 
             // Batch apply uniforms (Using cached locations) - ONLY if shader changed this draw call
             if (shader.Id != lastShaderId) {
 
-                if (locs.AlbedoColor    != -1) SetShaderValue(shader, locs.AlbedoColor,    ColorNormalize(Color),              ShaderUniformDataType.Vec4);
-                if (locs.ReceiveShadows != -1) SetShaderValue(shader, locs.ReceiveShadows, ReceiveShadows ? 1 : 0,             ShaderUniformDataType.Int);
-                if (locs.AlphaCutoff    != -1) SetShaderValue(shader, locs.AlphaCutoff,    overrideAlphaCutoff ?? AlphaCutoff, ShaderUniformDataType.Float);
+                if (locs.AlbedoColor != -1) SetShaderValue(shader, locs.AlbedoColor, ColorNormalize(Color), ShaderUniformDataType.Vec4);
+                if (locs.ReceiveShadows != -1) SetShaderValue(shader, locs.ReceiveShadows, ReceiveShadows ? 1 : 0, ShaderUniformDataType.Int);
+                if (locs.AlphaCutoff != -1) SetShaderValue(shader, locs.AlphaCutoff, overrideAlphaCutoff ?? AlphaCutoff, ShaderUniformDataType.Float);
 
                 // Global Ambient (Live Update)
-                if (locs.AmbientIntensity != -1) SetShaderValue(shader, locs.AmbientIntensity, Core.RenderSettings.AmbientIntensity,         ShaderUniformDataType.Float);
-                if (locs.AmbientColor     != -1) SetShaderValue(shader, locs.AmbientColor,     Core.RenderSettings.AmbientColor.ToVector4(), ShaderUniformDataType.Vec3);
+                if (locs.AmbientIntensity != -1) SetShaderValue(shader, locs.AmbientIntensity, Core.RenderSettings.AmbientIntensity, ShaderUniformDataType.Float);
+                if (locs.AmbientColor != -1) SetShaderValue(shader, locs.AmbientColor, Core.RenderSettings.AmbientColor.ToVector4(), ShaderUniformDataType.Vec3);
             }
 
             lastShaderId = shader.Id;
@@ -165,11 +165,11 @@ internal class Model(Obj obj) : Component(obj) {
             if (Cache.TryGetValue(shader.Id, out var locs)) return locs;
 
             locs = new ShaderLocations {
-                AlbedoColor      = GetShaderLocation(shader, "albedo_color"),
-                ReceiveShadows   = GetShaderLocation(shader, "receive_shadows"),
-                AlphaCutoff      = GetShaderLocation(shader, "alpha_cutoff"),
+                AlbedoColor = GetShaderLocation(shader, "albedo_color"),
+                ReceiveShadows = GetShaderLocation(shader, "receive_shadows"),
+                AlphaCutoff = GetShaderLocation(shader, "alpha_cutoff"),
                 AmbientIntensity = GetShaderLocation(shader, "ambient_intensity"),
-                AmbientColor     = GetShaderLocation(shader, "ambient_color")
+                AmbientColor = GetShaderLocation(shader, "ambient_color")
             };
 
             Cache[shader.Id] = locs;

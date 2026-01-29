@@ -12,9 +12,9 @@ internal class ProjectBrowser : Viewport {
 
     // Selection & Drag Logic
     private HashSet<string> _selectedPaths = [];
-    private string?         _selectionAnchor; // For Shift-Selection
-    private bool            _isBoxSelecting;
-    private Vector2         _boxSelectStart;
+    private string? _selectionAnchor; // For Shift-Selection
+    private bool _isBoxSelecting;
+    private Vector2 _boxSelectStart;
     private HashSet<string> _preBoxSelection = []; // Selection before box drag started
 
     // Interaction Flags
@@ -23,20 +23,20 @@ internal class ProjectBrowser : Viewport {
 
     // Rename State
     private string? _renamingPath;
-    private string  _renamingExtension = "";
-    private string  _renameBuffer      = "";
-    private bool    _requestRenameFocus;
-    private bool    _setRenameSelection;
+    private string _renamingExtension = "";
+    private string _renameBuffer = "";
+    private bool _requestRenameFocus;
+    private bool _setRenameSelection;
 
     // Search
-    private          string       _lastSearch          = "";
+    private string _lastSearch = "";
     private readonly List<string> _cachedSearchResults = [];
 
     public string? SelectedFile => _selectedPaths.Count == 1 ? _selectedPaths.First() : null;
 
     public ProjectBrowser() : base("Project") {
 
-        _currentPath = Config.Mod.Path;
+        _currentPath = ScytheConfig.Current.Project;
 
         if (!Directory.Exists(_currentPath)) Directory.CreateDirectory(_currentPath);
 
@@ -44,7 +44,7 @@ internal class ProjectBrowser : Viewport {
         GetIO().MouseDoubleClickTime = 0.5f; // Windows standard
     }
 
-    private static string GetPath() => PathUtil.ProjectRelative("ProjectBrowser.json");
+    private static string GetPath() => Path.Join(ScytheConfig.Current.Project, "Project", "ProjectBrowser.json");
 
     public void Load() {
 
@@ -58,7 +58,7 @@ internal class ProjectBrowser : Viewport {
 
                 if (settings == null) return;
 
-                var absPath = PathUtil.ModRelative(settings.CurrentPath);
+                var absPath = Path.Join(ScytheConfig.Current.Project, settings.CurrentPath);
 
                 if (Directory.Exists(absPath)) _currentPath = absPath;
             }
@@ -68,11 +68,11 @@ internal class ProjectBrowser : Viewport {
     public void Save() {
 
         var path = GetPath();
-        var dir  = Path.GetDirectoryName(path);
+        var dir = Path.GetDirectoryName(path);
 
         if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
-        var relPath  = Path.GetRelativePath(Config.Mod.Path, _currentPath);
+        var relPath = Path.GetRelativePath(ScytheConfig.Current.Project, _currentPath);
         var settings = new ProjectBrowserSettings { CurrentPath = relPath };
 
         File.WriteAllText(path, JsonConvert.SerializeObject(settings, Formatting.Indented));
@@ -87,13 +87,13 @@ internal class ProjectBrowser : Viewport {
         // Top Bar: Navigation -> Path -> Spacer -> Search (Right)
         PushFont(Fonts.ImFontAwesomeNormal);
 
-        var isRoot = Path.GetFullPath(_currentPath).TrimEnd(Path.DirectorySeparatorChar).Equals(Path.GetFullPath(Config.Mod.Path).TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase);
+        var isRoot = Path.GetFullPath(_currentPath).TrimEnd(Path.DirectorySeparatorChar).Equals(Path.GetFullPath(ScytheConfig.Current.Project).TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase);
 
         BeginDisabled(isRoot);
 
         if (Button(Icons.FaLevelUp)) {
 
-            var parent                       = Directory.GetParent(_currentPath);
+            var parent = Directory.GetParent(_currentPath);
             if (parent != null) _currentPath = parent.FullName;
         }
 
@@ -103,12 +103,12 @@ internal class ProjectBrowser : Viewport {
         if (IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled)) SetTooltip("Up");
 
         SameLine();
-        if (Button("Home")) _currentPath = Config.Mod.Path;
+        if (Button("Home")) _currentPath = ScytheConfig.Current.Project;
 
         SameLine();
 
-        var rootName                          = new DirectoryInfo(Config.Mod.Path).Name;
-        var relativePath                      = Path.GetRelativePath(Config.Mod.Path, _currentPath);
+        var rootName = new DirectoryInfo(ScytheConfig.Current.Project).Name;
+        var relativePath = Path.GetRelativePath(ScytheConfig.Current.Project, _currentPath);
         if (relativePath == ".") relativePath = "";
 
         var displayPath = string.IsNullOrEmpty(relativePath) ? rootName : $"{rootName}/{relativePath.Replace('\\', '/')}";
@@ -116,7 +116,7 @@ internal class ProjectBrowser : Viewport {
         TextColored(new Vector4(0.7f, 0.7f, 0.7f, 1.0f), displayPath);
 
         // Right Align Search
-        var         avail       = GetContentRegionAvail().X;
+        var avail = GetContentRegionAvail().X;
         const float searchWidth = 200f;
 
         var offset = avail - searchWidth;
@@ -152,13 +152,13 @@ internal class ProjectBrowser : Viewport {
         // Split View: Tree | Content
         if (!BeginTable("ProjectBrowserLayout", 2, ImGuiTableFlags.Resizable | ImGuiTableFlags.BordersInnerV)) return;
 
-        TableSetupColumn("Tree",  ImGuiTableColumnFlags.WidthFixed, 200f);
+        TableSetupColumn("Tree", ImGuiTableColumnFlags.WidthFixed, 200f);
         TableSetupColumn("Files", ImGuiTableColumnFlags.WidthStretch);
 
         // Left Panel: Directory Tree
         TableNextColumn();
         BeginChild("TreeRegion");
-        DrawDirectoryTree(Config.Mod.Path);
+        DrawDirectoryTree(ScytheConfig.Current.Project);
         EndChild();
 
         // Right Panel: Grid Content
@@ -199,16 +199,16 @@ internal class ProjectBrowser : Viewport {
 
         var full = Path.GetFullPath(rootPath);
 
-        if (full.Contains(PathUtil.TempPath) || (!string.IsNullOrEmpty(PathUtil.ProjectPath) && full.Contains(PathUtil.ProjectPath))) return;
+        if (full.Contains(ScytheConfig.Current.Project)) return;
 
         if (!Directory.Exists(rootPath)) return;
 
-        var name                             = Path.GetFileName(rootPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        var name = Path.GetFileName(rootPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         if (string.IsNullOrEmpty(name)) name = rootPath;
 
-        var flags                                  = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanAvailWidth;
-        if (_currentPath == rootPath) flags        |= ImGuiTreeNodeFlags.Selected;
-        if (rootPath     == Config.Mod.Path) flags |= ImGuiTreeNodeFlags.DefaultOpen;
+        var flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.SpanAvailWidth;
+        if (_currentPath == rootPath) flags |= ImGuiTreeNodeFlags.Selected;
+        if (rootPath == ScytheConfig.Current.Project) flags |= ImGuiTreeNodeFlags.DefaultOpen;
 
         var hasSubDirs = false;
 
@@ -228,14 +228,14 @@ internal class ProjectBrowser : Viewport {
         SameLine();
         SetCursorPosX(GetCursorPosX() - 10f); // Pull closer to arrow
 
-        var icon        = Icons.FaFolder;
+        var icon = Icons.FaFolder;
         var folderColor = new Vector4(1f, 0.8f, 0.2f, 1f);
 
-        if (full.Equals(Path.GetFullPath(Config.Mod.Path), StringComparison.OrdinalIgnoreCase))
+        if (full.Equals(Path.GetFullPath(ScytheConfig.Current.Project), StringComparison.OrdinalIgnoreCase))
             icon = Icons.FaHouse;
-        else if (full.Equals(Path.GetFullPath(PathUtil.ModRelative("Levels")), StringComparison.OrdinalIgnoreCase))
-            icon                                                                                                          = Icons.FaMap;
-        else if (full.Equals(Path.GetFullPath(PathUtil.ModRelative("Scripts")), StringComparison.OrdinalIgnoreCase)) icon = Icons.FaCode;
+        else if (full.Equals(Path.GetFullPath(Path.Join(ScytheConfig.Current.Project, "Levels")), StringComparison.OrdinalIgnoreCase))
+            icon = Icons.FaMap;
+        else if (full.Equals(Path.GetFullPath(Path.Join(ScytheConfig.Current.Project, "Scripts")), StringComparison.OrdinalIgnoreCase)) icon = Icons.FaCode;
 
         PushFont(Fonts.ImFontAwesomeNormal);
         TextColored(folderColor, icon);
@@ -283,21 +283,21 @@ internal class ProjectBrowser : Viewport {
         if (!Directory.Exists(path)) return;
 
         _itemClickedThisFrame = false;
-        _ignoreMouseRelease   = false;
+        _ignoreMouseRelease = false;
 
         // Handle Box Selection State
         if (_isBoxSelecting) {
 
             if (!IsMouseDown(ImGuiMouseButton.Left)) {
 
-                _isBoxSelecting     = false;
+                _isBoxSelecting = false;
                 _ignoreMouseRelease = true;
                 _preBoxSelection.Clear();
             } else
                 _selectedPaths = [.._preBoxSelection];
         }
 
-        var avail      = GetContentRegionAvail();
+        var avail = GetContentRegionAvail();
         var availWidth = avail.X;
 
         // Calculate Box Rect for Intersection Logic
@@ -306,8 +306,8 @@ internal class ProjectBrowser : Viewport {
         if (_isBoxSelecting) {
 
             var mousePos = GetMousePos();
-            var min      = new Vector2(Math.Min(_boxSelectStart.X, mousePos.X), Math.Min(_boxSelectStart.Y, mousePos.Y));
-            var max      = new Vector2(Math.Max(_boxSelectStart.X, mousePos.X), Math.Max(_boxSelectStart.Y, mousePos.Y));
+            var min = new Vector2(Math.Min(_boxSelectStart.X, mousePos.X), Math.Min(_boxSelectStart.Y, mousePos.Y));
+            var max = new Vector2(Math.Max(_boxSelectStart.X, mousePos.X), Math.Max(_boxSelectStart.Y, mousePos.Y));
             boxRect = new Rect(min.X, min.Y, max.X - min.X, max.Y - min.Y);
         }
 
@@ -335,8 +335,8 @@ internal class ProjectBrowser : Viewport {
 
             if (!_isBoxSelecting) {
 
-                _isBoxSelecting  = true;
-                _boxSelectStart  = GetMousePos();
+                _isBoxSelecting = true;
+                _boxSelectStart = GetMousePos();
                 _preBoxSelection = new HashSet<string>(_selectedPaths);
 
                 if (!GetIO().KeyCtrl) {
@@ -356,7 +356,7 @@ internal class ProjectBrowser : Viewport {
         // Sort
         var entriesList = entries.OrderByDescending(Directory.Exists).ThenBy(Path.GetFileName, new NaturalStringComparer()!).ToList();
 
-        var columns              = (int)(availWidth / (ThumbnailSize + Padding));
+        var columns = (int)(availWidth / (ThumbnailSize + Padding));
         if (columns < 1) columns = 1;
 
         Columns(columns, "Grid", false);
@@ -367,7 +367,7 @@ internal class ProjectBrowser : Viewport {
 
             var full = Path.GetFullPath(entryPath);
 
-            if (full.Contains(PathUtil.TempPath) || (!string.IsNullOrEmpty(PathUtil.ProjectPath) && full.Contains(PathUtil.ProjectPath))) continue;
+            if (full.Contains(ScytheConfig.Current.Project)) continue;
 
             // Skip meta files (e.g. Pistol.fbx.json)
             if (full.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) {
@@ -390,9 +390,9 @@ internal class ProjectBrowser : Viewport {
 
                     if (parent != null && Directory.Exists(parent)) {
 
-                        _currentPath  = parent;
+                        _currentPath = parent;
                         _searchFilter = "";
-                        _lastSearch   = "";
+                        _lastSearch = "";
                     }
                 }
             }
@@ -410,14 +410,14 @@ internal class ProjectBrowser : Viewport {
 
             var drawList = GetWindowDrawList();
             drawList.AddRectFilled(boxRect.Min, boxRect.Max, GetColorU32(ImGuiCol.TextSelectedBg, 0.2f));
-            drawList.AddRect(boxRect.Min, boxRect.Max, GetColorU32(ImGuiCol.TextSelectedBg,       0.8f));
+            drawList.AddRect(boxRect.Min, boxRect.Max, GetColorU32(ImGuiCol.TextSelectedBg, 0.8f));
         }
 
         // Keyboard Shortcuts
         if (IsWindowFocused()) {
 
             if (IsKeyPressed(ImGuiKey.Delete) && _selectedPaths.Count > 0) DeleteSelectedItems();
-            if (IsKeyPressed(ImGuiKey.F2)     && _selectedPaths.Count == 1) StartRename(_selectedPaths.First());
+            if (IsKeyPressed(ImGuiKey.F2) && _selectedPaths.Count == 1) StartRename(_selectedPaths.First());
         }
     }
 
@@ -438,7 +438,7 @@ internal class ProjectBrowser : Viewport {
 
         const float padding = 4f;
 
-        var cellStartScreen    = GetCursorScreenPos();
+        var cellStartScreen = GetCursorScreenPos();
         var contentStartScreen = cellStartScreen + new Vector2(padding, padding);
         SetCursorScreenPos(contentStartScreen);
 
@@ -449,14 +449,14 @@ internal class ProjectBrowser : Viewport {
         // Calculate Icon Size Reference (Standardize to Font Height)
         PushFont(Fonts.ImFontAwesomeLarge);
         var standardIconSize = CalcTextSize(isDirectory ? Icons.FaFolder : Icons.FaFile);
-        var maxDim           = Math.Max(standardIconSize.X, standardIconSize.Y);
+        var maxDim = Math.Max(standardIconSize.X, standardIconSize.Y);
 
         // Thumbnail or Icon
         var textureAsset = AssetManager.Get<TextureAsset>(path);
-        var matAsset     = AssetManager.Get<MaterialAsset>(path);
-        var modelAsset   = AssetManager.Get<ModelAsset>(path);
+        var matAsset = AssetManager.Get<MaterialAsset>(path);
+        var modelAsset = AssetManager.Get<ModelAsset>(path);
 
-        var        texId    = IntPtr.Zero;
+        var texId = IntPtr.Zero;
         Texture2D? thumbTex = null;
 
         if (textureAsset is { Thumbnail: not null })
@@ -478,9 +478,9 @@ internal class ProjectBrowser : Viewport {
 
         if (texId != IntPtr.Zero) {
 
-            var   tex = thumbTex!.Value;
-            float w   = tex.Width;
-            float h   = tex.Height;
+            var tex = thumbTex!.Value;
+            float w = tex.Width;
+            float h = tex.Height;
 
             // Scale to fit within the standard Icon Size
             var ratio = w / h;
@@ -493,7 +493,7 @@ internal class ProjectBrowser : Viewport {
                 drawW = drawH * ratio;
 
             // Center in the Cell
-            var imgOffsetX                 = (ThumbnailSize - drawW) * 0.5f;
+            var imgOffsetX = (ThumbnailSize - drawW) * 0.5f;
             if (imgOffsetX < 0) imgOffsetX = 0;
 
             SetCursorPosX(groupStartX + imgOffsetX);
@@ -501,17 +501,17 @@ internal class ProjectBrowser : Viewport {
 
         } else {
 
-            var icon        = Icons.FaFolder;
+            var icon = Icons.FaFolder;
             var folderColor = new Vector4(1f, 0.8f, 0.2f, 1f);
 
             if (isDirectory) {
 
                 var full = Path.GetFullPath(path);
-                if (full.Equals(Path.GetFullPath(Config.Mod.Path), StringComparison.OrdinalIgnoreCase))
+                if (full.Equals(Path.GetFullPath(ScytheConfig.Current.Project), StringComparison.OrdinalIgnoreCase))
                     icon = Icons.FaHouse;
-                else if (full.Equals(Path.GetFullPath(PathUtil.ModRelative("Levels")), StringComparison.OrdinalIgnoreCase))
-                    icon                                                                                                          = Icons.FaMap;
-                else if (full.Equals(Path.GetFullPath(PathUtil.ModRelative("Scripts")), StringComparison.OrdinalIgnoreCase)) icon = Icons.FaCode;
+                else if (full.Equals(Path.GetFullPath(Path.Join(ScytheConfig.Current.Project, "Levels")), StringComparison.OrdinalIgnoreCase))
+                    icon = Icons.FaMap;
+                else if (full.Equals(Path.GetFullPath(Path.Join(ScytheConfig.Current.Project, "Scripts")), StringComparison.OrdinalIgnoreCase)) icon = Icons.FaCode;
 
             } else {
 
@@ -529,7 +529,7 @@ internal class ProjectBrowser : Viewport {
 
             var iconSize = CalcTextSize(icon);
 
-            var iconOffset                 = (ThumbnailSize - iconSize.X) * 0.5f;
+            var iconOffset = (ThumbnailSize - iconSize.X) * 0.5f;
             if (iconOffset < 0) iconOffset = 0;
             SetCursorPosX(groupStartX + iconOffset);
 
@@ -561,9 +561,9 @@ internal class ProjectBrowser : Viewport {
                     if (!_setRenameSelection) return 0;
 
                     data->SelectionStart = 0;
-                    data->SelectionEnd   = data->BufTextLen;
-                    data->CursorPos      = data->BufTextLen;
-                    _setRenameSelection  = false;
+                    data->SelectionEnd = data->BufTextLen;
+                    data->CursorPos = data->BufTextLen;
+                    _setRenameSelection = false;
 
                     return 0;
                 }
@@ -600,14 +600,14 @@ internal class ProjectBrowser : Viewport {
         EndGroup();
 
         var groupHeight = GetItemRectSize().Y;
-        var boxMax      = new Vector2(cellStartScreen.X                           + ThumbnailSize               + 2 * padding, cellStartScreen.Y + groupHeight + 2 * padding);
-        var itemRect    = new Rect(cellStartScreen.X, cellStartScreen.Y, boxMax.X - cellStartScreen.X, boxMax.Y - cellStartScreen.Y);
+        var boxMax = new Vector2(cellStartScreen.X + ThumbnailSize + 2 * padding, cellStartScreen.Y + groupHeight + 2 * padding);
+        var itemRect = new Rect(cellStartScreen.X, cellStartScreen.Y, boxMax.X - cellStartScreen.X, boxMax.Y - cellStartScreen.Y);
 
         // Interaction
         SetCursorScreenPos(cellStartScreen);
         InvisibleButton("btn", boxMax - cellStartScreen);
 
-        var hovered    = IsItemHovered();
+        var hovered = IsItemHovered();
         var isSelected = _selectedPaths.Contains(path);
 
         // Selection Logic via Click
@@ -617,7 +617,7 @@ internal class ProjectBrowser : Viewport {
             if (!_isBoxSelecting) {
 
                 _itemClickedThisFrame = true;
-                itemClicked           = true;
+                itemClicked = true;
 
                 // Skip local selection logic and let the Caller (DrawContentGrid) handle Range Selection.
                 if (!GetIO().KeyShift) {
@@ -669,7 +669,7 @@ internal class ProjectBrowser : Viewport {
                 // Immediate navigation for directories
 
                 _itemClickedThisFrame = true;
-                _currentPath          = path;
+                _currentPath = path;
                 _selectedPaths.Clear();
             } else {
 
@@ -756,7 +756,7 @@ internal class ProjectBrowser : Viewport {
         drawList.ChannelsSetCurrent(0);
 
         if (isSelected)
-            drawList.AddRectFilled(cellStartScreen,               boxMax, GetColorU32(ImGuiCol.ButtonActive),  4f);
+            drawList.AddRectFilled(cellStartScreen, boxMax, GetColorU32(ImGuiCol.ButtonActive), 4f);
         else if (hovered) drawList.AddRectFilled(cellStartScreen, boxMax, GetColorU32(ImGuiCol.HeaderHovered), 4f);
 
         drawList.ChannelsMerge();
@@ -838,7 +838,7 @@ internal class ProjectBrowser : Viewport {
         if (pathsToDelete.Count == 0) return;
 
         // Ensure trash dir exists
-        Directory.CreateDirectory(PathUtil.TempRelative("Trash"));
+        PathUtil.ValidateDir("Trash", out var trashPath);
 
         var backups = new List<(string Original, string Backup, bool IsDir)>();
 
@@ -847,9 +847,9 @@ internal class ProjectBrowser : Viewport {
 
             if (!File.Exists(path) && !Directory.Exists(path)) continue;
 
-            var isDir      = Directory.Exists(path);
+            var isDir = Directory.Exists(path);
             var backupName = Guid.NewGuid().ToString();
-            var backupPath = Path.Combine(PathUtil.TempRelative("Trash"), backupName);
+            var backupPath = Path.Join(trashPath, backupName);
 
             SafeExec.Try(() => {
 
@@ -1007,7 +1007,7 @@ internal class ProjectBrowser : Viewport {
         }
 
         var startIdx = entries.IndexOf(_selectionAnchor);
-        var endIdx   = entries.IndexOf(targetPath);
+        var endIdx = entries.IndexOf(targetPath);
 
         if (startIdx == -1 || endIdx == -1) return;
 
@@ -1109,16 +1109,16 @@ internal class ProjectBrowser : Viewport {
     // Helper struct for Rect
     public readonly struct Rect(float x, float y, float w, float h) {
 
-        private readonly float   _x = x, _y = y, _w = w, _h = h;
-        public           Vector2 Min                => new(_x, _y);
-        public           Vector2 Max                => new(_x + _w, _y + _h);
-        public           bool    Intersects(Rect r) => _x < r._x + r._w && _x + _w > r._x && _y < r._y + r._h && _y + _h > r._y;
+        private readonly float _x = x, _y = y, _w = w, _h = h;
+        public Vector2 Min => new(_x, _y);
+        public Vector2 Max => new(_x + _w, _y + _h);
+        public bool Intersects(Rect r) => _x < r._x + r._w && _x + _w > r._x && _y < r._y + r._h && _y + _h > r._y;
     }
 
     // Helpers
-    private static bool IsLevel(string    path) => path.EndsWith(".level.json",    StringComparison.OrdinalIgnoreCase);
+    private static bool IsLevel(string path) => path.EndsWith(".level.json", StringComparison.OrdinalIgnoreCase);
     private static bool IsMaterial(string path) => path.EndsWith(".material.json", StringComparison.OrdinalIgnoreCase);
-    private static bool IsScript(string   path) => path.EndsWith(".lua",           StringComparison.OrdinalIgnoreCase);
+    private static bool IsScript(string path) => path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsModel(string path) {
 

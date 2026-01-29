@@ -8,8 +8,8 @@ using static Raylib_cs.Raylib;
 [JsonObject(MemberSerialization.OptIn)]
 internal class Transform(Obj obj) : Component(obj) {
 
-    public override string LabelIcon  => Icons.FaArrows;
-    public override Color  LabelColor => Colors.GuiTypeTransform;
+    public override string LabelIcon => Icons.FaArrows;
+    public override Color LabelColor => Colors.GuiTypeTransform;
 
     #region Local Transform
 
@@ -92,7 +92,7 @@ internal class Transform(Obj obj) : Component(obj) {
             else {
 
                 var parentRot = Obj.Parent.Transform.WorldRot;
-                var q         = Quaternion.Inverse(parentRot) * value;
+                var q = Quaternion.Inverse(parentRot) * value;
 
                 if (MathF.Abs(Quaternion.Dot(Rot, q)) > 0.9999f) return;
 
@@ -143,21 +143,21 @@ internal class Transform(Obj obj) : Component(obj) {
 
     private const float MoveSnap = 0.2f;
 
-    private int    _mode;
-    private float  _activeMove;
+    private int _mode;
+    private float _activeMove;
     private string _activeId = "";
 
     private bool _isWorldSpace, _canUseShortcuts;
 
     private Vector3 _activePos, _activeWorldPos, _activeLocalAxis, _activeScale, _activeNormal, _activeInitialPoint, _activeInitialVector;
 
-    private Vector2    _activeMouseTemp;
+    private Vector2 _activeMouseTemp;
     private Quaternion _activeRot = Quaternion.Identity;
 
-    private Vector3    _visualVel;
-    private Vector3    _visualPos;
-    private Quaternion _visualRot   = Quaternion.Identity;
-    private Vector3    _visualScale = Vector3.One;
+    private Vector3 _visualVel;
+    private Vector3 _visualPos;
+    private Quaternion _visualRot = Quaternion.Identity;
+    private Vector3 _visualScale = Vector3.One;
 
     public void UpdateTransform() {
 
@@ -169,7 +169,7 @@ internal class Transform(Obj obj) : Component(obj) {
         var matrix = Raymath.MatrixMultiply(Raymath.MatrixMultiply(Raymath.MatrixScale(Scale.X, Scale.Y, Scale.Z), rotMatrix), Raymath.MatrixTranslate(Pos.X, Pos.Y, Pos.Z));
 
         Obj.RotMatrix = rotMatrix;
-        Obj.Matrix    = matrix;
+        Obj.Matrix = matrix;
 
         RefreshWorldMatrices(Obj);
     }
@@ -178,26 +178,26 @@ internal class Transform(Obj obj) : Component(obj) {
 
         if (obj.Parent != null) {
 
-            obj.WorldMatrix    = obj.Parent.WorldMatrix    * obj.Matrix;
+            obj.WorldMatrix = obj.Parent.WorldMatrix * obj.Matrix;
             obj.WorldRotMatrix = obj.Parent.WorldRotMatrix * obj.RotMatrix;
 
         } else {
 
-            obj.WorldMatrix    = obj.Matrix;
+            obj.WorldMatrix = obj.Matrix;
             obj.WorldRotMatrix = obj.RotMatrix;
         }
 
         foreach (var child in obj.Children) RefreshWorldMatrices(child.Value);
     }
 
-    public bool IsHovered  { get; private set; }
+    public bool IsHovered { get; private set; }
     public bool IsDragging => !string.IsNullOrEmpty(_activeId);
 
     public override void Logic() { UpdateTransform(); }
 
     internal void UpdateCartoon() {
 
-        var dt            = GetFrameTime();
+        var dt = GetFrameTime();
         if (dt > 0.1f) dt = 0.1f;
 
         if (dt <= 0) return;
@@ -223,7 +223,7 @@ internal class Transform(Obj obj) : Component(obj) {
         }
 
         // Only process bounce if selected, moving, or still settling
-        var isMoving   = _visualVel.LengthSquared()                       > 0.0001f;
+        var isMoving = _visualVel.LengthSquared() > 0.0001f;
         var isRotating = MathF.Abs(Quaternion.Dot(_visualRot, targetRot)) < 0.9999f;
 
         if (!Obj.IsSelected && !isMoving && !isRotating) {
@@ -248,8 +248,8 @@ internal class Transform(Obj obj) : Component(obj) {
 
         // SCALE FIX: We extract the clean scale matrix directly from WorldMatrix to avoid "skew" distortion
         var mWorldTransInv = Raymath.MatrixInvert(Raymath.MatrixTranslate(targetPos.X, targetPos.Y, targetPos.Z));
-        var mWorldRotInv   = Raymath.MatrixInvert(Obj.WorldRotMatrix);
-        var mScaleWorld    = Raymath.MatrixMultiply(Raymath.MatrixMultiply(Obj.WorldMatrix, mWorldTransInv), mWorldRotInv);
+        var mWorldRotInv = Raymath.MatrixInvert(Obj.WorldRotMatrix);
+        var mScaleWorld = Raymath.MatrixMultiply(Raymath.MatrixMultiply(Obj.WorldMatrix, mWorldTransInv), mWorldRotInv);
 
         var mRotVisual = Matrix4x4.Transpose(Matrix4x4.CreateFromQuaternion(_visualRot));
 
@@ -262,9 +262,9 @@ internal class Transform(Obj obj) : Component(obj) {
         if (speed > 0.1f) {
 
             var stretch = MathF.Min(speed * 0.05f, 0.4f);
-            var dir     = Vector3.Normalize(_visualVel);
-            var s       = 1f + stretch;
-            var k       = 1f / MathF.Sqrt(s);
+            var dir = Vector3.Normalize(_visualVel);
+            var s = 1f + stretch;
+            var k = 1f / MathF.Sqrt(s);
 
             // Build Row-Major stretch matrix and then transpose it
             var stretchM = new Matrix4x4(k + (s - k) * dir.X * dir.X, (s - k) * dir.X * dir.Y, (s - k) * dir.X * dir.Z, 0, (s - k) * dir.Y * dir.X, k + (s - k) * dir.Y * dir.Y, (s - k) * dir.Y * dir.Z, 0, (s - k) * dir.Z * dir.X, (s - k) * dir.Z * dir.Y, k + (s - k) * dir.Z * dir.Z, 0, 0, 0, 0, 1);
@@ -288,9 +288,9 @@ internal class Transform(Obj obj) : Component(obj) {
 
         if (_canUseShortcuts && _activeMove == 0 && Editor.EditorRender.IsHovered) {
 
-            if (IsKeyPressed(KeyboardKey.Q)) _mode         = 0;
-            if (IsKeyPressed(KeyboardKey.W)) _mode         = 1;
-            if (IsKeyPressed(KeyboardKey.E)) _mode         = 2;
+            if (IsKeyPressed(KeyboardKey.Q)) _mode = 0;
+            if (IsKeyPressed(KeyboardKey.W)) _mode = 1;
+            if (IsKeyPressed(KeyboardKey.E)) _mode = 2;
             if (IsKeyPressed(KeyboardKey.X)) _isWorldSpace = !_isWorldSpace;
         }
 
@@ -334,7 +334,7 @@ internal class Transform(Obj obj) : Component(obj) {
         };
         var spaceName = (_mode == 2) ? ("") : (_isWorldSpace ? "(World)" : "(Local)");
 
-        var textA    = $"{modeName} {spaceName}";
+        var textA = $"{modeName} {spaceName}";
         var textPosA = Editor.EditorRender.RelativeMouse with { Y = Editor.EditorRender.RelativeMouse.Y - 15 };
 
         DrawTextEx(Fonts.RlMontserratRegular, textA, new Vector2(textPosA.X - 13, textPosA.Y - 19), 20, 1, Color.Black);
@@ -366,7 +366,7 @@ internal class Transform(Obj obj) : Component(obj) {
         Obj.DecomposeWorldMatrix(out var worldPos, out _, out _);
 
         var a = worldPos + (Raymath.Vector3Normalize(normal) * 0.1f);
-        var b = a        + normal * 1.5f;
+        var b = a + normal * 1.5f;
 
         if (!string.IsNullOrEmpty(_activeId) && _activeId != id) {
 
@@ -383,7 +383,7 @@ internal class Transform(Obj obj) : Component(obj) {
                     // Position
 
                     var currentPoint = GetClosestPointLineRay(_activeWorldPos, _activeNormal, ray);
-                    var delta        = currentPoint - _activeInitialPoint;
+                    var delta = currentPoint - _activeInitialPoint;
 
                     if (!IsKeyDown(KeyboardKey.LeftShift)) {
 
@@ -411,8 +411,8 @@ internal class Transform(Obj obj) : Component(obj) {
                     if (IntersectRayPlane(ray, worldPos, _activeNormal, out var currentPoint)) {
 
                         var currentVector = Vector3.Normalize(currentPoint - _activeWorldPos);
-                        var angleRad      = MathF.Atan2(Vector3.Dot(_activeNormal, Vector3.Cross(_activeInitialVector, currentVector)), Vector3.Dot(_activeInitialVector, currentVector));
-                        var angleDeg      = angleRad * (180f / MathF.PI);
+                        var angleRad = MathF.Atan2(Vector3.Dot(_activeNormal, Vector3.Cross(_activeInitialVector, currentVector)), Vector3.Dot(_activeInitialVector, currentVector));
+                        var angleDeg = angleRad * (180f / MathF.PI);
 
                         if (!IsKeyDown(KeyboardKey.LeftShift)) angleDeg = MathF.Round(angleDeg / 22.5f) * 22.5f;
 
@@ -427,7 +427,7 @@ internal class Transform(Obj obj) : Component(obj) {
 
                                 if (target.Parent != null) {
 
-                                    var parentRot               = target.Parent.Transform.WorldRot;
+                                    var parentRot = target.Parent.Transform.WorldRot;
                                     var localDeltaInParentSpace = Quaternion.Inverse(parentRot) * deltaRot * parentRot;
                                     target.Transform.Rot = localDeltaInParentSpace * target.Transform.Rot;
 
@@ -449,8 +449,8 @@ internal class Transform(Obj obj) : Component(obj) {
                     // Scale
 
                     var currentPoint = GetClosestPointLineRay(_activeWorldPos, _activeNormal, ray);
-                    var delta        = currentPoint - _activeInitialPoint;
-                    var move         = -Vector3.Dot(delta, _activeNormal);
+                    var delta = currentPoint - _activeInitialPoint;
+                    var move = -Vector3.Dot(delta, _activeNormal);
 
                     if (!IsKeyDown(KeyboardKey.LeftShift)) move = MathF.Round(move / MoveSnap) * MoveSnap;
 
@@ -494,7 +494,7 @@ internal class Transform(Obj obj) : Component(obj) {
                 for (var i = 0; i < rayQuality + 1; i++) {
 
                     var angle = (i / (float)rayQuality) * MathF.PI * 2f;
-                    var step  = worldPos + (normal1 * MathF.Cos(angle) + normal2 * MathF.Sin(angle)) * 1.5f;
+                    var step = worldPos + (normal1 * MathF.Cos(angle) + normal2 * MathF.Sin(angle)) * 1.5f;
 
                     if (GetRayCollisionSphere(ray, step, rayRadius * 1.5f).Hit) isHovered = true;
                 }
@@ -513,14 +513,14 @@ internal class Transform(Obj obj) : Component(obj) {
 
         if (isHovered && IsMouseButtonPressed(MouseButton.Left) && Editor.EditorRender.IsHovered) {
 
-            _activeId        = id;
+            _activeId = id;
             _activeLocalAxis = axis;
-            _activePos       = Pos;
-            _activeRot       = Rot;
-            _activeScale     = Scale;
+            _activePos = Pos;
+            _activeRot = Rot;
+            _activeScale = Scale;
 
             _activeMouseTemp = GetMousePosition();
-            _activeNormal    = normal;
+            _activeNormal = normal;
 
             _activeWorldPos = worldPos;
 
@@ -539,7 +539,7 @@ internal class Transform(Obj obj) : Component(obj) {
 
         if ((isActive && IsMouseButtonReleased(MouseButton.Left)) || IsCursorHidden()) {
 
-            _activeId   = "";
+            _activeId = "";
             _activeMove = 0;
 
             if (Core.ActiveLevel != null) Core.ActiveLevel.IsDirty = true;
@@ -556,10 +556,10 @@ internal class Transform(Obj obj) : Component(obj) {
 
             for (var i = 0; i < 48; i++) {
 
-                var angle1 = (i       / 48f) * MathF.PI * 2f;
+                var angle1 = (i / 48f) * MathF.PI * 2f;
                 var angle2 = ((i + 1) / 48f) * MathF.PI * 2f;
-                var p1     = worldPos + (normal1 * MathF.Cos(angle1) + normal2 * MathF.Sin(angle1)) * 1.5f;
-                var p2     = worldPos + (normal1 * MathF.Cos(angle2) + normal2 * MathF.Sin(angle2)) * 1.5f;
+                var p1 = worldPos + (normal1 * MathF.Cos(angle1) + normal2 * MathF.Sin(angle1)) * 1.5f;
+                var p2 = worldPos + (normal1 * MathF.Cos(angle2) + normal2 * MathF.Sin(angle2)) * 1.5f;
 
                 DrawCylinderEx(p1, p2, radius, radius, 1, targetColor);
             }
@@ -581,12 +581,12 @@ internal class Transform(Obj obj) : Component(obj) {
 
     private static Vector3 GetClosestPointLineRay(Vector3 lineStart, Vector3 lineDir, Ray ray) {
 
-        var w0          = ray.Position - lineStart;
-        var a           = Vector3.Dot(lineDir,       lineDir);
-        var b           = Vector3.Dot(lineDir,       ray.Direction);
-        var c           = Vector3.Dot(ray.Direction, ray.Direction);
-        var d           = Vector3.Dot(lineDir,       w0);
-        var e           = Vector3.Dot(ray.Direction, w0);
+        var w0 = ray.Position - lineStart;
+        var a = Vector3.Dot(lineDir, lineDir);
+        var b = Vector3.Dot(lineDir, ray.Direction);
+        var c = Vector3.Dot(ray.Direction, ray.Direction);
+        var d = Vector3.Dot(lineDir, w0);
+        var e = Vector3.Dot(ray.Direction, w0);
         var denominator = a * c - b * b;
 
         if (MathF.Abs(denominator) < 1e-6f) return lineStart;

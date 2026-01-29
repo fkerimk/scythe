@@ -3,14 +3,34 @@ using System.Reflection;
 
 internal static class ViewSettings {
 
-    private static string GetPath() => PathUtil.BestPath("Layouts/Viewports.json", out var path) ? path : PathUtil.ExeRelative("Layouts/Viewports.json");
+    private static string GetPath() {
+
+        PathUtil.ValidateFile(
+            "Layouts/Viewports.json",
+            out var path,
+            """
+            {
+              "EditorRender": true,
+              "LevelBrowser": true,
+              "ProjectBrowser": true,
+              "ObjectBrowser": true,
+              "ScriptEditor": true,
+              "MusicPlayer": true,
+              "Preview": true,
+              "RuntimeRender": true
+            }
+            """
+        );
+
+        return path;
+    }
 
     private static IEnumerable<(FieldInfo field, Viewport value)> GetViewports() { return typeof(Editor).GetFields(BindingFlags.Public | BindingFlags.Static).Where(f => typeof(Viewport).IsAssignableFrom(f.FieldType)).Select(f => (f, (Viewport)f.GetValue(null)!)); }
 
     public static void Save() {
 
         var path = GetPath();
-        var dir  = Path.GetDirectoryName(path);
+        var dir = Path.GetDirectoryName(path);
         if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
         var settings = new Dictionary<string, bool>();
@@ -29,7 +49,7 @@ internal static class ViewSettings {
 
         SafeExec.Try(() => {
 
-                var json     = File.ReadAllText(path);
+                var json = File.ReadAllText(path);
                 var settings = JsonConvert.DeserializeObject<Dictionary<string, bool>>(json);
 
                 if (settings == null) return;

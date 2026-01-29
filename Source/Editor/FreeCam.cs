@@ -3,11 +3,14 @@ using Raylib_cs;
 
 internal static class FreeCam {
 
-    private const float Sens  = 0.003f;
+    private const float Sens = 0.003f;
     private const float Clamp = 1.55f;
     private const float Speed = 15;
 
-    public static Vector3 Pos { get => _pos; set => _pos = _lerpedPos = value; }
+    public static Vector3 Pos {
+        get => _pos;
+        set => _pos = _lerpedPos = value;
+    }
 
     public static Vector2 Rot {
         get => _rot;
@@ -23,7 +26,7 @@ internal static class FreeCam {
 
     private static Vector2 _rot;
 
-    private static bool    _isLocked;
+    private static bool _isLocked;
     private static Vector2 _lockPos;
 
     public static void Loop(Viewport viewport) {
@@ -35,7 +38,7 @@ internal static class FreeCam {
         if (viewport.IsHovered && Raylib.IsMouseButtonPressed(MouseButton.Right)) {
 
             _isLocked = true;
-            _lockPos  = center;
+            _lockPos = center;
 
             Raylib.DisableCursor();
             ImGuiNET.ImGui.SetWindowFocus(null);
@@ -52,7 +55,7 @@ internal static class FreeCam {
         _lerpedPos = Raymath.Vector3Lerp(_lerpedPos, _pos, Raylib.GetFrameTime() * 15);
 
         Core.ActiveCamera.Position = _lerpedPos;
-        Core.ActiveCamera.Target   = _lerpedPos + _forward;
+        Core.ActiveCamera.Target = _lerpedPos + _forward;
 
         if (!_isLocked) return;
 
@@ -66,8 +69,8 @@ internal static class FreeCam {
 
         var input = Raylib.GetMouseDelta();
 
-        _rot   -= new Vector2(input.Y * Sens, input.X * Sens);
-        _rot.X =  Raymath.Clamp(_rot.X, -Clamp, Clamp);
+        _rot -= new Vector2(input.Y * Sens, input.X * Sens);
+        _rot.X = Raymath.Clamp(_rot.X, -Clamp, Clamp);
 
         UpdateForward();
     }
@@ -96,11 +99,11 @@ internal static class FreeCam {
 
         var dir = Raymath.Vector3Normalize(target - pos);
 
-        var vertical   = MathF.Asin(dir.Y);
+        var vertical = MathF.Asin(dir.Y);
         var horizontal = MathF.Atan2(dir.X, dir.Z);
 
         _lerpedPos = _pos = Core.ActiveCamera.Position;
-        _rot       = new Vector2(vertical, horizontal);
+        _rot = new Vector2(vertical, horizontal);
 
         _forward = new Vector3(MathF.Cos(_rot.X) * MathF.Sin(_rot.Y), MathF.Sin(_rot.X), MathF.Cos(_rot.X) * MathF.Cos(_rot.Y));
     }

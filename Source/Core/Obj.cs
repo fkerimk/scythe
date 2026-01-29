@@ -6,8 +6,8 @@ using Newtonsoft.Json;
 [JsonObject(MemberSerialization.OptIn)]
 internal class Obj {
 
-    public static string Icon  => Icons.FaDotCircleO;
-    public static Color  Color => Colors.GuiTypeObject;
+    public static string Icon => Icons.FaDotCircleO;
+    public static Color Color => Colors.GuiTypeObject;
 
     public static event Action<Obj>? OnDelete;
 
@@ -31,7 +31,7 @@ internal class Obj {
         }
     } = null!;
 
-    public                         Obj?                    Parent;
+    public Obj? Parent;
     [JsonProperty] public readonly Dictionary<string, Obj> Children = [];
 
     // Components
@@ -40,22 +40,22 @@ internal class Obj {
     [JsonProperty] public Dictionary<string, Component> Components { get; set; } = null!;
 
     // Transform
-    public Matrix4x4 Matrix    = Matrix4x4.Identity;
+    public Matrix4x4 Matrix = Matrix4x4.Identity;
     public Matrix4x4 RotMatrix = Matrix4x4.Identity;
 
-    public Matrix4x4 WorldMatrix       = Matrix4x4.Identity;
-    public Matrix4x4 WorldRotMatrix    = Matrix4x4.Identity;
+    public Matrix4x4 WorldMatrix = Matrix4x4.Identity;
+    public Matrix4x4 WorldRotMatrix = Matrix4x4.Identity;
     public Matrix4x4 VisualWorldMatrix = Matrix4x4.Identity;
 
-    public Vector3 Up    => Vector3.Normalize(new Vector3(WorldRotMatrix.M12, WorldRotMatrix.M22, WorldRotMatrix.M32));
-    public Vector3 Fwd   => Vector3.Normalize(new Vector3(WorldRotMatrix.M13, WorldRotMatrix.M23, WorldRotMatrix.M33));
+    public Vector3 Up => Vector3.Normalize(new Vector3(WorldRotMatrix.M12, WorldRotMatrix.M22, WorldRotMatrix.M32));
+    public Vector3 Fwd => Vector3.Normalize(new Vector3(WorldRotMatrix.M13, WorldRotMatrix.M23, WorldRotMatrix.M33));
     public Vector3 Right => Vector3.Normalize(new Vector3(WorldRotMatrix.M11, WorldRotMatrix.M21, WorldRotMatrix.M31));
 
     public Vector3 FwdFlat {
         get {
             var fwd = Fwd;
             fwd.Y = 0;
-            fwd   = Vector3.Normalize(fwd);
+            fwd = Vector3.Normalize(fwd);
 
             return fwd;
         }
@@ -65,14 +65,21 @@ internal class Obj {
         get {
             var right = Right;
             right.Y = 0;
-            right   = Vector3.Normalize(right);
+            right = Vector3.Normalize(right);
 
             return right;
         }
     }
 
-    public Vector3    Pos { get => Transform.Pos; set => Transform.Pos = value; }
-    public Quaternion Rot { get => Transform.Rot; set => Transform.Rot = value; }
+    public Vector3 Pos {
+        get => Transform.Pos;
+        set => Transform.Pos = value;
+    }
+
+    public Quaternion Rot {
+        get => Transform.Rot;
+        set => Transform.Rot = value;
+    }
 
     public bool IsSelected;
 
@@ -81,10 +88,10 @@ internal class Obj {
         if (name == null) return;
 
         Parent = parent;
-        Name   = name;
+        Name = name;
 
         // Components
-        Transform  = new Transform(this);
+        Transform = new Transform(this);
         Components = new Dictionary<string, Component>();
     }
 
@@ -136,8 +143,8 @@ internal class Obj {
 
         if (keepWorld) {
 
-            Transform.WorldPos   = wp;
-            Transform.WorldRot   = wr;
+            Transform.WorldPos = wp;
+            Transform.WorldRot = wr;
             Transform.WorldScale = ws;
         }
     }
@@ -161,33 +168,33 @@ internal class Obj {
 
     public unsafe void DecomposeMatrix(out Vector3 pos, out Quaternion rot, out Vector3 scale) {
 
-        var position   = Vector3.Zero;
-        var rotation   = Quaternion.Identity;
+        var position = Vector3.Zero;
+        var rotation = Quaternion.Identity;
         var lossyScale = Vector3.One;
 
         Raymath.MatrixDecompose(Matrix, &position, &rotation, &lossyScale);
 
-        pos   = position;
-        rot   = rotation;
+        pos = position;
+        rot = rotation;
         scale = lossyScale;
     }
 
     public unsafe void DecomposeWorldMatrix(out Vector3 worldPos, out Quaternion worldRot, out Vector3 worldScale) {
 
-        var position   = Vector3.Zero;
-        var rotation   = Quaternion.Identity;
+        var position = Vector3.Zero;
+        var rotation = Quaternion.Identity;
         var lossyScale = Vector3.One;
 
         Raymath.MatrixDecompose(WorldMatrix, &position, &rotation, &lossyScale);
 
-        worldPos   = position;
+        worldPos = position;
         worldScale = lossyScale;
-        worldRot   = rotation;
+        worldRot = rotation;
     }
 
     public string[] GetPathFromRoot() {
 
-        var path    = new List<string>();
+        var path = new List<string>();
         var current = this;
 
         while (current is { Parent: not null }) {
@@ -227,7 +234,7 @@ internal class Obj {
         return obj?.Components.GetValueOrDefault(names[^1]);
     }
 
-    public Obj?       Find(Table          t) => Find(t.Values.Select(v => v.String).ToArray());
+    public Obj? Find(Table t) => Find(t.Values.Select(v => v.String).ToArray());
     public Component? FindComponent(Table t) => FindComponent(t.Values.Select(v => v.String).ToArray());
 
     public Component MakeComponent(string name) {
@@ -280,7 +287,7 @@ internal static partial class Extensions {
 
         public Obj CloneRecorded() {
 
-            var clone  = source.Clone();
+            var clone = source.Clone();
             var parent = source.Parent!;
 
             History.Execute($"Duplicate {source.Name}", redo: () => clone.SetParent(parent), undo: clone.Delete);

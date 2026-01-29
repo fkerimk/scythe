@@ -3,7 +3,7 @@
 internal class ScriptTab {
 
     public readonly string? FilePath;
-    public readonly string  Title, Uri;
+    public readonly string Title, Uri;
 
     [RecordHistory] public List<string> Lines { get; private set; } = [""];
 
@@ -18,19 +18,19 @@ internal class ScriptTab {
     public bool IsDirty, IsSelecting;
 
     public readonly Dictionary<int, float> LineYOffsets = new();
-    public          double                 LastRecordTime;
-    public          string                 CurrentHistoryAction = "";
+    public double LastRecordTime;
+    public string CurrentHistoryAction = "";
 
-    public Vector2 ViewPos    { get; set; } = Vector2.Zero;
-    public Vector2 CameraPos  { get; set; } = Vector2.Zero;
-    public float   Zoom       { get; set; } = 1.0f;
-    public float   TargetZoom { get; set; } = 1.0f;
-    public float   FollowCursorTimer;
+    public Vector2 ViewPos { get; set; } = Vector2.Zero;
+    public Vector2 CameraPos { get; set; } = Vector2.Zero;
+    public float Zoom { get; set; } = 1.0f;
+    public float TargetZoom { get; set; } = 1.0f;
+    public float FollowCursorTimer;
 
-    public readonly List<DiagnosticInfo> Diagnostics    = [];
-    public          List<SemanticToken>  SemanticTokens = [];
-    public readonly HistoryStack         History        = new();
-    public          int                  LspVersion     = 1;
+    public readonly List<DiagnosticInfo> Diagnostics = [];
+    public List<SemanticToken> SemanticTokens = [];
+    public readonly HistoryStack History = new();
+    public int LspVersion = 1;
 
     public ScriptTab(string? path) {
 

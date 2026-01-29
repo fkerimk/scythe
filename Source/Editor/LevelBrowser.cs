@@ -216,7 +216,7 @@ internal class LevelBrowser : Viewport {
 
                 if (BeginMenu("Models")) {
 
-                    PathUtil.BestPath("Models", out var checkPath, true);
+                    PathUtil.GetPath("Models", out var checkPath);
 
                     var modelPaths = Directory.GetFiles(checkPath, "*.*", SearchOption.AllDirectories);
 

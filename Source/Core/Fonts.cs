@@ -1,7 +1,11 @@
 ﻿using System.Runtime.InteropServices;
 using ImGuiNET;
 using Raylib_cs;
-using rlImGui_cs;
+using static System.Text.Encoding;
+using static ImGuiNET.ImGui;
+using static ImGuiNET.ImGuiNative;
+using static Raylib_cs.Raylib;
+using static rlImGui_cs.rlImGui;
 
 internal static class Fonts {
 
@@ -20,7 +24,7 @@ internal static class Fonts {
 
             _iconRanges = GCHandle.Alloc(new ushort[] { 0xE000, 0xF8FF, 0 }, GCHandleType.Pinned).AddrOfPinnedObject();
 
-            _imFontConfigPtr             = ImGuiNative.ImFontConfig_ImFontConfig();
+            _imFontConfigPtr             = ImFontConfig_ImFontConfig();
             _imFontConfigPtr.OversampleH = 3;
             _imFontConfigPtr.OversampleV = 3;
 
@@ -29,7 +33,7 @@ internal static class Fonts {
             ImFontAwesomeNormal = LoadFont<ImFontPtr>("Fonts/fa7-free-solid.otf", NormalSize, true);
             ImFontAwesomeLarge  = LoadFont<ImFontPtr>("Fonts/fa7-free-solid.otf", LargeSize,  true);
 
-            rlImGui.ReloadFonts();
+            ReloadFonts();
         }
 
         RlMontserratRegular = LoadFont<Font>("Fonts/montserrat-regular.otf");
@@ -38,13 +42,13 @@ internal static class Fonts {
 
     public static void UnloadRlFonts() {
 
-        Raylib.UnloadFont(RlMontserratRegular);
-        Raylib.UnloadFont(RlCascadiaCode);
+        UnloadFont(RlMontserratRegular);
+        UnloadFont(RlCascadiaCode);
     }
 
     private static unsafe T LoadFont<T>(string path, int size = NormalSize, bool useIconRanges = false) {
 
-        if (!PathUtil.BestPath(path, out var bestPath)) throw new FileNotFoundException($"Font {path} not found");
+        if (!PathUtil.GetPath(path, out var fontPath)) throw new FileNotFoundException($"Font {path} not found");
 
         if (typeof(T) == typeof(Font)) {
 
@@ -57,12 +61,12 @@ internal static class Fonts {
 
             fixed (int* pCodepoints = codepoints.ToArray()) {
 
-                var bytes = System.Text.Encoding.UTF8.GetBytes(bestPath);
+                var bytes = UTF8.GetBytes(fontPath);
 
                 fixed (byte* pBytes = bytes) {
 
-                    var font = Raylib.LoadFontEx((sbyte*)pBytes, 96, pCodepoints, codepoints.Count);
-                    Raylib.SetTextureFilter(font.Texture, TextureFilter.Bilinear);
+                    var font = LoadFontEx((sbyte*)pBytes, 96, pCodepoints, codepoints.Count);
+                    SetTextureFilter(font.Texture, TextureFilter.Bilinear);
 
                     return (T)(object)font;
                 }
@@ -71,7 +75,7 @@ internal static class Fonts {
 
         if (typeof(T) == typeof(ImFontPtr)) {
 
-            return (T)(object)(useIconRanges ? Editor.ImGuiIoPtr.Fonts.AddFontFromFileTTF(bestPath, size, _imFontConfigPtr, _iconRanges) : Editor.ImGuiIoPtr.Fonts.AddFontFromFileTTF(bestPath, size, _imFontConfigPtr));
+            return (T)(object)(useIconRanges ? GetIO().Fonts.AddFontFromFileTTF(fontPath, size, _imFontConfigPtr, _iconRanges) : GetIO().Fonts.AddFontFromFileTTF(fontPath, size, _imFontConfigPtr));
         }
 
         throw new NotSupportedException($"Unsupported font type: {typeof(T)}");

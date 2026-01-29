@@ -1,7 +1,7 @@
 ﻿internal static partial class Extensions {
 
     private const float Deg2Rad = MathF.PI / 180.0f;
-    private const float Rad2deg = 180.0f   / MathF.PI;
+    private const float Rad2deg = 180.0f / MathF.PI;
 
     extension(float value) {
 

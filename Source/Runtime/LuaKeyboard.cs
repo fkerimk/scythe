@@ -13,8 +13,8 @@ internal class LuaKb {
         throw new Exception($"Key {keyName} is not a recognized key name");
     }
 
-    public bool Down(string     keyName) => IsKeyDown(GetKey(keyName));
-    public bool Pressed(string  keyName) => IsKeyPressed(GetKey(keyName));
+    public bool Down(string keyName) => IsKeyDown(GetKey(keyName));
+    public bool Pressed(string keyName) => IsKeyPressed(GetKey(keyName));
     public bool Released(string keyName) => IsKeyReleased(GetKey(keyName));
-    public bool Up(string       keyName) => IsKeyUp(GetKey(keyName));
+    public bool Up(string keyName) => IsKeyUp(GetKey(keyName));
 }

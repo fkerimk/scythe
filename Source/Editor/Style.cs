@@ -5,31 +5,31 @@ using static ImGuiNET.ImGui;
 
 internal static class Style {
 
-    private static          int       _pushes;
+    private static int _pushes;
     private static readonly List<int> PushedColors = [];
-    private static readonly List<int> PushedVars   = [];
+    private static readonly List<int> PushedVars = [];
 
     public static void Push(CustomStyle? style = null) {
 
         if (PushedColors.Count == _pushes) PushedColors.Add(0);
-        if (PushedVars.Count   == _pushes) PushedVars.Add(0);
+        if (PushedVars.Count == _pushes) PushedVars.Add(0);
 
         GetStyle().WindowMenuButtonPosition = ImGuiDir.None;
 
-        Set(ImGuiCol.Text,         Colors.GuiText);
+        Set(ImGuiCol.Text, Colors.GuiText);
         Set(ImGuiCol.TextDisabled, Colors.GuiTextDisabled);
-        Set(ImGuiCol.WindowBg,     Colors.GuiWindowBg);
+        Set(ImGuiCol.WindowBg, Colors.GuiWindowBg);
 
         //ChildBg,
         //PopupBg,
         Set(ImGuiCol.Border, Colors.GuiBorder);
 
         //BorderShadow,
-        Set(ImGuiCol.FrameBg,          Colors.GuiFrameBg);
-        Set(ImGuiCol.FrameBgHovered,   Colors.GuiFrameBgHovered);
-        Set(ImGuiCol.FrameBgActive,    Colors.GuiFrameBgActive);
-        Set(ImGuiCol.TitleBg,          Colors.GuiTitleBg);
-        Set(ImGuiCol.TitleBgActive,    Colors.GuiTitleBgActive);
+        Set(ImGuiCol.FrameBg, Colors.GuiFrameBg);
+        Set(ImGuiCol.FrameBgHovered, Colors.GuiFrameBgHovered);
+        Set(ImGuiCol.FrameBgActive, Colors.GuiFrameBgActive);
+        Set(ImGuiCol.TitleBg, Colors.GuiTitleBg);
+        Set(ImGuiCol.TitleBgActive, Colors.GuiTitleBgActive);
         Set(ImGuiCol.TitleBgCollapsed, Colors.GuiTitleBgCollapsed);
 
         //MenuBarBg,
@@ -41,27 +41,27 @@ internal static class Style {
 
         //SliderGrab,
         //SliderGrabActive,
-        Set(ImGuiCol.Button,        Colors.GuiButton);
+        Set(ImGuiCol.Button, Colors.GuiButton);
         Set(ImGuiCol.ButtonHovered, Colors.GuiButtonHovered);
-        Set(ImGuiCol.ButtonActive,  Colors.GuiButtonActive);
-        Set(ImGuiCol.Header,        Colors.GuiHeader);
+        Set(ImGuiCol.ButtonActive, Colors.GuiButtonActive);
+        Set(ImGuiCol.Header, Colors.GuiHeader);
         Set(ImGuiCol.HeaderHovered, Colors.GuiHeaderHovered);
-        Set(ImGuiCol.HeaderActive,  Colors.GuiHeaderActive);
+        Set(ImGuiCol.HeaderActive, Colors.GuiHeaderActive);
 
         //Separator,
         //SeparatorHovered,
         //SeparatorActive,
-        Set(ImGuiCol.ResizeGrip,                Colors.GuiResizeGrip);
-        Set(ImGuiCol.ResizeGripHovered,         Colors.GuiResizeGripHovered);
-        Set(ImGuiCol.ResizeGripActive,          Colors.GuiResizeGripActive);
-        Set(ImGuiCol.TabHovered,                Colors.GuiTabHovered);
-        Set(ImGuiCol.Tab,                       Colors.GuiTab);
-        Set(ImGuiCol.TabSelected,               Colors.GuiTabSelected);
-        Set(ImGuiCol.TabSelectedOverline,       Colors.GuiTabSelectedOverline);
-        Set(ImGuiCol.TabDimmed,                 Colors.GuiTabDimmed);
-        Set(ImGuiCol.TabDimmedSelected,         Colors.GuiTabDimmedSelected);
+        Set(ImGuiCol.ResizeGrip, Colors.GuiResizeGrip);
+        Set(ImGuiCol.ResizeGripHovered, Colors.GuiResizeGripHovered);
+        Set(ImGuiCol.ResizeGripActive, Colors.GuiResizeGripActive);
+        Set(ImGuiCol.TabHovered, Colors.GuiTabHovered);
+        Set(ImGuiCol.Tab, Colors.GuiTab);
+        Set(ImGuiCol.TabSelected, Colors.GuiTabSelected);
+        Set(ImGuiCol.TabSelectedOverline, Colors.GuiTabSelectedOverline);
+        Set(ImGuiCol.TabDimmed, Colors.GuiTabDimmed);
+        Set(ImGuiCol.TabDimmedSelected, Colors.GuiTabDimmedSelected);
         Set(ImGuiCol.TabDimmedSelectedOverline, Colors.GuiTabDimmedSelectedOverline);
-        Set(ImGuiCol.DockingPreview,            Colors.GuiDockingPreview);
+        Set(ImGuiCol.DockingPreview, Colors.GuiDockingPreview);
 
         //DockingEmptyBg,
         //PlotLines,
@@ -82,9 +82,9 @@ internal static class Style {
         //NavWindowingDimBg,
         //ModalWindowDimBg,
 
-        if (style?.WindowPadding        != null) Set(ImGuiStyleVar.WindowPadding,        style.Value.WindowPadding.Value);
-        if (style?.CellPadding          != null) Set(ImGuiStyleVar.CellPadding,          style.Value.CellPadding.Value);
-        if (style?.FramePadding         != null) Set(ImGuiStyleVar.FramePadding,         style.Value.FramePadding.Value);
+        if (style?.WindowPadding != null) Set(ImGuiStyleVar.WindowPadding, style.Value.WindowPadding.Value);
+        if (style?.CellPadding != null) Set(ImGuiStyleVar.CellPadding, style.Value.CellPadding.Value);
+        if (style?.FramePadding != null) Set(ImGuiStyleVar.FramePadding, style.Value.FramePadding.Value);
         if (style?.SeparatorTextPadding != null) Set(ImGuiStyleVar.SeparatorTextPadding, style.Value.SeparatorTextPadding.Value);
 
         _pushes++;
@@ -130,9 +130,9 @@ internal static class Style {
 
 public struct CustomStyle {
 
-    public Vector2? WindowPadding        = null;
-    public Vector2? CellPadding          = null;
-    public Vector2? FramePadding         = null;
+    public Vector2? WindowPadding = null;
+    public Vector2? CellPadding = null;
+    public Vector2? FramePadding = null;
     public Vector2? SeparatorTextPadding = null;
 
     public CustomStyle() { }

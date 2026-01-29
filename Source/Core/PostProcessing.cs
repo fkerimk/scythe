@@ -22,7 +22,7 @@ internal static class PostProcessing {
 
         foreach (var name in shaderFiles) {
 
-            if (PathUtil.BestPath($"Shaders/PostProcess/{name}.fs", out var fsPath) && PathUtil.BestPath("Shaders/PostProcess/postprocess.vs", out var vsPath)) {
+            if (PathUtil.GetPath($"Shaders/PostProcess/{name}.fs", out var fsPath) && PathUtil.GetPath("Shaders/PostProcess/postprocess.vs", out var vsPath)) {
 
                 var shader = LoadShader(vsPath, fsPath);
 

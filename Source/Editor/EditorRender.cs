@@ -2,14 +2,16 @@
 using ImGuiNET;
 using Raylib_cs;
 using Newtonsoft.Json;
+using static ImGuiNET.ImGui;
+using static Raylib_cs.Raylib;
 
 internal class EditorRender() : Viewport("Render (Editor)") {
 
-    public        RenderTexture2D Rt      = new(),       OutlineRt = new();
-    public        Vector2         TexSize = Vector2.One, TexTemp   = Vector2.Zero;
-    public static Vector2         RelativeMouse3D;
+    public RenderTexture2D Rt = new(), OutlineRt = new();
+    public Vector2 TexSize = Vector2.One, TexTemp = Vector2.Zero;
+    public static Vector2 RelativeMouse3D;
 
-    private static string GetPath() => PathUtil.ProjectRelative("EditorRender.json");
+    private static string GetPath() => Path.Join(ScytheConfig.Current.Project, "Project", "EditorRender.json");
 
     public void Load() {
 
@@ -25,7 +27,7 @@ internal class EditorRender() : Viewport("Render (Editor)") {
 
                     foreach (var relPath in settings.OpenLevels) {
 
-                        var absPath = PathUtil.ModRelative(relPath);
+                        var absPath = Path.Join(ScytheConfig.Current.Project, relPath);
                         if (File.Exists(absPath)) Editor.OpenLevel(absPath);
                     }
 
@@ -41,11 +43,11 @@ internal class EditorRender() : Viewport("Render (Editor)") {
 
         if (Core.OpenLevels.Count > 0) return;
 
-        if (PathUtil.BestPath("Levels/Main.json", out var mainPath)) {
+        if (PathUtil.GetPath("Levels/Main.json", out var mainPath)) {
             Editor.OpenLevel(mainPath);
         } else {
 
-            var levelsDir = PathUtil.ModRelative("Levels");
+            var levelsDir = Path.Join(ScytheConfig.Current.Project, "Levels");
 
             if (Directory.Exists(levelsDir)) {
 
@@ -67,18 +69,18 @@ internal class EditorRender() : Viewport("Render (Editor)") {
     public void Save() {
 
         var path = GetPath();
-        var dir  = Path.GetDirectoryName(path);
+        var dir = Path.GetDirectoryName(path);
         if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
-        var settings = new EditorRenderSettings { OpenLevels = Core.OpenLevels.Select(l => Path.GetRelativePath(Config.Mod.Path, l.JsonPath).Replace('\\', '/')).ToList(), ActiveLevelIndex = Core.ActiveLevelIndex };
+        var settings = new EditorRenderSettings { OpenLevels = Core.OpenLevels.Select(l => Path.GetRelativePath(ScytheConfig.Current.Project, l.JsonPath).Replace('\\', '/')).ToList(), ActiveLevelIndex = Core.ActiveLevelIndex };
 
         File.WriteAllText(path, JsonConvert.SerializeObject(settings, Formatting.Indented));
     }
 
     private class EditorRenderSettings {
 
-        public List<string> OpenLevels       { get; init; } = [];
-        public int          ActiveLevelIndex { get; init; } = -1;
+        public List<string> OpenLevels { get; init; } = [];
+        public int ActiveLevelIndex { get; init; } = -1;
     }
 
     protected override void OnDraw() {
@@ -87,42 +89,42 @@ internal class EditorRender() : Viewport("Render (Editor)") {
 
         if (Core.OpenLevels.Count == 0) return;
 
-        if (ImGui.BeginTabBar("##LevelTabs", ImGuiTabBarFlags.AutoSelectNewTabs | ImGuiTabBarFlags.Reorderable)) {
+        if (BeginTabBar("##LevelTabs", ImGuiTabBarFlags.AutoSelectNewTabs | ImGuiTabBarFlags.Reorderable)) {
 
             for (var i = 0; i < Core.OpenLevels.Count; i++) {
 
                 var level = Core.OpenLevels[i];
                 var label = $"{level.Name}{(level.IsDirty ? " *" : "")}###level_{level.GetHashCode()}";
 
-                var open       = true;
+                var open = true;
                 var isSelected = (Core.ActiveLevelIndex == i);
-                var flags      = ImGuiTabItemFlags.None;
+                var flags = ImGuiTabItemFlags.None;
 
                 if (Core.ShouldFocusActiveLevel && isSelected) flags |= ImGuiTabItemFlags.SetSelected;
 
-                if (ImGui.BeginTabItem(label, ref open, flags)) {
+                if (BeginTabItem(label, ref open, flags)) {
 
                     if (!isSelected) Core.SetActiveLevel(i);
 
                     if (Rt.Texture is { Width: > 0, Height: > 0 }) {
 
-                        var tex        = (IntPtr)Rt.Texture.Id;
-                        var contentPos = ImGui.GetCursorScreenPos();
-                        var avail      = ImGui.GetContentRegionAvail();
+                        var tex = (IntPtr)Rt.Texture.Id;
+                        var contentPos = GetCursorScreenPos();
+                        var avail = GetContentRegionAvail();
 
-                        ImGui.Image(tex, avail, new Vector2(0, 1), new Vector2(1, 0));
+                        Image(tex, avail, new Vector2(0, 1), new Vector2(1, 0));
 
-                        var mouse = Raylib.GetMousePosition();
-                        var relX  = Raymath.Clamp((mouse.X - contentPos.X) / avail.X, 0, 1);
-                        var relY  = Raymath.Clamp((mouse.Y - contentPos.Y) / avail.Y, 0, 1);
+                        var mouse = GetMousePosition();
+                        var relX = Raymath.Clamp((mouse.X - contentPos.X) / avail.X, 0, 1);
+                        var relY = Raymath.Clamp((mouse.Y - contentPos.Y) / avail.Y, 0, 1);
 
-                        relX            = (relX - 0.5f) * (avail.X / Raylib.GetScreenWidth()) * (Raylib.GetScreenHeight() / avail.Y) + 0.5f;
-                        RelativeMouse3D = new Vector2(relX         * Raylib.GetScreenWidth(), relY                        * Raylib.GetScreenHeight());
+                        relX = (relX - 0.5f) * (avail.X / GetScreenWidth()) * (GetScreenHeight() / avail.Y) + 0.5f;
+                        RelativeMouse3D = new Vector2(relX * GetScreenWidth(), relY * GetScreenHeight());
 
                         TexSize = avail;
                     }
 
-                    ImGui.EndTabItem();
+                    EndTabItem();
                 }
 
                 if (open) continue;
@@ -132,7 +134,7 @@ internal class EditorRender() : Viewport("Render (Editor)") {
                 break;
             }
 
-            ImGui.EndTabBar();
+            EndTabBar();
         }
 
         // Draw FPS in top-right corner of the viewport using ImGui DrawList (so it stays on top)
@@ -140,16 +142,16 @@ internal class EditorRender() : Viewport("Render (Editor)") {
 
             const float fontSize = 26f;
 
-            var fpsText  = Window.GetFpsText();
-            var textSize = ImGui.CalcTextSize(fpsText) * (fontSize / ImGui.GetFontSize());
-            var padding  = new Vector2(10, 5);
+            var fpsText = GetFPS().ToString();
+            var textSize = CalcTextSize(fpsText) * (fontSize / GetFontSize());
+            var padding = new Vector2(10, 5);
 
             // Draw on top of everything in this window
-            var drawList = ImGui.GetWindowDrawList();
-            var pos      = WindowPos + new Vector2(ContentRegion.X - textSize.X - padding.X, ImGui.GetFrameHeight() + padding.Y);
+            var drawList = GetWindowDrawList();
+            var pos = WindowPos + new Vector2(ContentRegion.X - textSize.X - padding.X, GetFrameHeight() + padding.Y);
 
-            drawList.AddText(ImGui.GetFont(), fontSize, pos + new Vector2(1, 1), ImGui.ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 1)),    fpsText); // Shadow
-            drawList.AddText(ImGui.GetFont(), fontSize, pos,                     ImGui.ColorConvertFloat4ToU32(Colors.Primary.ToVector4()), fpsText);
+            drawList.AddText(GetFont(), fontSize, pos + new Vector2(1, 1), ColorConvertFloat4ToU32(new Vector4(0, 0, 0, 1)), fpsText); // Shadow
+            drawList.AddText(GetFont(), fontSize, pos, ColorConvertFloat4ToU32(Colors.Primary.ToVector4()), fpsText);
         }
 
         Core.ShouldFocusActiveLevel = false;

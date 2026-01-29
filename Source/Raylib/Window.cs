@@ -7,7 +7,7 @@ internal static class Window {
 
     public static void UpdateFps() {
 
-        var targetFps = CommandLine.Editor ? Config.Editor.FpsLock : Config.Runtime.FpsLock;
+        var targetFps = CommandLine.Editor ? OldConfig.Editor.FpsLock : OldConfig.Runtime.FpsLock;
 
         if (targetFps == -1) targetFps = Screen.RefreshRate;
 
@@ -18,18 +18,14 @@ internal static class Window {
         SetTargetFPS(targetFps);
     }
 
-    public static void Clear(Color color) => ClearBackground(color);
-
-    public static string GetFpsText() => $"{GetFPS()}";
-
     public static void DrawFps(System.Numerics.Vector2 pos) {
 
-        if (CommandLine.Editor ? !Config.Editor.DrawFps : !Config.Runtime.DrawFps) return;
+        if (CommandLine.Editor ? !OldConfig.Editor.DrawFps : !OldConfig.Runtime.DrawFps) return;
 
-        var fpsText = GetFpsText();
+        var fpsText = GetFPS().ToString();
 
         DrawTextEx(Fonts.RlMontserratRegular, fpsText, pos + new System.Numerics.Vector2(1, 0), 26, 1, Color.Black);
-        DrawTextEx(Fonts.RlMontserratRegular, fpsText, pos,                                     26, 1, Colors.Primary);
+        DrawTextEx(Fonts.RlMontserratRegular, fpsText, pos, 26, 1, Colors.Primary);
     }
 
     private static void CenterWindow() => SetWindowPosition((Screen.Width - GetScreenWidth()) / 2, (Screen.Height - GetScreenHeight()) / 2);
@@ -56,12 +52,13 @@ internal static class Window {
                 Flags.Add(ConfigFlags.UndecoratedWindow);
                 SetWindowSize(GetMonitorWidth(GetCurrentMonitor()), GetMonitorHeight(GetCurrentMonitor()));
                 CenterWindow();
+
             } else if (!IsWindowFullscreen()) ToggleFullscreen();
 
         } else if (maximize) MaximizeWindow();
 
         // Window icon
-        if (PathUtil.BestPath("Images/Icon.png", out var iconPath)) {
+        if (PathUtil.GetPath("Images/Icon.png", out var iconPath)) {
 
             var img = LoadImage(iconPath);
             SetWindowIcon(img);

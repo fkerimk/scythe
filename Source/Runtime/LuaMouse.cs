@@ -7,7 +7,7 @@ internal class LuaMouse {
     public static bool IsLocked;
 
     public static Vector2 Delta;
-    public static float   Scroll => GetMouseWheelMove();
+    public static float Scroll => GetMouseWheelMove();
 
     public static void Loop() {
 

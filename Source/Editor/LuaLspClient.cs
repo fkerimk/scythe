@@ -6,23 +6,23 @@ using Newtonsoft.Json.Linq;
 internal class LuaLspClient(string serverPath) : IDisposable {
 
     private Process? _process;
-    private Stream?  _stream;
+    private Stream? _stream;
 
     private int _requestId = 1;
 
     // Non-BOM UTF8
     private readonly Encoding _utf8NoBom = new UTF8Encoding(false);
 
-    public string Status  { get; private set; } = "Not Started";
-    public bool   IsAlive => _process is { HasExited: false };
+    public string Status { get; private set; } = "Not Started";
+    public bool IsAlive => _process is { HasExited: false };
 
-    private static readonly string[] TokenTypes  = ["namespace", "type", "class", "enum", "interface", "struct", "typeParameter", "parameter", "variable", "property", "enumMember", "event", "function", "method", "macro", "keyword", "modifier", "comment", "string", "number", "regexp", "operator"];
-    private static readonly string[] Formats     = ["relative"];
+    private static readonly string[] TokenTypes = ["namespace", "type", "class", "enum", "interface", "struct", "typeParameter", "parameter", "variable", "property", "enumMember", "event", "function", "method", "macro", "keyword", "modifier", "comment", "string", "number", "regexp", "operator"];
+    private static readonly string[] Formats = ["relative"];
     private static readonly string[] StringArray = ["self", "level", "cam", "renderSettings", "f2", "f3", "mt", "time", "kb", "mouse", "quat", "game", "color"];
 
     public event Action<string, JToken>? NotificationReceived;
-    public event Action<int, JToken>?    ResponseReceived;
-    public event Action?                 OnExited;
+    public event Action<int, JToken>? ResponseReceived;
+    public event Action? OnExited;
 
     public async Task Start() {
 
@@ -37,14 +37,14 @@ internal class LuaLspClient(string serverPath) : IDisposable {
 
         _process = new Process {
             StartInfo = new ProcessStartInfo {
-                FileName               = Path.GetFullPath(serverPath),
-                Arguments              = $"-E \"{Path.Combine(binDir, "main.lua")}\"",
-                RedirectStandardInput  = true,
+                FileName = Path.GetFullPath(serverPath),
+                Arguments = "-E main.lua",
+                RedirectStandardInput = true,
                 RedirectStandardOutput = true,
-                RedirectStandardError  = true,
-                UseShellExecute        = false,
-                CreateNoWindow         = true,
-                WorkingDirectory       = binDir
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                WorkingDirectory = binDir
             }
         };
 
@@ -68,16 +68,16 @@ internal class LuaLspClient(string serverPath) : IDisposable {
             "initialize",
             new {
                 processId = Environment.ProcessId,
-                rootUri   = new Uri(Config.Mod.Path).AbsoluteUri,
-                rootPath  = Config.Mod.Path,
+                rootUri = new Uri(ScytheConfig.Current.Project).AbsoluteUri,
+                rootPath = ScytheConfig.Current.Project,
                 capabilities = new {
                     textDocument = new {
-                        hover              = new { },
-                        completion         = new { completionItem       = new { snippetSupport       = true } },
-                        signatureHelp      = new { signatureInformation = new { parameterInformation = new { labelOffsetSupport = true }, activeParameterSupport = true } },
+                        hover = new { },
+                        completion = new { completionItem = new { snippetSupport = true } },
+                        signatureHelp = new { signatureInformation = new { parameterInformation = new { labelOffsetSupport = true }, activeParameterSupport = true } },
                         publishDiagnostics = new { },
-                        semanticTokens     = new { requests = new { full = true }, tokenTypes = TokenTypes, formats = Formats },
-                        synchronization    = new { didOpen  = true, didChange                 = 1, didClose         = true }
+                        semanticTokens = new { requests = new { full = true }, tokenTypes = TokenTypes, formats = Formats },
+                        synchronization = new { didOpen = true, didChange = 1, didClose = true }
                     }
                 },
             }
@@ -87,7 +87,7 @@ internal class LuaLspClient(string serverPath) : IDisposable {
         SendNotification("initialized", new { });
 
         // Library config
-        SendNotification("workspace/didChangeConfiguration", new { settings = new { Lua = new { workspace = new { library = new[] { PathUtil.ModRelative("Temp") }, checkThirdParty = false }, diagnostics = new { enable = true, globals = StringArray } } } });
+        SendNotification("workspace/didChangeConfiguration", new { settings = new { Lua = new { workspace = new { library = new[] { Path.Join(ScytheConfig.Current.Project, "Project") }, checkThirdParty = false }, diagnostics = new { enable = true, globals = StringArray } } } });
 
         Status = "Connected";
     }
@@ -121,14 +121,14 @@ internal class LuaLspClient(string serverPath) : IDisposable {
 
         try {
 
-            var json   = JsonConvert.SerializeObject(message);
-            var body   = _utf8NoBom.GetBytes(json);
+            var json = JsonConvert.SerializeObject(message);
+            var body = _utf8NoBom.GetBytes(json);
             var header = Encoding.ASCII.GetBytes($"Content-Length: {body.Length}\r\n\r\n");
 
             lock (_stream) {
 
                 _stream.Write(header, 0, header.Length);
-                _stream.Write(body,   0, body.Length);
+                _stream.Write(body, 0, body.Length);
                 _stream.Flush();
             }
         } catch {
@@ -165,8 +165,8 @@ internal class LuaLspClient(string serverPath) : IDisposable {
 
                 if (!match.Success) continue;
 
-                var length    = int.Parse(match.Groups[1].Value);
-                var buffer    = new byte[length];
+                var length = int.Parse(match.Groups[1].Value);
+                var buffer = new byte[length];
                 var totalRead = 0;
 
                 while (totalRead < length) {
@@ -179,7 +179,7 @@ internal class LuaLspClient(string serverPath) : IDisposable {
                 }
 
                 var json = _utf8NoBom.GetString(buffer);
-                var obj  = JObject.Parse(json);
+                var obj = JObject.Parse(json);
 
                 if (obj["id"] != null)
                     ResponseReceived?.Invoke(obj["id"]!.Value<int>(), obj["result"] ?? obj["error"] ?? new JObject());

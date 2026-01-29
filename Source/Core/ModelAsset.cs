@@ -5,15 +5,15 @@ using Newtonsoft.Json;
 
 internal class ModelAsset : Asset {
 
-    public          List<AssimpMesh>                   Meshes   = [];
-    public          List<BoneInfo>                     Bones    = [];
-    public readonly Dictionary<string, List<BoneInfo>> BoneMap  = new();
-    public          ModelNode                          RootNode = null!;
-    public          Matrix4x4                          GlobalInverse;
-    public          List<AnimationClip>                Animations           = [];
-    public          Material[]                         Materials            = null!;
-    public          string[]                           MaterialPaths        = null!;
-    public          List<MaterialAsset?>               CachedMaterialAssets = [];
+    public List<AssimpMesh> Meshes = [];
+    public List<BoneInfo> Bones = [];
+    public readonly Dictionary<string, List<BoneInfo>> BoneMap = new();
+    public ModelNode RootNode = null!;
+    public Matrix4x4 GlobalInverse;
+    public List<AnimationClip> Animations = [];
+    public Material[] Materials = null!;
+    public string[] MaterialPaths = null!;
+    public List<MaterialAsset?> CachedMaterialAssets = [];
 
     private uint _lastBakeVersion;
 
@@ -22,7 +22,7 @@ internal class ModelAsset : Asset {
     public class ModelSettings : ICloneable {
 
         public Dictionary<int, string> MeshMaterials = new();
-        public float                   ImportScale   = 1.0f;
+        public float ImportScale = 1.0f;
 
         public object Clone() => new ModelSettings { MeshMaterials = new Dictionary<int, string>(MeshMaterials), ImportScale = ImportScale };
     }
@@ -31,7 +31,7 @@ internal class ModelAsset : Asset {
 
         for (var i = 0; i < Materials.Length; i++) {
 
-            MaterialPaths[i]        = Settings.MeshMaterials.GetValueOrDefault(i, "");
+            MaterialPaths[i] = Settings.MeshMaterials.GetValueOrDefault(i, "");
             CachedMaterialAssets[i] = AssetManager.Get<MaterialAsset>(MaterialPaths[i]);
             ApplyMaterialState(i, true);
         }
@@ -47,11 +47,11 @@ internal class ModelAsset : Asset {
         try {
 
             var data = AssimpLoader.Load(File);
-            Meshes        = data.Meshes;
-            Bones         = data.Bones;
-            RootNode      = data.Root;
+            Meshes = data.Meshes;
+            Bones = data.Bones;
+            RootNode = data.Root;
             GlobalInverse = data.GlobalInverse;
-            Animations    = data.Animations;
+            Animations = data.Animations;
 
             BoneMap.Clear();
 
@@ -59,14 +59,14 @@ internal class ModelAsset : Asset {
 
                 if (!BoneMap.TryGetValue(b.Name, out var list)) {
 
-                    list            = [];
+                    list = [];
                     BoneMap[b.Name] = list;
                 }
 
                 list.Add(b);
             }
 
-            var jsonPath                                  = File + ".json";
+            var jsonPath = File + ".json";
             if (System.IO.File.Exists(jsonPath)) Settings = JsonConvert.DeserializeObject<ModelSettings>(System.IO.File.ReadAllText(jsonPath)) ?? new ModelSettings();
 
         } catch (Exception e) {
@@ -78,13 +78,13 @@ internal class ModelAsset : Asset {
 
         IsLoaded = true;
         var matCount = Meshes.Count > 0 ? Meshes.Max(m => m.MaterialIndex) + 1 : 1;
-        Materials            = new Material[matCount];
-        MaterialPaths        = new string[matCount];
+        Materials = new Material[matCount];
+        MaterialPaths = new string[matCount];
         CachedMaterialAssets = [];
 
         for (var i = 0; i < matCount; i++) {
 
-            Materials[i]     = LoadMaterialDefault();
+            Materials[i] = LoadMaterialDefault();
             MaterialPaths[i] = Settings.MeshMaterials.GetValueOrDefault(i, "");
             CachedMaterialAssets.Add(null);
             ApplyMaterialState(i, true);
@@ -97,7 +97,7 @@ internal class ModelAsset : Asset {
 
     public void SaveSettings() {
 
-        var jsonPath                                                             = File + ".json";
+        var jsonPath = File + ".json";
         for (var i = 0; i < MaterialPaths.Length; i++) Settings.MeshMaterials[i] = MaterialPaths[i];
         System.IO.File.WriteAllText(jsonPath, JsonConvert.SerializeObject(Settings, Formatting.Indented));
     }
@@ -106,7 +106,7 @@ internal class ModelAsset : Asset {
 
         if (index < 0 || index >= Materials.Length) return;
 
-        MaterialPaths[index]        = path;
+        MaterialPaths[index] = path;
         CachedMaterialAssets[index] = AssetManager.Get<MaterialAsset>(path);
         ApplyMaterialState(index, true);
         SaveSettings();
@@ -124,8 +124,8 @@ internal class ModelAsset : Asset {
 
         if (index < 0 || index >= Materials.Length) return;
 
-        ref var mat   = ref Materials[index];
-        var     asset = (index < CachedMaterialAssets.Count) ? CachedMaterialAssets[index] : null;
+        ref var mat = ref Materials[index];
+        var asset = (index < CachedMaterialAssets.Count) ? CachedMaterialAssets[index] : null;
 
         if (asset == null && !string.IsNullOrEmpty(MaterialPaths[index])) {
 
@@ -143,27 +143,27 @@ internal class ModelAsset : Asset {
         fixed (Material* p = &mat) {
 
             var tPath = asset?.Data.Textures.GetValueOrDefault("albedo_map", "");
-            var tex   = AssetManager.Get<TextureAsset>(tPath);
+            var tex = AssetManager.Get<TextureAsset>(tPath);
             SetMaterialTexture(p, MaterialMapIndex.Albedo, tex?.Texture ?? new Texture2D());
 
             tPath = asset?.Data.Textures.GetValueOrDefault("normal_map", "");
-            tex   = AssetManager.Get<TextureAsset>(tPath);
+            tex = AssetManager.Get<TextureAsset>(tPath);
             SetMaterialTexture(p, MaterialMapIndex.Normal, tex?.Texture ?? new Texture2D());
 
             tPath = asset?.Data.Textures.GetValueOrDefault("metallic_map", "");
-            tex   = AssetManager.Get<TextureAsset>(tPath);
+            tex = AssetManager.Get<TextureAsset>(tPath);
             SetMaterialTexture(p, MaterialMapIndex.Metalness, tex?.Texture ?? new Texture2D());
 
             tPath = asset?.Data.Textures.GetValueOrDefault("roughness_map", "");
-            tex   = AssetManager.Get<TextureAsset>(tPath);
+            tex = AssetManager.Get<TextureAsset>(tPath);
             SetMaterialTexture(p, MaterialMapIndex.Roughness, tex?.Texture ?? new Texture2D());
 
             tPath = asset?.Data.Textures.GetValueOrDefault("occlusion_map", "");
-            tex   = AssetManager.Get<TextureAsset>(tPath);
+            tex = AssetManager.Get<TextureAsset>(tPath);
             SetMaterialTexture(p, MaterialMapIndex.Occlusion, tex?.Texture ?? new Texture2D());
 
             tPath = asset?.Data.Textures.GetValueOrDefault("emissive_map", "");
-            tex   = AssetManager.Get<TextureAsset>(tPath);
+            tex = AssetManager.Get<TextureAsset>(tPath);
             SetMaterialTexture(p, MaterialMapIndex.Emission, tex?.Texture ?? new Texture2D());
         }
     }

@@ -10,20 +10,18 @@ using static rlImGui_cs.rlImGui;
 
 internal static unsafe class Editor {
 
-    private static bool     _scheduledQuit;
+    private static bool _scheduledQuit;
     private static Camera3D _editorCamera = null!;
 
-    public static ImGuiIOPtr ImGuiIoPtr;
-
     // ReSharper disable MemberCanBePrivate.Global
-    public static EditorRender   EditorRender   = null!;
-    public static LevelBrowser   LevelBrowser   = null!;
+    public static EditorRender EditorRender = null!;
+    public static LevelBrowser LevelBrowser = null!;
     public static ProjectBrowser ProjectBrowser = null!;
-    public static ObjectBrowser  ObjectBrowser  = null!;
-    public static ScriptEditor   ScriptEditor   = null!;
-    public static MusicPlayer    MusicPlayer    = null!;
-    public static Preview        Preview        = null!;
-    public static RuntimeRender  RuntimeRender  = null!;
+    public static ObjectBrowser ObjectBrowser = null!;
+    public static ScriptEditor ScriptEditor = null!;
+    public static MusicPlayer MusicPlayer = null!;
+    public static Preview Preview = null!;
+    public static RuntimeRender RuntimeRender = null!;
 
     // ReSharper restore MemberCanBePrivate.Global
 
@@ -34,12 +32,14 @@ internal static unsafe class Editor {
     public static void OpenScript(string path) => ScriptEditor.Open(path);
 
     public static void OpenLevel(string path) {
+
         var name = Path.GetFileNameWithoutExtension(path);
         Core.OpenLevel(name, path);
     }
 
     public static void CreateLevel(string path) {
-        var name  = Path.GetFileNameWithoutExtension(path);
+
+        var name = Path.GetFileNameWithoutExtension(path);
         var level = new Level(name, path, false);
 
         Core.OpenLevels.Add(level);
@@ -49,28 +49,24 @@ internal static unsafe class Editor {
     }
 
     public static void Show() {
-        Window.Show(flags: [ConfigFlags.Msaa4xHint, ConfigFlags.ResizableWindow], title: $"{Config.Mod.Name} - Editor");
 
-        // Setup ImGui
+        Window.Show(flags: [ConfigFlags.Msaa4xHint, ConfigFlags.ResizableWindow], title: $"{ProjectConfig.Current.Name} - Editor");
+
         Setup(true, true);
 
         EditorRender = new EditorRender { CustomStyle = new CustomStyle { WindowPadding = new Vector2(0, 0), CellPadding = new Vector2(0, 0), SeparatorTextPadding = new Vector2(0, 0) } };
-
-        LevelBrowser   = new LevelBrowser();
+        LevelBrowser = new LevelBrowser();
         ProjectBrowser = new ProjectBrowser();
-        ObjectBrowser  = new ObjectBrowser();
-        ScriptEditor   = new ScriptEditor();
-        MusicPlayer    = new MusicPlayer();
-        Preview        = new Preview();
-        RuntimeRender  = new RuntimeRender();
+        ObjectBrowser = new ObjectBrowser();
+        ScriptEditor = new ScriptEditor();
+        MusicPlayer = new MusicPlayer();
+        Preview = new Preview();
+        RuntimeRender = new RuntimeRender();
 
-        var layoutPath = PathUtil.ExeRelative("Layouts/User.ini");
+        PathUtil.ValidateFile("Layouts/User.ini", out var layoutPath);
 
-        if (PathUtil.BestPath("Layouts/User.ini", out var existLayoutPath)) layoutPath = existLayoutPath;
-
-        ImGuiIoPtr                        =  GetIO();
-        ImGuiIoPtr.ConfigFlags            |= ImGuiConfigFlags.DockingEnable;
-        ImGuiIoPtr.NativePtr->IniFilename =  (byte*)Marshal.StringToHGlobalAnsi(layoutPath).ToPointer();
+        GetIO().ConfigFlags |= ImGuiConfigFlags.DockingEnable;
+        GetIO().NativePtr->IniFilename = (byte*)Marshal.StringToHGlobalAnsi(layoutPath).ToPointer();
 
         // Setup core
         Core.Init();
@@ -132,7 +128,7 @@ internal static unsafe class Editor {
             PushFont(Fonts.ImMontserratRegular);
 
             DockSpaceOverViewport(GetMainViewport().ID);
-            ImGuiIoPtr.MouseDoubleClickTime = 0.2f;
+            GetIO().MouseDoubleClickTime = 0.2f;
 
             // Handle Editor UI Lock when playing with mouse locked
             if (LuaMouse.IsLocked) {
@@ -177,7 +173,7 @@ internal static unsafe class Editor {
 
             // Runtime viewport
             BeginTextureMode(RuntimeRender.Rt);
-            Window.Clear(Colors.Game);
+            ClearBackground(Colors.Game);
             Core.IsPreviewRender = true;
 
             // 3D Pass
@@ -185,7 +181,7 @@ internal static unsafe class Editor {
                 BeginMode3D(Core.GameCamera.Raylib);
                 PostProcessing.ApplyJitter(Core.GameCamera);
                 Core.LastProjectionMatrix = GetMatrixProjection();
-                Core.LastViewMatrix       = GetMatrixModelview();
+                Core.LastViewMatrix = GetMatrixModelview();
                 Core.Render(false);
                 EndMode3D();
             }
@@ -203,7 +199,7 @@ internal static unsafe class Editor {
 
             // Editor viewport
             BeginTextureMode(EditorRender.Rt);
-            Window.Clear(Colors.Game);
+            ClearBackground(Colors.Game);
 
             Core.ActiveCamera = _editorCamera;
             FreeCam.Loop(EditorRender);
@@ -211,7 +207,7 @@ internal static unsafe class Editor {
             Camera.ApplySettings(_editorCamera, 0.01f, 2000.0f);
             BeginMode3D(_editorCamera.Raylib);
             Core.LastProjectionMatrix = GetMatrixProjection();
-            Core.LastViewMatrix       = GetMatrixModelview();
+            Core.LastViewMatrix = GetMatrixModelview();
             Core.Render(false);
             Grid.Draw(_editorCamera);
             EndMode3D();
@@ -222,9 +218,9 @@ internal static unsafe class Editor {
 
                 if (outlinePost != null) {
                     BeginShaderMode(outlinePost.Shader);
-                    SetShaderValue(outlinePost.Shader, outlinePost.GetLoc("textureSize"),  new Vector2(EditorRender.TexSize.X, EditorRender.TexSize.Y), ShaderUniformDataType.Vec2);
-                    SetShaderValue(outlinePost.Shader, outlinePost.GetLoc("outlineSize"),  2.0f,                                                        ShaderUniformDataType.Float);
-                    SetShaderValue(outlinePost.Shader, outlinePost.GetLoc("outlineColor"), ColorNormalize(Colors.Primary),                              ShaderUniformDataType.Vec4);
+                    SetShaderValue(outlinePost.Shader, outlinePost.GetLoc("textureSize"), new Vector2(EditorRender.TexSize.X, EditorRender.TexSize.Y), ShaderUniformDataType.Vec2);
+                    SetShaderValue(outlinePost.Shader, outlinePost.GetLoc("outlineSize"), 2.0f, ShaderUniformDataType.Float);
+                    SetShaderValue(outlinePost.Shader, outlinePost.GetLoc("outlineColor"), ColorNormalize(Colors.Primary), ShaderUniformDataType.Vec4);
                     DrawTextureRec(EditorRender.OutlineRt.Texture, new Rectangle(0, 0, EditorRender.TexSize.X, -EditorRender.TexSize.Y), Vector2.Zero, Color.White);
                     EndShaderMode();
                 }
@@ -269,8 +265,6 @@ internal static unsafe class Editor {
         Shutdown();
         Core.Quit();
         CloseWindow();
-
-        SafeExec.Try(() => Directory.Delete(PathUtil.TempPath, true));
     }
 
     public static void Quit() => _scheduledQuit = true;
@@ -283,10 +277,10 @@ internal static unsafe class Editor {
             _editorLevelRef = Core.ActiveLevel;
             var snapshot = Core.ActiveLevel.ToSnapshot();
 
-            Core.IsPlaying    = true;
+            Core.IsPlaying = true;
             LuaMouse.IsLocked = true;
             LuaTime.Reset();
-            RuntimeRender.IsOpen      = true;
+            RuntimeRender.IsOpen = true;
             RuntimeRender.ShouldFocus = true;
 
             // Re-init physics to clear any leftovers and prepare for fresh simulation
@@ -302,7 +296,7 @@ internal static unsafe class Editor {
             Notifications.Show("Play Mode Started");
         } else {
             // Stop play mode
-            Core.IsPlaying    = false;
+            Core.IsPlaying = false;
             LuaMouse.IsLocked = false;
             EnableCursor();
             ShowCursor();
@@ -342,7 +336,7 @@ internal static unsafe class Editor {
             if (component is not Model { IsLoaded: true } model) continue;
 
             // Override shaders
-            var modelAsset  = model.AssetRef;
+            var modelAsset = model.AssetRef;
             var outlineMask = AssetManager.Get<ShaderAsset>("outline_mask");
 
             if (outlineMask != null) {
@@ -350,7 +344,7 @@ internal static unsafe class Editor {
                 var originalShaders = new Dictionary<int, Shader>();
 
                 for (var i = 0; i < modelAsset.Materials.Length; i++) {
-                    originalShaders[i]             = modelAsset.Materials[i].Shader;
+                    originalShaders[i] = modelAsset.Materials[i].Shader;
                     modelAsset.Materials[i].Shader = outlineMask.Shader;
                 }
 

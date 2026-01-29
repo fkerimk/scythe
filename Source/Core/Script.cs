@@ -5,26 +5,23 @@ using Newtonsoft.Json;
 
 internal class Script(Obj obj) : Component(obj) {
 
-    public override string LabelIcon  => Icons.FaCode;
-    public override Color  LabelColor => Color.White;
+    public override string LabelIcon => Icons.FaCode;
+    public override Color LabelColor => Color.White;
 
-    [RecordHistory]
-    [JsonProperty]
-    [Label("Path")]
-    [FindAsset("ScriptAsset")]
+    [Label("Path"), JsonProperty, RecordHistory, FindAsset("ScriptAsset")]
     public string Path { get; set; } = "";
 
     public required MoonSharp.Interpreter.Script LuaScript;
-    public          DynValue?                    LuaLoop;
+    public DynValue? LuaLoop;
 
-    public static LuaMt?    LuaMt;
-    public static LuaTime?  LuaTime;
-    public static LuaKb?    LuaKb;
+    public static LuaMt? LuaMt;
+    public static LuaTime? LuaTime;
+    public static LuaKb? LuaKb;
     public static LuaMouse? LuaMouse;
-    public static LuaF2?    LuaF2;
-    public static LuaF3?    LuaF3;
-    public static LuaQuat?  LuaQuat;
-    public static LuaGame?  LuaGame;
+    public static LuaF2? LuaF2;
+    public static LuaF3? LuaF3;
+    public static LuaQuat? LuaQuat;
+    public static LuaGame? LuaGame;
     public static LuaColor? LuaColor;
 
     public static void Register() {
@@ -49,25 +46,25 @@ internal class Script(Obj obj) : Component(obj) {
 
         UserData.RegisterType<LuaTime>();
         LuaTime = new LuaTime();
-        
+
         UserData.RegisterType<LuaKb>();
         LuaKb = new LuaKb();
-        
+
         UserData.RegisterType<LuaMouse>();
         LuaMouse = new LuaMouse();
-        
+
         UserData.RegisterType<LuaF2>();
         LuaF2 = new LuaF2();
-        
+
         UserData.RegisterType<LuaF3>();
         LuaF3 = new LuaF3();
-        
+
         UserData.RegisterType<LuaQuat>();
         LuaQuat = new LuaQuat();
-        
+
         UserData.RegisterType<LuaGame>();
         LuaGame = new LuaGame();
-        
+
         UserData.RegisterType<LuaColor>();
         LuaColor = new LuaColor();
 
@@ -90,25 +87,26 @@ internal class Script(Obj obj) : Component(obj) {
         var script = new MoonSharp.Interpreter.Script {
             Options = { DebugPrint = Console.WriteLine },
             Globals = {
-                ["self"]           = generateDefinitions ? new Obj(null!, null) : obj,
-                ["level"]          = generateDefinitions ? new Level(null!) : Core.ActiveLevel,
-                ["cam"]            = generateDefinitions ? new Camera(null!) { Cam = new Camera3D() } : FindFirstCameraComponent(Core.ActiveLevel?.Root),
+                ["self"] = generateDefinitions ? new Obj(null!, null) : obj,
+                ["level"] = generateDefinitions ? new Level(null!) : Core.ActiveLevel,
+                ["cam"] = generateDefinitions ? new Camera(null!) { Cam = new Camera3D() } : FindFirstCameraComponent(Core.ActiveLevel?.Root),
                 ["renderSettings"] = generateDefinitions ? new RenderSettings() : Core.RenderSettings,
-                ["f2"]             = LuaF2,
-                ["f3"]             = LuaF3,
-                ["mt"]             = LuaMt,
-                ["time"]           = LuaTime,
-                ["kb"]             = LuaKb,
-                ["mouse"]          = LuaMouse,
-                ["quat"]           = LuaQuat,
-                ["game"]           = LuaGame,
-                ["color"]          = LuaColor,
+                ["f2"] = LuaF2,
+                ["f3"] = LuaF3,
+                ["mt"] = LuaMt,
+                ["time"] = LuaTime,
+                ["kb"] = LuaKb,
+                ["mouse"] = LuaMouse,
+                ["quat"] = LuaQuat,
+                ["game"] = LuaGame,
+                ["color"] = LuaColor,
             }
         };
 
         if (!generateDefinitions) return script;
 
-        LuaDefinitionGenerator.Generate(script, PathUtil.TempRelative("Scythe.lua"));
+        PathUtil.ValidateFile("Project/Definitions.lua", out var definitionsPath, "", true);
+        LuaDefinitionGenerator.Generate(script, definitionsPath);
 
         return script;
     }

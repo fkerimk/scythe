@@ -12,28 +12,42 @@ internal class MusicPlayer() : Viewport("Music Player") {
     private const string Url = "https://lofi.stream.laut.fm/lofi";
 
     private AudioStream? _audioStream;
-    private MpegFile?    _mpegFile;
-    private HttpClient?  _httpClient;
-    private Stream?      _networkStream;
+    private MpegFile? _mpegFile;
+    private HttpClient? _httpClient;
+    private Stream? _networkStream;
 
-    private bool  _isPlaying, _isConnecting;
+    private bool _isPlaying, _isConnecting;
     private float _volume = 0.2f;
 
     private RenderTexture2D _rt;
-    private bool            _rtInit;
+    private bool _rtInit;
 
-    private const int FftSize    = 1024;
+    private const int FftSize = 1024;
     private const int VisualBins = 48;
 
     private readonly float[] _fft = new float[VisualBins], _samples = new float[FftSize];
 
-    private          int   _sampleIdx;
-    private readonly Lock  _lock = new();
-    private          float _hueOffset;
+    private int _sampleIdx;
+    private readonly Lock _lock = new();
+    private float _hueOffset;
 
     private CancellationTokenSource? _cts;
 
-    private static string GetPath() => PathUtil.BestPath("Layouts/MusicPlayer.json", out var path) ? path : PathUtil.ExeRelative("Layouts/MusicPlayer.json");
+    private static string GetPath() {
+
+        PathUtil.ValidateFile(
+            "Layouts/MusicPlayer.json",
+            out var path,
+            """
+            {
+                "Volume": 0.05,
+                "IsPlaying": true
+            }
+            """
+        );
+
+        return path;
+    }
 
     public void Load() {
 
@@ -55,7 +69,7 @@ internal class MusicPlayer() : Viewport("Music Player") {
     public void Save() {
 
         var path = GetPath();
-        var dir  = Path.GetDirectoryName(path);
+        var dir = Path.GetDirectoryName(path);
         if (dir != null && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
         var settings = new MusicPlayerSettings { Volume = _volume, IsPlaying = _isPlaying };
         File.WriteAllText(path, JsonConvert.SerializeObject(settings, Formatting.Indented));
@@ -63,7 +77,7 @@ internal class MusicPlayer() : Viewport("Music Player") {
 
     private struct MusicPlayerSettings {
         public float Volume;
-        public bool  IsPlaying;
+        public bool IsPlaying;
     }
 
     private void Play() {
@@ -71,7 +85,7 @@ internal class MusicPlayer() : Viewport("Music Player") {
         if (_isPlaying || _isConnecting) return;
 
         _isConnecting = true;
-        _cts          = new CancellationTokenSource();
+        _cts = new CancellationTokenSource();
 
         var token = _cts.Token;
 
@@ -86,14 +100,14 @@ internal class MusicPlayer() : Viewport("Music Player") {
                     const int streamBufferSize = 4096;
                     SetAudioStreamBufferSizeDefault(streamBufferSize);
 
-                    _httpClient    = new HttpClient();
+                    _httpClient = new HttpClient();
                     _networkStream = await _httpClient.GetStreamAsync(Url, token);
 
                     // Wrap in a simple seekable buffer
                     var streamingBuffer = new StreamingMemoryBuffer(_networkStream);
                     _mpegFile = new MpegFile(streamingBuffer);
 
-                    var channels   = _mpegFile.Channels;
+                    var channels = _mpegFile.Channels;
                     var sampleRate = _mpegFile.SampleRate;
 
                     _audioStream = LoadAudioStream((uint)sampleRate, 32, (uint)channels);
@@ -106,7 +120,7 @@ internal class MusicPlayer() : Viewport("Music Player") {
                     while (streamingBuffer.Length < 128 * 1024 && !token.IsCancellationRequested) await Task.Delay(100, token);
 
                     PlayAudioStream(_audioStream.Value);
-                    _isPlaying    = true;
+                    _isPlaying = true;
                     _isConnecting = false;
 
                     // This decouples audio from the GUI frame rate, eliminating stuttering.
@@ -177,7 +191,7 @@ internal class MusicPlayer() : Viewport("Music Player") {
         if (_isConnecting) {
 
             const float radius = 10;
-            var         pos    = GetCursorScreenPos()                                                                 + new Vector2(15, 12);
+            var pos = GetCursorScreenPos() + new Vector2(15, 12);
             GetWindowDrawList().PathArcTo(pos, radius, (float)Raylib.GetTime() * 5.0f, (float)Raylib.GetTime() * 5.0f + 4.5f, 10);
             GetWindowDrawList().PathStroke(GetColorU32(ImGuiCol.Text), ImDrawFlags.None, 2.0f);
             Dummy(new Vector2(30, 24));
@@ -186,7 +200,7 @@ internal class MusicPlayer() : Viewport("Music Player") {
 
             PushFont(Fonts.ImFontAwesomeNormal);
             if (!_isPlaying && Button(Icons.FaPlay, new Vector2(30, 24))) Play();
-            if (_isPlaying  && Button(Icons.FaStop, new Vector2(30, 24))) Stop();
+            if (_isPlaying && Button(Icons.FaStop, new Vector2(30, 24))) Stop();
             PopFont();
         }
 
@@ -209,7 +223,7 @@ internal class MusicPlayer() : Viewport("Music Player") {
         if (!_rtInit || _rt.Texture.Width != (int)winSize.X || _rt.Texture.Height != (int)winSize.Y) {
 
             if (_rtInit) UnloadRenderTexture(_rt);
-            _rt     = LoadRenderTexture(Math.Max(1, (int)winSize.X), Math.Max(1, (int)winSize.Y));
+            _rt = LoadRenderTexture(Math.Max(1, (int)winSize.X), Math.Max(1, (int)winSize.Y));
             _rtInit = true;
         }
 
@@ -230,16 +244,16 @@ internal class MusicPlayer() : Viewport("Music Player") {
         float[] snap;
 
         lock (_lock) {
-            snap       = (float[])_samples.Clone();
+            snap = (float[])_samples.Clone();
             _sampleIdx = 0;
         }
 
         var dt = GetIO().DeltaTime;
 
         for (var i = 0; i < VisualBins; i++) {
-            var sum                            = 0f;
+            var sum = 0f;
             for (var j = 0; j < step; j++) sum += Math.Abs(snap[Math.Clamp(i * step + j, 0, FftSize - 1)]);
-            var val                            = sum / step;
+            var val = sum / step;
             _fft[i] = Raymath.Lerp(_fft[i], val, dt * (val > _fft[i] ? 20.0f : 10.0f));
         }
 
@@ -254,10 +268,10 @@ internal class MusicPlayer() : Viewport("Music Player") {
 
         for (var i = 0; i < VisualBins; i++) {
 
-            var val         = Math.Clamp(_fft[i]                                             * h * 2.5f, 2, h * 0.9f);
-            var colorTop    = ColorFromHSV(((float)i / VisualBins * 45.0f + _hueOffset)      % 360, 0.6f, 0.9f);
+            var val = Math.Clamp(_fft[i] * h * 2.5f, 2, h * 0.9f);
+            var colorTop = ColorFromHSV(((float)i / VisualBins * 45.0f + _hueOffset) % 360, 0.6f, 0.9f);
             var colorBottom = ColorFromHSV(((float)i / VisualBins * 45.0f + _hueOffset + 25) % 360, 0.7f, 0.4f);
-            var rect        = new Rectangle(i * barWidth + padding, h - val, barWidth - padding * 2, val);
+            var rect = new Rectangle(i * barWidth + padding, h - val, barWidth - padding * 2, val);
             DrawRectangleGradientV((int)rect.X, (int)rect.Y, (int)rect.Width, (int)rect.Height, colorTop, colorBottom);
             DrawRectangle((int)rect.X, (int)rect.Y, (int)rect.Width, 1, Fade(Color.White, 0.3f));
         }
@@ -267,9 +281,9 @@ internal class MusicPlayer() : Viewport("Music Player") {
     private class StreamingMemoryBuffer : Stream {
 
         private readonly MemoryStream _memory = new();
-        private readonly Stream       _source;
+        private readonly Stream _source;
 
-        private          long _position;
+        private long _position;
         private readonly Lock _sync = new();
 
         public StreamingMemoryBuffer(Stream source) {
@@ -304,8 +318,8 @@ internal class MusicPlayer() : Viewport("Music Player") {
             );
         }
 
-        public override bool CanRead  => true;
-        public override bool CanSeek  => true;
+        public override bool CanRead => true;
+        public override bool CanSeek => true;
         public override bool CanWrite => false;
 
         public override long Length {
@@ -314,8 +328,12 @@ internal class MusicPlayer() : Viewport("Music Player") {
             }
         }
 
-        public override long Position { get => _position; set => Seek(value, SeekOrigin.Begin); }
-        public override void Flush()  { }
+        public override long Position {
+            get => _position;
+            set => Seek(value, SeekOrigin.Begin);
+        }
+
+        public override void Flush() { }
 
         public override int Read(byte[] buffer, int offset, int count) {
 
@@ -344,7 +362,7 @@ internal class MusicPlayer() : Viewport("Music Player") {
                 _position = origin switch {
 
                     SeekOrigin.Begin   => offset,
-                    SeekOrigin.Current => _position      + offset,
+                    SeekOrigin.Current => _position + offset,
                     SeekOrigin.End     => _memory.Length + offset,
                     _                  => _position
                 };
@@ -353,8 +371,8 @@ internal class MusicPlayer() : Viewport("Music Player") {
             }
         }
 
-        public override void SetLength(long value)                         { }
-        public override void Write(byte[]   buffer, int offset, int count) { }
+        public override void SetLength(long value) { }
+        public override void Write(byte[] buffer, int offset, int count) { }
 
         protected override void Dispose(bool disposing) {
 

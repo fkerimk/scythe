@@ -3,7 +3,7 @@ using Raylib_cs;
 
 internal struct Token {
 
-    public string    Text;
+    public string Text;
     public TokenType Type;
 }
 
@@ -23,12 +23,12 @@ internal static partial class Extensions {
 
     public static List<Token> Tokenize(this string line) {
 
-        var tokens  = new List<Token>();
+        var tokens = new List<Token>();
         var matches = Regex.Matches(line, """(--.*)|("[^"]*")|('[^']*')|(\b\d+\.?\d*\b)|(\b\w+\b)|(\s+)|(.)""");
 
         foreach (Match m in matches) {
 
-            var t    = m.Value;
+            var t = m.Value;
             var type = t.StartsWith("--") ? TokenType.Comment : (t.StartsWith('\"') || t.StartsWith('\'') ? TokenType.String : (char.IsDigit(t[0]) ? TokenType.Number : (TokenKeywords.Contains(t) ? TokenType.Keyword : (string.IsNullOrWhiteSpace(t) ? TokenType.Whitespace : TokenType.Normal))));
 
             tokens.Add(new Token { Text = t, Type = type });

@@ -4,16 +4,16 @@ using System.Reflection;
 internal class HistoryStack {
 
     private readonly List<HistoryRecord> _records = [];
-    private          int                 _index   = -1;
-    private          HistoryRecord?      _active;
+    private int _index = -1;
+    private HistoryRecord? _active;
 
-    public bool CanUndo   => _index >= 0;
-    public bool CanRedo   => _index < _records.Count  - 1;
+    public bool CanUndo => _index >= 0;
+    public bool CanRedo => _index < _records.Count - 1;
     public bool CanExtend => _index == _records.Count - 1;
 
     public void Clear() {
         _records.Clear();
-        _index  = -1;
+        _index = -1;
         _active = null;
     }
 
@@ -108,17 +108,17 @@ internal class HistoryStack {
 
     private class HistoryRecord(string? description) {
 
-        public readonly string              Description = description ?? "Action";
-        public readonly List<StateSnapshot> Snapshots   = [];
-        public          Action?             UndoAction;
-        public          Action?             RedoAction;
+        public readonly string Description = description ?? "Action";
+        public readonly List<StateSnapshot> Snapshots = [];
+        public Action? UndoAction;
+        public Action? RedoAction;
     }
 
     private class StateSnapshot(object target) {
 
-        public readonly object    Target     = target;
+        public readonly object Target = target;
         public readonly object?[] StartState = History.CaptureState(target);
-        public          object?[] EndState   = [];
+        public object?[] EndState = [];
     }
 }
 
@@ -163,7 +163,7 @@ internal static class History {
 
     public static object?[] CaptureState(object target) {
         const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-        var                type  = target.GetType();
+        var type = target.GetType();
 
         var props = type.GetProperties(flags).Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute))).OrderBy(p => p.Name).Select(f => CloneValue(f.GetValue(target)));
 
@@ -174,7 +174,7 @@ internal static class History {
 
     public static void RestoreState(object target, object?[] state) {
         const BindingFlags flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-        var                type  = target.GetType();
+        var type = target.GetType();
 
         var props = type.GetProperties(flags).Where(f => Attribute.IsDefined(f, typeof(RecordHistoryAttribute))).OrderBy(p => p.Name).ToArray();
 

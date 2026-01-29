@@ -21,14 +21,14 @@ internal static class AssetManager {
         TypeCache.Clear();
 
         // Load Resources
-        if (PathUtil.BestPath("Resources", out var resourcesPath, isDirectory: true)) {
+        if (PathUtil.GetPath("Resources", out var resourcesPath)) {
 
             ScanDirectory(resourcesPath);
             CreateWatcher(resourcesPath, "*.*", HandleFileChange, HandleFileDelete);
         }
 
         // Mod Directory (Recursive)
-        var modPath = Config.Mod.Path;
+        var modPath = ScytheConfig.Current.Project;
 
         if (Directory.Exists(modPath)) {
 
@@ -195,9 +195,9 @@ internal static class AssetManager {
         }
 
         // Mod relative Path
-        if (full.Contains(Config.Mod.Path.Replace('\\', '/'), StringComparison.InvariantCultureIgnoreCase)) {
+        if (full.Contains(ScytheConfig.Current.Project.Replace('\\', '/'), StringComparison.InvariantCultureIgnoreCase)) {
 
-            var rel = Path.GetRelativePath(Config.Mod.Path, file).Replace('\\', '/').ToLowerInvariant();
+            var rel = Path.GetRelativePath(ScytheConfig.Current.Project, file).Replace('\\', '/').ToLowerInvariant();
             PathLookup[typePrefix + rel] = asset;
         }
 
@@ -233,7 +233,7 @@ internal static class AssetManager {
 
         if (!TypeCache.TryGetValue(typeof(T), out var list)) return [];
 
-        var modPath = Config.Mod.Path;
+        var modPath = ScytheConfig.Current.Project;
         var resPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources");
 
         return list.Cast<T>()

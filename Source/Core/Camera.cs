@@ -4,13 +4,16 @@ using Newtonsoft.Json;
 
 internal class Camera(Obj obj) : Component(obj) {
 
-    public override string LabelIcon  => Icons.FaVideoCamera;
-    public override Color  LabelColor => Colors.GuiTypeCamera;
+    public override string LabelIcon => Icons.FaVideoCamera;
+    public override Color LabelColor => Colors.GuiTypeCamera;
 
     public required Camera3D Cam = new();
 
     [Label("FOV"), JsonProperty, RecordHistory]
-    public float Fov { get => Cam.FovY; set => Cam.FovY = value; }
+    public float Fov {
+        get => Cam.FovY;
+        set => Cam.FovY = value;
+    }
 
     [Label("Near Clip"), JsonProperty, RecordHistory]
     public float NearClip { get; set; } = 0.01f;
@@ -25,8 +28,8 @@ internal class Camera(Obj obj) : Component(obj) {
         var forward = Vector3.Transform(Vector3.UnitZ, rot);
 
         Cam.Position = pos;
-        Cam.Target   = (pos + forward);
-        Cam.Up       = Vector3.Transform(Vector3.UnitY, rot);
+        Cam.Target = (pos + forward);
+        Cam.Up = Vector3.Transform(Vector3.UnitY, rot);
     }
 
     public static void ApplySettings(Camera3D cam, float near, float far) { Rlgl.SetClipPlanes(near, far); }

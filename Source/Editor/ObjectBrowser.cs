@@ -6,10 +6,10 @@ using static ImGuiNET.ImGui;
 
 internal class ObjectBrowser : Viewport {
 
-    private          int               _propIndex;
+    private int _propIndex;
     private readonly IEnumerable<Type> _addComponentTypes;
-    private          string[]          _foundFiles   = [];
-    private          string            _searchFilter = "";
+    private string[] _foundFiles = [];
+    private string _searchFilter = "";
 
     public ObjectBrowser() : base("Object") {
 
@@ -55,8 +55,8 @@ internal class ObjectBrowser : Viewport {
         Spacing();
 
         // Object & component inspection
-        DrawProperties(targets.Cast<object>().ToList(),                   false, "Object");
-        DrawProperties(targets.Select(t => (object)t.Transform).ToList(), true,  "Transform", false);
+        DrawProperties(targets.Cast<object>().ToList(), false, "Object");
+        DrawProperties(targets.Select(t => (object)t.Transform).ToList(), true, "Transform", false);
 
         var firstObj = targets[0];
 
@@ -97,7 +97,7 @@ internal class ObjectBrowser : Viewport {
 
             History.StartRecording(targetObj, $"Add Component {compName}");
             targetObj.Components[compName] = component;
-            if (component.Load()) component.IsLoaded               = true;
+            if (component.Load()) component.IsLoaded = true;
             if (Core.ActiveLevel != null) Core.ActiveLevel.IsDirty = true;
 
             History.StopRecording();
@@ -111,7 +111,7 @@ internal class ObjectBrowser : Viewport {
 
         AlignTextToFramePadding();
         PushFont(Fonts.ImMontserratRegular);
-        var cp         = GetCursorPos();
+        var cp = GetCursorPos();
         var cleanLabel = Generators.SplitCamelCase(label);
         Text(cleanLabel);
         SetCursorPos(cp + new Vector2(0.3f, 0));
@@ -122,7 +122,7 @@ internal class ObjectBrowser : Viewport {
 
     private (bool changed, bool deactivated) DrawInspectorField(string id, ref object? value, Type type, List<object> targets, string? propName, string? pickerType = null) {
 
-        var changed     = false;
+        var changed = false;
         var deactivated = false;
 
         PushItemWidth(-1); // Fill the entire column
@@ -145,7 +145,7 @@ internal class ObjectBrowser : Viewport {
                     _                => new List<(string, string)>()
                 };
 
-                _foundFiles   = names.Select(n => n.Path).ToArray();
+                _foundFiles = names.Select(n => n.Path).ToArray();
                 _searchFilter = "";
 
                 OpenPopup($"Picker_{id}");
@@ -157,8 +157,8 @@ internal class ObjectBrowser : Viewport {
             SameLine();
 
             if (Button($"{Icons.FaXMark}##{id}_clear")) {
-                value       = "";
-                changed     = true;
+                value = "";
+                changed = true;
                 deactivated = true;
             }
 
@@ -172,14 +172,14 @@ internal class ObjectBrowser : Viewport {
         // Field drawing
         if (type == typeof(string)) {
 
-            var val     = (string)(value ?? "");
+            var val = (string)(value ?? "");
             var display = Path.GetFileNameWithoutExtension(val);
 
             if (string.IsNullOrEmpty(display)) display = val;
 
             if (InputTextWithHint($"##{id}", "None", ref display, 512, string.IsNullOrEmpty(pickerType) ? ImGuiInputTextFlags.None : ImGuiInputTextFlags.ReadOnly) && string.IsNullOrEmpty(pickerType)) {
 
-                value   = display;
+                value = display;
                 changed = true;
             }
         } else if (type == typeof(float)) {
@@ -188,7 +188,7 @@ internal class ObjectBrowser : Viewport {
 
             if (InputFloat($"##{id}", ref val)) {
 
-                value   = val;
+                value = val;
                 changed = true;
             }
         } else if (type == typeof(int)) {
@@ -201,12 +201,12 @@ internal class ObjectBrowser : Viewport {
 
                 if (Checkbox($"##{id}", ref bVal)) {
 
-                    value   = bVal ? 1 : 0;
+                    value = bVal ? 1 : 0;
                     changed = true;
                 }
             } else if (InputInt($"##{id}", ref val)) {
 
-                value   = val;
+                value = val;
                 changed = true;
             }
         } else if (type == typeof(bool)) {
@@ -215,7 +215,7 @@ internal class ObjectBrowser : Viewport {
 
             if (Checkbox($"##{id}", ref val)) {
 
-                value   = val;
+                value = val;
                 changed = true;
             }
         } else if (type == typeof(Vector3)) {
@@ -223,7 +223,7 @@ internal class ObjectBrowser : Viewport {
             var val = (Vector3)(value ?? Vector3.Zero);
 
             if (InputFloat3($"##{id}", ref val)) {
-                value   = val;
+                value = val;
                 changed = true;
             }
         } else if (type == typeof(Bool3)) {
@@ -233,7 +233,7 @@ internal class ObjectBrowser : Viewport {
             PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(4, 0));
 
             if (Checkbox($"##{id}_x", ref val.X)) {
-                value   = val;
+                value = val;
                 changed = true;
             }
 
@@ -242,7 +242,7 @@ internal class ObjectBrowser : Viewport {
             SameLine();
 
             if (Checkbox($"##{id}_y", ref val.Y)) {
-                value   = val;
+                value = val;
                 changed = true;
             }
 
@@ -251,7 +251,7 @@ internal class ObjectBrowser : Viewport {
             SameLine();
 
             if (Checkbox($"##{id}_z", ref val.Z)) {
-                value   = val;
+                value = val;
                 changed = true;
             }
 
@@ -265,28 +265,28 @@ internal class ObjectBrowser : Viewport {
 
             if (InputFloat2($"##{id}", ref val)) {
 
-                value   = val;
+                value = val;
                 changed = true;
             }
         } else if (type == typeof(Color)) {
 
             var col = (Color)(value ?? Color.White);
-            var v4  = col.ToVector4();
+            var v4 = col.ToVector4();
 
             if (ColorEdit4($"##{id}", ref v4, ImGuiColorEditFlags.AlphaBar | ImGuiColorEditFlags.NoInputs)) {
 
-                value   = v4.ToColor();
+                value = v4.ToColor();
                 changed = true;
             }
         } else if (type.IsEnum) {
 
-            var val   = (Enum)(value ?? Activator.CreateInstance(type)!);
+            var val = (Enum)(value ?? Activator.CreateInstance(type)!);
             var names = Enum.GetNames(type);
             var index = Array.IndexOf(names, val.ToString());
 
             if (Combo($"##{id}", ref index, names, names.Length)) {
 
-                value   = Enum.Parse(type, names[index]);
+                value = Enum.Parse(type, names[index]);
                 changed = true;
             }
         }
@@ -318,8 +318,8 @@ internal class ObjectBrowser : Viewport {
 
                     if (targets != null && propName != null) targets.ForEach(t => History.StartRecording(t, propName));
 
-                    value       = f;
-                    changed     = true;
+                    value = f;
+                    changed = true;
                     deactivated = true;
 
                     CloseCurrentPopup();
@@ -328,7 +328,7 @@ internal class ObjectBrowser : Viewport {
                 if (string.IsNullOrEmpty(n) || nms.Count(x => x == n) <= 1) continue;
 
                 SameLine();
-                TextDisabled(Path.GetRelativePath(Config.Mod.Path, f));
+                TextDisabled(Path.GetRelativePath(ScytheConfig.Current.Project, f));
             }
 
             EndChild();
@@ -343,11 +343,11 @@ internal class ObjectBrowser : Viewport {
 
     private static void DrawSectionHeader(string title, string icon, Color color, out bool open, bool showRemove = false, Action? onRemove = null, bool defaultOpen = true, Component? comp = null) {
 
-        var flags              = ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.SpanFullWidth;
+        var flags = ImGuiTreeNodeFlags.AllowOverlap | ImGuiTreeNodeFlags.SpanFullWidth;
         if (defaultOpen) flags |= ImGuiTreeNodeFlags.DefaultOpen;
 
         Spacing();
-        var headerPos  = GetCursorScreenPos();
+        var headerPos = GetCursorScreenPos();
         var headerSize = new Vector2(GetContentRegionAvail().X, GetFrameHeight());
         GetWindowDrawList().AddRectFilled(headerPos, headerPos + headerSize, GetColorU32(ImGuiCol.Header, 0.45f), 2.0f);
 
@@ -483,7 +483,7 @@ internal class ObjectBrowser : Viewport {
             if (shaderDeactivated) History.StopRecording();
 
             var shaderName = string.IsNullOrEmpty(mat.Data.Shader) ? "pbr" : mat.Data.Shader;
-            var sa         = AssetManager.Get<ShaderAsset>(shaderName);
+            var sa = AssetManager.Get<ShaderAsset>(shaderName);
 
             if (sa != null) {
 
@@ -492,34 +492,34 @@ internal class ObjectBrowser : Viewport {
                     PushID(prop.Name);
                     DrawShadowedLabel(prop.Name);
 
-                    object? val    = null;
-                    var     t      = typeof(float);
+                    object? val = null;
+                    var t = typeof(float);
                     string? picker = null;
 
                     switch (prop.Type) {
 
                         case "sampler2D":
-                            val    = mat.Data.Textures.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? "" : MaterialAsset.Default.Data.Textures.GetValueOrDefault(prop.Name, ""));
-                            t      = typeof(string);
+                            val = mat.Data.Textures.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? "" : MaterialAsset.Default.Data.Textures.GetValueOrDefault(prop.Name, ""));
+                            t = typeof(string);
                             picker = "TextureAsset";
 
                             break;
 
                         case "float":
                             val = mat.Data.Floats.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? 0f : MaterialAsset.Default.Data.Floats.GetValueOrDefault(prop.Name, 0f));
-                            t   = typeof(float);
+                            t = typeof(float);
 
                             break;
 
                         case "int":
                             val = mat.Data.Ints.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? 0 : MaterialAsset.Default.Data.Ints.GetValueOrDefault(prop.Name, 0));
-                            t   = typeof(int);
+                            t = typeof(int);
 
                             break;
 
                         case "vec2":
                             val = mat.Data.Vectors.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? Vector2.Zero : MaterialAsset.Default.Data.Vectors.GetValueOrDefault(prop.Name, Vector2.Zero));
-                            t   = typeof(Vector2);
+                            t = typeof(Vector2);
 
                             break;
 
@@ -529,12 +529,12 @@ internal class ObjectBrowser : Viewport {
                             if (prop.Name.Contains("color", StringComparison.OrdinalIgnoreCase) || prop.Name.Contains("albedo", StringComparison.OrdinalIgnoreCase) || prop.Name.Contains("emiss", StringComparison.OrdinalIgnoreCase)) {
 
                                 val = mat.Data.Colors.GetValueOrDefault(prop.Name, mat == MaterialAsset.Default ? Color.White : MaterialAsset.Default.Data.Colors.GetValueOrDefault(prop.Name, Color.White));
-                                t   = typeof(Color);
+                                t = typeof(Color);
 
                             } else {
 
                                 val = prop.Type == "vec3" ? Vector3.Zero : Vector4.One;
-                                t   = prop.Type == "vec3" ? typeof(Vector3) : typeof(Vector4);
+                                t = prop.Type == "vec3" ? typeof(Vector3) : typeof(Vector4);
                             }
 
                             break;
@@ -552,7 +552,7 @@ internal class ObjectBrowser : Viewport {
                         else if (t == typeof(int))
                             mat.Data.Ints[prop.Name] = (int)val;
                         else if (t == typeof(Vector2))
-                            mat.Data.Vectors[prop.Name]                         = (Vector2)val;
+                            mat.Data.Vectors[prop.Name] = (Vector2)val;
                         else if (t == typeof(Color)) mat.Data.Colors[prop.Name] = (Color)val;
 
                         mat.Save();
@@ -579,8 +579,8 @@ internal class ObjectBrowser : Viewport {
 
         if (separator) {
 
-            var icon        = (first is Component c) ? c.LabelIcon : Icons.FaCube;
-            var color       = (first is Component cc) ? cc.LabelColor : Colors.GuiTypeModel;
+            var icon = (first is Component c) ? c.LabelIcon : Icons.FaCube;
+            var color = (first is Component cc) ? cc.LabelColor : Colors.GuiTypeModel;
             var isRemovable = (first is Component and not Transform) && targets.Count == 1;
 
             DrawSectionHeader(
@@ -591,9 +591,9 @@ internal class ObjectBrowser : Viewport {
                 isRemovable,
                 () => {
 
-                    var comp      = (first as Component)!;
+                    var comp = (first as Component)!;
                     var targetObj = comp.Obj;
-                    var name      = comp.GetType().Name;
+                    var name = comp.GetType().Name;
                     History.StartRecording(targetObj, $"Remove {name}");
                     comp.UnloadAndQuit();
                     targetObj.Components.Remove(name);
@@ -620,16 +620,16 @@ internal class ObjectBrowser : Viewport {
 
                 if (labelAttr == null) continue;
 
-                var id      = $"##prop_{_propIndex++}";
-                var values  = targets.Select(prop.GetValue).ToList();
+                var id = $"##prop_{_propIndex++}";
+                var values = targets.Select(prop.GetValue).ToList();
                 var allSame = values.All(v => Equals(v, values[0]));
-                var val     = allSame ? values[0] : null;
+                var val = allSame ? values[0] : null;
 
                 DrawShadowedLabel(labelAttr.Value);
 
-                var fileAttr  = prop.GetCustomAttribute<FilePathAttribute>();
+                var fileAttr = prop.GetCustomAttribute<FilePathAttribute>();
                 var assetAttr = prop.GetCustomAttribute<FindAssetAttribute>();
-                var picker    = assetAttr?.TypeName ?? fileAttr?.Category;
+                var picker = assetAttr?.TypeName ?? fileAttr?.Category;
 
                 var (changed, deactivated) = DrawInspectorField(id, ref val, prop.PropertyType, targets, prop.Name, picker);
 

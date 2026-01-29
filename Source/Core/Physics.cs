@@ -9,15 +9,15 @@ internal static class Physics {
     public static void Init() {
 
         RegisteredBodies.Clear();
-        World         = new World();
+        World = new World();
         World.Gravity = new Vector3(0, -9.81f, 0);
     }
 
     private static readonly HashSet<Rigidbody> RegisteredBodies = [];
-    private static          float              _accumulator;
-    private const           float              TimeStep = 1.0f / 60.0f;
+    private static float _accumulator;
+    private const float TimeStep = 1.0f / 60.0f;
 
-    public static void Register(Rigidbody   rb) => RegisteredBodies.Add(rb);
+    public static void Register(Rigidbody rb) => RegisteredBodies.Add(rb);
     public static void Unregister(Rigidbody rb) => RegisteredBodies.Remove(rb);
 
     public static void Update() {

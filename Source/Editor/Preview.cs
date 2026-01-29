@@ -16,22 +16,22 @@ internal class Preview : Viewport {
 
     private static readonly string[] PrimitiveNames = ["Sphere", "Cube", "Plane", "Cylinder", "Torus"];
 
-    private int    _currentPrimitiveIndex;
-    private int    _currentAnimationIndex;
+    private int _currentPrimitiveIndex;
+    private int _currentAnimationIndex;
     private double _animationTime;
 
     private RenderTexture2D _rt;
-    private string          _lastFile = "";
+    private string _lastFile = "";
 
     // Interactive Preview State
-    private float   _zoom     = 1.0f;
-    private Vector2 _pan      = Vector2.Zero;
+    private float _zoom = 1.0f;
+    private Vector2 _pan = Vector2.Zero;
     private Vector2 _rotation = new(45.0f, 45.0f);
-    private float   _distance = 2.5f;
+    private float _distance = 2.5f;
 
     protected override void OnDraw() {
 
-        var selectedFile   = Editor.ProjectBrowser.SelectedFile;
+        var selectedFile = Editor.ProjectBrowser.SelectedFile;
         var selectedCamera = LevelBrowser.SelectedObject?.Components.GetValueOrDefault("Camera") as Camera;
 
         if (selectedCamera == null && string.IsNullOrEmpty(selectedFile)) {
@@ -52,26 +52,26 @@ internal class Preview : Viewport {
         // Reset view when switching assets (only if no camera is selected)
         if (selectedCamera == null && selectedFile != _lastFile) {
 
-            _pan                   = Vector2.Zero;
-            _rotation              = new Vector2(45.0f, 45.0f);
+            _pan = Vector2.Zero;
+            _rotation = new Vector2(45.0f, 45.0f);
             _currentAnimationIndex = 0;
-            _animationTime         = 0;
+            _animationTime = 0;
 
             var textureAsset = AssetManager.Get<TextureAsset>(selectedFile);
-            var matAsset     = AssetManager.Get<MaterialAsset>(selectedFile);
-            var modelAsset   = AssetManager.Get<ModelAsset>(selectedFile);
+            var matAsset = AssetManager.Get<MaterialAsset>(selectedFile);
+            var modelAsset = AssetManager.Get<ModelAsset>(selectedFile);
 
             if (textureAsset is { IsLoaded: true }) {
 
                 var tw = (float)textureAsset.Texture.Width;
                 var th = (float)textureAsset.Texture.Height;
-                _zoom     = Math.Min(avail.X / tw, avail.Y / th) * 0.9f;
+                _zoom = Math.Min(avail.X / tw, avail.Y / th) * 0.9f;
                 _distance = 2.5f;
 
             } else {
 
                 _zoom = 1.0f;
-                var asset                    = (Asset?)matAsset ?? modelAsset;
+                var asset = (Asset?)matAsset ?? modelAsset;
                 if (asset != null) _distance = GetAssetAutoDistance(asset, out _) * 1.6f;
             }
 
@@ -106,8 +106,8 @@ internal class Preview : Viewport {
         } else {
 
             var textureAsset = AssetManager.Get<TextureAsset>(selectedFile!);
-            var matAsset     = AssetManager.Get<MaterialAsset>(selectedFile!);
-            var modelAsset   = AssetManager.Get<ModelAsset>(selectedFile!);
+            var matAsset = AssetManager.Get<MaterialAsset>(selectedFile!);
+            var modelAsset = AssetManager.Get<ModelAsset>(selectedFile!);
 
             if (textureAsset != null)
                 DrawTexturePreview(textureAsset);
@@ -136,14 +136,14 @@ internal class Preview : Viewport {
         if (IsWindowHovered()) {
 
             _zoom += GetMouseWheelMove() * 0.1f * _zoom;
-            _zoom =  Math.Clamp(_zoom, 0.01f, 100f);
+            _zoom = Math.Clamp(_zoom, 0.01f, 100f);
             if (IsMouseDown(ImGuiMouseButton.Left)) _pan += GetMouseDelta() / _zoom;
         }
 
-        var tw       = tex.Texture.Width;
-        var th       = tex.Texture.Height;
+        var tw = tex.Texture.Width;
+        var th = tex.Texture.Height;
         var drawSize = new Vector2(tw, th) * _zoom;
-        var pos      = (new Vector2(_rt.Texture.Width, _rt.Texture.Height) - drawSize) * 0.5f + _pan * _zoom;
+        var pos = (new Vector2(_rt.Texture.Width, _rt.Texture.Height) - drawSize) * 0.5f + _pan * _zoom;
 
         DrawTextureEx(tex.Texture, pos, 0, _zoom, Color.White);
     }
@@ -160,11 +160,11 @@ internal class Preview : Viewport {
                 var delta = GetMouseDelta();
 
                 _rotation.X += delta.X * 0.5f;
-                _rotation.Y =  Math.Clamp(_rotation.Y + delta.Y * 0.5f, -89f, 89f);
+                _rotation.Y = Math.Clamp(_rotation.Y + delta.Y * 0.5f, -89f, 89f);
             }
 
             _distance -= GetMouseWheelMove() * 0.5f * (_distance / 5.0f);
-            _distance =  Math.Clamp(_distance, 0.01f, 1000f);
+            _distance = Math.Clamp(_distance, 0.01f, 1000f);
         }
 
         GetAssetAutoDistance(asset, out var targetPos);
@@ -172,23 +172,23 @@ internal class Preview : Viewport {
         var camPos = targetPos + new Vector3((float)(Math.Cos(_rotation.X * Math.PI / 180.0) * Math.Cos(_rotation.Y * Math.PI / 180.0) * _distance), (float)(Math.Sin(_rotation.Y * Math.PI / 180.0) * _distance), (float)(Math.Sin(_rotation.X * Math.PI / 180.0) * Math.Cos(_rotation.Y * Math.PI / 180.0) * _distance));
 
         var camera = new Raylib_cs.Camera3D {
-            Position   = camPos,
-            Target     = targetPos,
-            Up         = Vector3.UnitY,
-            FovY       = 45.0f,
+            Position = camPos,
+            Target = targetPos,
+            Up = Vector3.UnitY,
+            FovY = 45.0f,
             Projection = CameraProjection.Perspective
         };
 
         // Draw Grid
         BeginMode3D(camera);
 
-        var gridCol  = new Color(80, 80, 80, 100);
+        var gridCol = new Color(80, 80, 80, 100);
         var gridSize = Math.Max(10f, _distance * 2f);
 
         for (var i = -(int)gridSize; i <= (int)gridSize; i++) {
 
-            DrawLine3D(new Vector3(i,         0, -gridSize), new Vector3(i,        0, gridSize), gridCol);
-            DrawLine3D(new Vector3(-gridSize, 0, i),         new Vector3(gridSize, 0, i),        gridCol);
+            DrawLine3D(new Vector3(i, 0, -gridSize), new Vector3(i, 0, gridSize), gridCol);
+            DrawLine3D(new Vector3(-gridSize, 0, i), new Vector3(gridSize, 0, i), gridCol);
         }
 
         EndMode3D();
@@ -228,11 +228,11 @@ internal class Preview : Viewport {
         var w = (float)_rt.Texture.Width;
         var h = (float)_rt.Texture.Height;
 
-        const float barHeight  = 35f;
+        const float barHeight = 35f;
         const float arrowWidth = 45f;
 
-        var leftArrowRect  = new Rectangle(0, h - barHeight,  arrowWidth,    barHeight);
-        var rightArrowRect = new Rectangle(w    - arrowWidth, h - barHeight, arrowWidth, barHeight);
+        var leftArrowRect = new Rectangle(0, h - barHeight, arrowWidth, barHeight);
+        var rightArrowRect = new Rectangle(w - arrowWidth, h - barHeight, arrowWidth, barHeight);
 
         return (leftArrowRect, rightArrowRect, w, barHeight);
     }
@@ -240,21 +240,21 @@ internal class Preview : Viewport {
     private void DrawOverlayUi(Asset asset) {
 
         string label;
-        int    count;
-        int    currentIndex;
+        int count;
+        int currentIndex;
 
         switch (asset) {
 
             case MaterialAsset:
-                label        = PrimitiveNames[_currentPrimitiveIndex];
-                count        = PrimitiveNames.Length;
+                label = PrimitiveNames[_currentPrimitiveIndex];
+                count = PrimitiveNames.Length;
                 currentIndex = _currentPrimitiveIndex;
 
                 break;
 
             case ModelAsset { Animations.Count: > 0 } model:
-                label        = model.Animations[_currentAnimationIndex].Name;
-                count        = model.Animations.Count;
+                label = model.Animations[_currentAnimationIndex].Name;
+                count = model.Animations.Count;
                 currentIndex = _currentAnimationIndex;
 
                 break;
@@ -264,20 +264,20 @@ internal class Preview : Viewport {
 
         var font = Fonts.RlMontserratRegular;
         var (leftRect, rightRect, fullWidth, barHeight) = GetUiBounds();
-        var h        = _rt.Texture.Height;
-        var uiY      = h - barHeight * 0.5f;
+        var h = _rt.Texture.Height;
+        var uiY = h - barHeight * 0.5f;
         var mousePos = GetMousePositionInRt();
 
         // Background
         DrawRectangle(0, (int)(h - barHeight), (int)fullWidth, (int)barHeight, new Color(15, 15, 15, 220));
 
-        var         idStr       = $"{currentIndex}";
-        var         idTextSize  = MeasureTextEx(font, idStr, 18, 1);
-        const float idPadding   = 20f;
-        var         idAreaWidth = idTextSize.X + idPadding;
+        var idStr = $"{currentIndex}";
+        var idTextSize = MeasureTextEx(font, idStr, 18, 1);
+        const float idPadding = 20f;
+        var idAreaWidth = idTextSize.X + idPadding;
 
         var maxLabelWidth = fullWidth - (leftRect.Width + rightRect.Width + idAreaWidth + 10);
-        var displayLabel  = label;
+        var displayLabel = label;
 
         if (MeasureTextEx(font, displayLabel, 18, 1).X > maxLabelWidth) {
 
@@ -286,38 +286,38 @@ internal class Preview : Viewport {
             displayLabel = "..." + displayLabel;
         }
 
-        var labelSize      = MeasureTextEx(font, displayLabel, 18, 1);
+        var labelSize = MeasureTextEx(font, displayLabel, 18, 1);
         var totalTextWidth = idAreaWidth + labelSize.X;
-        var startX         = (fullWidth - totalTextWidth) * 0.5f;
+        var startX = (fullWidth - totalTextWidth) * 0.5f;
 
         // Interaction Rects for Copy
-        var idRect    = new Rectangle(startX, h - barHeight,   idAreaWidth,   barHeight);
-        var labelRect = new Rectangle(startX    + idAreaWidth, h - barHeight, labelSize.X, barHeight);
+        var idRect = new Rectangle(startX, h - barHeight, idAreaWidth, barHeight);
+        var labelRect = new Rectangle(startX + idAreaWidth, h - barHeight, labelSize.X, barHeight);
 
-        bool idHover    = CheckCollisionPointRec(mousePos, idRect);
+        bool idHover = CheckCollisionPointRec(mousePos, idRect);
         bool labelHover = CheckCollisionPointRec(mousePos, labelRect);
 
-        if (idHover) DrawRectangleRec(idRect,       new Color(255, 255, 255, 15));
+        if (idHover) DrawRectangleRec(idRect, new Color(255, 255, 255, 15));
         if (labelHover) DrawRectangleRec(labelRect, new Color(255, 255, 255, 15));
 
         // Draw Texts - Center ID text within its allocated padded area
-        DrawTextEx(font, idStr,        new Vector2(startX + (idAreaWidth - idTextSize.X) * 0.5f - 2,           uiY - idTextSize.Y * 0.5f), 18, 1, idHover ? Color.SkyBlue : new Color(140, 140, 150, 255));
-        DrawTextEx(font, displayLabel, new Vector2(startX                                       + idAreaWidth, uiY - labelSize.Y  * 0.5f), 18, 1, labelHover ? Color.SkyBlue : Color.White);
+        DrawTextEx(font, idStr, new Vector2(startX + (idAreaWidth - idTextSize.X) * 0.5f - 2, uiY - idTextSize.Y * 0.5f), 18, 1, idHover ? Color.SkyBlue : new Color(140, 140, 150, 255));
+        DrawTextEx(font, displayLabel, new Vector2(startX + idAreaWidth, uiY - labelSize.Y * 0.5f), 18, 1, labelHover ? Color.SkyBlue : Color.White);
 
         if (count <= 1) return;
 
-        bool leftHover  = CheckCollisionPointRec(mousePos, leftRect);
+        bool leftHover = CheckCollisionPointRec(mousePos, leftRect);
         bool rightHover = CheckCollisionPointRec(mousePos, rightRect);
 
-        if (leftHover) DrawRectangleRec(leftRect,   new Color(255, 255, 255, 20));
+        if (leftHover) DrawRectangleRec(leftRect, new Color(255, 255, 255, 20));
         if (rightHover) DrawRectangleRec(rightRect, new Color(255, 255, 255, 20));
 
         // Arrows
-        var alc = new Vector2(leftRect.X + leftRect.Width * 0.5f, leftRect.Y                + leftRect.Height * 0.5f);
-        DrawTriangle(new Vector2(alc.X   - 8,                     alc.Y), new Vector2(alc.X + 4, alc.Y + 8), new Vector2(alc.X + 4, alc.Y - 8), leftHover ? Color.SkyBlue : Color.White);
+        var alc = new Vector2(leftRect.X + leftRect.Width * 0.5f, leftRect.Y + leftRect.Height * 0.5f);
+        DrawTriangle(new Vector2(alc.X - 8, alc.Y), new Vector2(alc.X + 4, alc.Y + 8), new Vector2(alc.X + 4, alc.Y - 8), leftHover ? Color.SkyBlue : Color.White);
 
-        var arc = new Vector2(rightRect.X + rightRect.Width * 0.5f, rightRect.Y               + rightRect.Height * 0.5f);
-        DrawTriangle(new Vector2(arc.X    + 8,                      arc.Y), new Vector2(arc.X - 4, arc.Y - 8), new Vector2(arc.X - 4, arc.Y + 8), rightHover ? Color.SkyBlue : Color.White);
+        var arc = new Vector2(rightRect.X + rightRect.Width * 0.5f, rightRect.Y + rightRect.Height * 0.5f);
+        DrawTriangle(new Vector2(arc.X + 8, arc.Y), new Vector2(arc.X - 4, arc.Y - 8), new Vector2(arc.X - 4, arc.Y + 8), rightHover ? Color.SkyBlue : Color.White);
 
         if (!IsMouseButtonPressed(MouseButton.Left)) return;
 
@@ -329,7 +329,7 @@ internal class Preview : Viewport {
 
                 case ModelAsset:
                     _currentAnimationIndex = (_currentAnimationIndex - 1 + count) % count;
-                    _animationTime         = 0;
+                    _animationTime = 0;
 
                     break;
             }
@@ -341,7 +341,7 @@ internal class Preview : Viewport {
 
                 case ModelAsset:
                     _currentAnimationIndex = (_currentAnimationIndex + 1) % count;
-                    _animationTime         = 0;
+                    _animationTime = 0;
 
                     break;
             }
@@ -366,7 +366,7 @@ internal class Preview : Viewport {
                 mat.ApplyChanges(updateThumbnail: false);
                 SetupPreviewLighting(mat, camera, target, distance);
 
-                var transform                                                    = Matrix4x4.Transpose(Matrix4x4.CreateTranslation(0, 0.5f, 0));
+                var transform = Matrix4x4.Transpose(Matrix4x4.CreateTranslation(0, 0.5f, 0));
                 if (PrimitiveNames[_currentPrimitiveIndex] == "Plane") transform = Matrix4x4.Transpose(Matrix4x4.CreateRotationX((float)Math.PI * -0.5f));
 
                 DrawMesh(mesh, mat.Material, transform);
@@ -481,34 +481,34 @@ internal class Preview : Viewport {
         mat.ApplyUniforms(shader);
 
         // Ensure sampler slots are assigned correctly for custom shaders
-        SetShaderValue(shader, shaderAsset.GetLoc("albedo_map"),    0, ShaderUniformDataType.Int);
-        SetShaderValue(shader, shaderAsset.GetLoc("normal_map"),    1, ShaderUniformDataType.Int);
-        SetShaderValue(shader, shaderAsset.GetLoc("metallic_map"),  2, ShaderUniformDataType.Int);
+        SetShaderValue(shader, shaderAsset.GetLoc("albedo_map"), 0, ShaderUniformDataType.Int);
+        SetShaderValue(shader, shaderAsset.GetLoc("normal_map"), 1, ShaderUniformDataType.Int);
+        SetShaderValue(shader, shaderAsset.GetLoc("metallic_map"), 2, ShaderUniformDataType.Int);
         SetShaderValue(shader, shaderAsset.GetLoc("roughness_map"), 3, ShaderUniformDataType.Int);
         SetShaderValue(shader, shaderAsset.GetLoc("occlusion_map"), 4, ShaderUniformDataType.Int);
-        SetShaderValue(shader, shaderAsset.GetLoc("emissive_map"),  5, ShaderUniformDataType.Int);
+        SetShaderValue(shader, shaderAsset.GetLoc("emissive_map"), 5, ShaderUniformDataType.Int);
 
         var lightDist = distance * 2.0f;
-        SetShaderValue(shader, shaderAsset.GetLoc("view_pos"),            camera.Position,                                       ShaderUniformDataType.Vec3);
-        SetShaderValue(shader, shaderAsset.GetLoc("light_count"),         2,                                                     ShaderUniformDataType.Int);
-        SetShaderValue(shader, shaderAsset.GetLoc("lights[0].enabled"),   1,                                                     ShaderUniformDataType.Int);
-        SetShaderValue(shader, shaderAsset.GetLoc("lights[0].type"),      0,                                                     ShaderUniformDataType.Int);
-        SetShaderValue(shader, shaderAsset.GetLoc("lights[0].position"),  target + new Vector3(lightDist, lightDist, lightDist), ShaderUniformDataType.Vec3);
-        SetShaderValue(shader, shaderAsset.GetLoc("lights[0].target"),    target,                                                ShaderUniformDataType.Vec3);
-        SetShaderValue(shader, shaderAsset.GetLoc("lights[0].color"),     Vector4.One,                                           ShaderUniformDataType.Vec4);
-        SetShaderValue(shader, shaderAsset.GetLoc("lights[0].intensity"), 4.0f,                                                  ShaderUniformDataType.Float);
+        SetShaderValue(shader, shaderAsset.GetLoc("view_pos"), camera.Position, ShaderUniformDataType.Vec3);
+        SetShaderValue(shader, shaderAsset.GetLoc("light_count"), 2, ShaderUniformDataType.Int);
+        SetShaderValue(shader, shaderAsset.GetLoc("lights[0].enabled"), 1, ShaderUniformDataType.Int);
+        SetShaderValue(shader, shaderAsset.GetLoc("lights[0].type"), 0, ShaderUniformDataType.Int);
+        SetShaderValue(shader, shaderAsset.GetLoc("lights[0].position"), target + new Vector3(lightDist, lightDist, lightDist), ShaderUniformDataType.Vec3);
+        SetShaderValue(shader, shaderAsset.GetLoc("lights[0].target"), target, ShaderUniformDataType.Vec3);
+        SetShaderValue(shader, shaderAsset.GetLoc("lights[0].color"), Vector4.One, ShaderUniformDataType.Vec4);
+        SetShaderValue(shader, shaderAsset.GetLoc("lights[0].intensity"), 4.0f, ShaderUniformDataType.Float);
 
-        SetShaderValue(shader, shaderAsset.GetLoc("lights[1].enabled"),   1,                                                                    ShaderUniformDataType.Int);
-        SetShaderValue(shader, shaderAsset.GetLoc("lights[1].type"),      0,                                                                    ShaderUniformDataType.Int);
-        SetShaderValue(shader, shaderAsset.GetLoc("lights[1].position"),  target + new Vector3(-lightDist, lightDist * 0.5f, lightDist * 0.5f), ShaderUniformDataType.Vec3);
-        SetShaderValue(shader, shaderAsset.GetLoc("lights[1].target"),    target,                                                               ShaderUniformDataType.Vec3);
-        SetShaderValue(shader, shaderAsset.GetLoc("lights[1].color"),     new Vector4(0.8f, 0.9f, 1.0f, 1.0f),                                  ShaderUniformDataType.Vec4);
-        SetShaderValue(shader, shaderAsset.GetLoc("lights[1].intensity"), 1.5f,                                                                 ShaderUniformDataType.Float);
+        SetShaderValue(shader, shaderAsset.GetLoc("lights[1].enabled"), 1, ShaderUniformDataType.Int);
+        SetShaderValue(shader, shaderAsset.GetLoc("lights[1].type"), 0, ShaderUniformDataType.Int);
+        SetShaderValue(shader, shaderAsset.GetLoc("lights[1].position"), target + new Vector3(-lightDist, lightDist * 0.5f, lightDist * 0.5f), ShaderUniformDataType.Vec3);
+        SetShaderValue(shader, shaderAsset.GetLoc("lights[1].target"), target, ShaderUniformDataType.Vec3);
+        SetShaderValue(shader, shaderAsset.GetLoc("lights[1].color"), new Vector4(0.8f, 0.9f, 1.0f, 1.0f), ShaderUniformDataType.Vec4);
+        SetShaderValue(shader, shaderAsset.GetLoc("lights[1].intensity"), 1.5f, ShaderUniformDataType.Float);
 
-        SetShaderValue(shader, shaderAsset.GetLoc("ambient_intensity"), 1.0f,        ShaderUniformDataType.Float);
-        SetShaderValue(shader, shaderAsset.GetLoc("ambient_color"),     Vector3.One, ShaderUniformDataType.Vec3);
-        SetShaderValue(shader, shaderAsset.GetLoc("aoValue"),           1.0f,        ShaderUniformDataType.Float);
-        SetShaderValue(shader, shaderAsset.GetLoc("receive_shadows"),   0,           ShaderUniformDataType.Int);
+        SetShaderValue(shader, shaderAsset.GetLoc("ambient_intensity"), 1.0f, ShaderUniformDataType.Float);
+        SetShaderValue(shader, shaderAsset.GetLoc("ambient_color"), Vector3.One, ShaderUniformDataType.Vec3);
+        SetShaderValue(shader, shaderAsset.GetLoc("aoValue"), 1.0f, ShaderUniformDataType.Float);
+        SetShaderValue(shader, shaderAsset.GetLoc("receive_shadows"), 0, ShaderUniformDataType.Int);
     }
 
     private static float GetAssetAutoDistance(Asset asset, out Vector3 center) {
@@ -524,26 +524,26 @@ internal class Preview : Viewport {
 
             case ModelAsset model: {
 
-                var min         = new Vector3(float.MaxValue);
-                var max         = new Vector3(float.MinValue);
+                var min = new Vector3(float.MaxValue);
+                var max = new Vector3(float.MinValue);
                 var hasVertices = false;
-                var scale       = model.Settings.ImportScale;
+                var scale = model.Settings.ImportScale;
 
                 foreach (var mesh in model.Meshes) {
 
                     foreach (var v in mesh.Vertices) {
 
                         var tv = v * scale;
-                        min         = Vector3.Min(min, tv);
-                        max         = Vector3.Max(max, tv);
+                        min = Vector3.Min(min, tv);
+                        max = Vector3.Max(max, tv);
                         hasVertices = true;
                     }
                 }
 
                 if (!hasVertices) return 5f;
 
-                center = (min      + max) * 0.5f;
-                var size     = max - min;
+                center = (min + max) * 0.5f;
+                var size = max - min;
                 var diagonal = size.Length();
 
                 return diagonal * 1.35f;
@@ -605,25 +605,25 @@ internal class Preview : Viewport {
         if (!IsAssetReady(asset)) return;
 
         const int size = 64;
-        var       rt   = LoadRenderTexture(size, size);
+        var rt = LoadRenderTexture(size, size);
         BeginTextureMode(rt);
         ClearBackground(Color.Blank);
         BeginBlendMode(BlendMode.Alpha);
 
         Raylib_cs.Camera3D camera;
-        Vector3            targetPos;
-        float              dist;
+        Vector3 targetPos;
+        float dist;
 
         if (asset is MaterialAsset) {
 
             targetPos = new Vector3(0, 0.5f, 0);
-            dist      = 1.15f;
+            dist = 1.15f;
 
             camera = new Raylib_cs.Camera3D {
-                Position   = new Vector3(0, 0.5f, 1.4f),
-                Target     = targetPos,
-                Up         = Vector3.UnitY,
-                FovY       = 45.0f,
+                Position = new Vector3(0, 0.5f, 1.4f),
+                Target = targetPos,
+                Up = Vector3.UnitY,
+                FovY = 45.0f,
                 Projection = CameraProjection.Perspective
             };
 
@@ -632,10 +632,10 @@ internal class Preview : Viewport {
             dist = GetAssetAutoDistance(asset, out targetPos);
 
             camera = new Raylib_cs.Camera3D {
-                Position   = targetPos + Vector3.Normalize(new Vector3(1, 0.8f, 1)) * dist,
-                Target     = targetPos,
-                Up         = Vector3.UnitY,
-                FovY       = 45.0f,
+                Position = targetPos + Vector3.Normalize(new Vector3(1, 0.8f, 1)) * dist,
+                Target = targetPos,
+                Up = Vector3.UnitY,
+                FovY = 45.0f,
                 Projection = CameraProjection.Perspective
             };
         }

@@ -10,7 +10,7 @@ internal class ShaderAsset : Asset {
 
     public override unsafe bool Load() {
 
-        var     name   = Path.GetFileNameWithoutExtension(File);
+        var name = Path.GetFileNameWithoutExtension(File);
         string? vsPath = null;
         string? fsPath = null;
 
@@ -29,32 +29,32 @@ internal class ShaderAsset : Asset {
             Shader = LoadShader(vsPath, fsPath);
 
             // Map standard locations
-            var locAlbedo                                                        = GetShaderLocation(Shader, "albedo_map");
+            var locAlbedo = GetShaderLocation(Shader, "albedo_map");
             if (locAlbedo != -1) Shader.Locs[(int)ShaderLocationIndex.MapAlbedo] = locAlbedo;
 
-            var locNormal                                                        = GetShaderLocation(Shader, "normal_map");
+            var locNormal = GetShaderLocation(Shader, "normal_map");
             if (locNormal != -1) Shader.Locs[(int)ShaderLocationIndex.MapNormal] = locNormal;
 
-            var locMetallic                                                           = GetShaderLocation(Shader, "metallic_map");
+            var locMetallic = GetShaderLocation(Shader, "metallic_map");
             if (locMetallic != -1) Shader.Locs[(int)ShaderLocationIndex.MapMetalness] = locMetallic;
 
-            var locRoughness                                                           = GetShaderLocation(Shader, "roughness_map");
+            var locRoughness = GetShaderLocation(Shader, "roughness_map");
             if (locRoughness != -1) Shader.Locs[(int)ShaderLocationIndex.MapRoughness] = locRoughness;
 
-            var locOcclusion                                                           = GetShaderLocation(Shader, "occlusion_map");
+            var locOcclusion = GetShaderLocation(Shader, "occlusion_map");
             if (locOcclusion != -1) Shader.Locs[(int)ShaderLocationIndex.MapOcclusion] = locOcclusion;
 
-            var locEmission                                                          = GetShaderLocation(Shader, "emissive_map");
+            var locEmission = GetShaderLocation(Shader, "emissive_map");
             if (locEmission != -1) Shader.Locs[(int)ShaderLocationIndex.MapEmission] = locEmission;
 
             // Map standard attributes
-            Shader.Locs[(int)ShaderLocationIndex.VertexPosition]   = GetShaderLocation(Shader, "vertex_pos");
+            Shader.Locs[(int)ShaderLocationIndex.VertexPosition] = GetShaderLocation(Shader, "vertex_pos");
             Shader.Locs[(int)ShaderLocationIndex.VertexTexcoord01] = GetShaderLocation(Shader, "vertex_tex_pos");
-            Shader.Locs[(int)ShaderLocationIndex.VertexNormal]     = GetShaderLocation(Shader, "vertex_normal");
-            Shader.Locs[(int)ShaderLocationIndex.VertexTangent]    = GetShaderLocation(Shader, "vertex_tangent");
-            Shader.Locs[(int)ShaderLocationIndex.VertexColor]      = GetShaderLocation(Shader, "vertex_color");
+            Shader.Locs[(int)ShaderLocationIndex.VertexNormal] = GetShaderLocation(Shader, "vertex_normal");
+            Shader.Locs[(int)ShaderLocationIndex.VertexTangent] = GetShaderLocation(Shader, "vertex_tangent");
+            Shader.Locs[(int)ShaderLocationIndex.VertexColor] = GetShaderLocation(Shader, "vertex_color");
 
-            var locView                                                         = GetShaderLocation(Shader, "view_pos");
+            var locView = GetShaderLocation(Shader, "view_pos");
             if (locView != -1) Shader.Locs[(int)ShaderLocationIndex.VectorView] = locView;
 
             // Global defaults for tiling/offset
@@ -122,7 +122,7 @@ internal class ShaderAsset : Asset {
 
         if (_locations.TryGetValue(name, out var loc)) return loc;
 
-        loc              = GetShaderLocation(Shader, name);
+        loc = GetShaderLocation(Shader, name);
         _locations[name] = loc;
 
         return loc;

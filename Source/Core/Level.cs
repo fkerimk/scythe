@@ -18,13 +18,13 @@ internal class Level {
             if (string.IsNullOrEmpty(val)) return val;
 
             // Try explicit mod path first
-            if (PathUtil.BestPath(val, out var fullPath)) return fullPath;
+            if (PathUtil.GetPath(val, out var fullPath)) return fullPath;
 
             // Try asset lookup
             if (Path.IsPathRooted(val)) return val;
 
             // If it's relative, assume it's relative to Mod Root or Resources
-            if (PathUtil.BestPath(val, out var bestPath)) return bestPath;
+            if (PathUtil.GetPath(val, out var bestPath)) return bestPath;
 
             return val;
         }
@@ -40,7 +40,7 @@ internal class Level {
                 return;
             }
 
-            var modPath = Config.Mod.Path;
+            var modPath = ScytheConfig.Current.Project;
 
             // Standardize separators
             val = val.Replace('\\', '/');
@@ -65,12 +65,12 @@ internal class Level {
         }
     }
 
-    public string Name     { get; set; } = null!;
+    public string Name { get; set; } = null!;
     public string JsonPath { get; set; } = null!;
-    public bool   IsDirty  { get; set; }
+    public bool IsDirty { get; set; }
 
-    [JsonProperty] public readonly Obj         Root = null!;
-    [JsonProperty] public          CameraData? EditorCamera;
+    [JsonProperty] public readonly Obj Root = null!;
+    [JsonProperty] public CameraData? EditorCamera;
 
     public class CameraData {
 
@@ -81,8 +81,8 @@ internal class Level {
     [JsonConstructor]
     private Level() {
 
-        Root     = new Obj("Root", null);
-        Name     = "New Level";
+        Root = new Obj("Root", null);
+        Name = "New Level";
         JsonPath = "";
     }
 
@@ -92,32 +92,32 @@ internal class Level {
 
         Name = name;
 
-        if (!PathUtil.BestPath($"Levels/{Name}.level.json", out var path))
-            if (!PathUtil.BestPath($"{Name}.level.json", out path))
-                if (!PathUtil.BestPath($"Levels/{Name}.json", out path))
-                    if (!PathUtil.BestPath($"{Name}.json", out path))
+        if (!PathUtil.GetPath($"Levels/{Name}.level.json", out var path))
+            if (!PathUtil.GetPath($"{Name}.level.json", out path))
+                if (!PathUtil.GetPath($"Levels/{Name}.json", out path))
+                    if (!PathUtil.GetPath($"{Name}.json", out path))
                         throw new FileNotFoundException($"Could not find level file {Name} with .level.json or .json extension");
 
         JsonPath = path;
-        Root     = new Obj("Root", null);
+        Root = new Obj("Root", null);
 
         LoadInternal();
     }
 
     public Level(string name, string path, bool load = true) {
 
-        Name     = name;
+        Name = name;
         JsonPath = path;
-        Root     = new Obj("Root", null);
+        Root = new Obj("Root", null);
 
         if (load) LoadInternal();
     }
 
     public Level(string name, string path, string jsonBody) {
 
-        Name     = name;
+        Name = name;
         JsonPath = path;
-        Root     = new Obj("Root", null);
+        Root = new Obj("Root", null);
         LoadInternal(jsonBody);
     }
 
@@ -125,7 +125,7 @@ internal class Level {
         SafeExec.Try(() => {
 
                 var jsonText = jsonOverride ?? File.ReadAllText(JsonPath);
-                var rawData  = JObject.Parse(jsonText);
+                var rawData = JObject.Parse(jsonText);
 
                 if (rawData["Root"]?["Children"] is JObject children) {
 
@@ -148,11 +148,11 @@ internal class Level {
 
     public void Save() {
 
-        File.WriteAllText(JsonPath, ToSnapshot(true));
+        File.WriteAllText(JsonPath, ToSnapshot());
         IsDirty = false;
     }
 
-    public string ToSnapshot(bool pretty = false) {
+    public string ToSnapshot() {
 
         if (CommandLine.Editor) {
 
@@ -161,11 +161,7 @@ internal class Level {
 
         var settings = new JsonSerializerSettings { DefaultValueHandling = DefaultValueHandling.Ignore, NullValueHandling = NullValueHandling.Ignore, TypeNameHandling = TypeNameHandling.None, Converters = { new RelativePathConverter() } };
 
-        var formatting = pretty ? Formatting.Indented : Formatting.None;
-
-        if (pretty && !Enum.TryParse(Config.Level.Formatting, out formatting)) formatting = Formatting.None;
-
-        return JsonConvert.SerializeObject(this, formatting, settings);
+        return JsonConvert.SerializeObject(this, Formatting.Indented, settings);
     }
 
     private static void BuildHierarchy(KeyValuePair<string, JToken> dataPair, Obj parent) {
@@ -173,7 +169,7 @@ internal class Level {
         if (dataPair.Value is not JObject data) return;
 
         var name = dataPair.Key;
-        var obj  = MakeObject(name, parent);
+        var obj = MakeObject(name, parent);
 
         // Load transform
         if (data["Transform"] is JObject) JsonConvert.PopulateObject(data["Transform"]!.ToString(), obj.Transform);
@@ -222,9 +218,9 @@ internal class Level {
         return obj;
     }
 
-    [MoonSharpHidden] public Obj?       Find(string[]          names) => Root.Find(names);
+    [MoonSharpHidden] public Obj? Find(string[] names) => Root.Find(names);
     [MoonSharpHidden] public Component? FindComponent(string[] names) => Root.FindComponent(names);
 
-    public Obj?       Find(Table          t) => Root.Find(t.Values.Select(v => v.String).ToArray());
+    public Obj? Find(Table t) => Root.Find(t.Values.Select(v => v.String).ToArray());
     public Component? FindComponent(Table t) => Root.FindComponent(t.Values.Select(v => v.String).ToArray());
 }

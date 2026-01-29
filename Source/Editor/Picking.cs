@@ -2,9 +2,9 @@ using Raylib_cs;
 
 internal static class Picking {
 
-    public static  Obj? DragSource;
-    public static  Obj? DragTarget;
-    public static  bool IsDragging;
+    public static Obj? DragSource;
+    public static Obj? DragTarget;
+    public static bool IsDragging;
     private static bool _wasGizmoInteracting;
 
     public static void Update() {
@@ -30,8 +30,8 @@ internal static class Picking {
             }
 
             _wasGizmoInteracting = false;
-            DragSource           = GetObjectAtMouse();
-            IsDragging           = false;
+            DragSource = GetObjectAtMouse();
+            IsDragging = false;
         }
 
         // Cancel Drag
@@ -122,9 +122,9 @@ internal static class Picking {
 
         if (Core.ActiveCamera == null || Core.ActiveLevel == null) return null;
 
-        var  ray         = Raylib.GetScreenToWorldRay(EditorRender.RelativeMouse3D, Core.ActiveCamera.Raylib);
-        Obj? closestObj  = null;
-        var  minDistance = float.MaxValue;
+        var ray = Raylib.GetScreenToWorldRay(EditorRender.RelativeMouse3D, Core.ActiveCamera.Raylib);
+        Obj? closestObj = null;
+        var minDistance = float.MaxValue;
 
         CheckObj(Core.ActiveLevel.Root);
 
@@ -162,7 +162,7 @@ internal static class Picking {
                     if (!collision.Hit || !(collision.Distance < minDistance)) continue;
 
                     minDistance = collision.Distance;
-                    closestObj  = obj;
+                    closestObj = obj;
                 }
             }
 
