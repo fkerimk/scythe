@@ -4,28 +4,35 @@ using static Raylib_cs.Raylib;
 
 internal static class Core {
 
-    public static readonly List<Level> OpenLevels       = [];
-    public static          int         ActiveLevelIndex = -1;
-    public static          Level?      ActiveLevel => ActiveLevelIndex >= 0 && ActiveLevelIndex < OpenLevels.Count ? OpenLevels[ActiveLevelIndex] : null;
-    public static          Camera3D?   ActiveCamera;
-    public static          Camera3D?   GameCamera;
-    public static          bool        ShouldFocusActiveLevel;
-    public static          bool        IsPreviewRender;
-    public static          bool        IsPlaying;
+    public static readonly List<Level> OpenLevels = [];
+    public static int ActiveLevelIndex = -1;
+    public static Level? ActiveLevel => ActiveLevelIndex >= 0 && ActiveLevelIndex < OpenLevels.Count ? OpenLevels[ActiveLevelIndex] : null;
+    public static Camera3D? ActiveCamera;
+    public static Camera3D? GameCamera;
+    public static bool IsAnyLevelDirty => OpenLevels.Any(l => l.IsDirty);
+
+    public static void SaveAllDirtyLevels() {
+        
+        foreach (var level in OpenLevels.Where(level => level.IsDirty)) level.Save();
+    }
+
+    public static bool ShouldFocusActiveLevel;
+    public static bool IsPreviewRender;
+    public static bool IsPlaying;
 
     public static Matrix4x4 LastProjectionMatrix = Matrix4x4.Identity;
-    public static Matrix4x4 LastViewMatrix       = Matrix4x4.Identity;
+    public static Matrix4x4 LastViewMatrix = Matrix4x4.Identity;
 
     public static readonly RenderSettings RenderSettings = new();
 
-    private static readonly List<Light>               Lights                 = [];
+    private static readonly List<Light> Lights = [];
     private static readonly List<TransparentDrawCall> TransparentRenderQueue = [];
 
     private static RenderTexture2D _shadowMap;
-    private const  int             ShadowMapResolution = 4096;
+    private const int ShadowMapResolution = 4096;
 
     private static Raylib_cs.Model _skyboxModel;
-    private static Texture2D       _skyboxTexture;
+    private static Texture2D _skyboxTexture;
 
     public static unsafe void Init() {
 
@@ -43,9 +50,9 @@ internal static class Core {
 
         if (pbr != null) {
 
-            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_albedo"),   CommandLine.Editor ? OldConfig.Editor.PbrAlbedo : OldConfig.Runtime.PbrAlbedo,     ShaderUniformDataType.Int);
-            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_normal"),   CommandLine.Editor ? OldConfig.Editor.PbrNormal : OldConfig.Runtime.PbrNormal,     ShaderUniformDataType.Int);
-            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_mra"),      CommandLine.Editor ? OldConfig.Editor.PbrMra : OldConfig.Runtime.PbrMra,           ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_albedo"), CommandLine.Editor ? OldConfig.Editor.PbrAlbedo : OldConfig.Runtime.PbrAlbedo, ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_normal"), CommandLine.Editor ? OldConfig.Editor.PbrNormal : OldConfig.Runtime.PbrNormal, ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_mra"), CommandLine.Editor ? OldConfig.Editor.PbrMra : OldConfig.Runtime.PbrMra, ShaderUniformDataType.Int);
             SetShaderValue(pbr.Shader, pbr.GetLoc("use_tex_emissive"), CommandLine.Editor ? OldConfig.Editor.PbrEmissive : OldConfig.Runtime.PbrEmissive, ShaderUniformDataType.Int);
         }
 
@@ -62,7 +69,7 @@ internal static class Core {
         var cube = GenMeshCube(1.0f, 1.0f, 1.0f);
         _skyboxModel = LoadModelFromMesh(cube);
 
-        var skybox                                           = AssetManager.Get<ShaderAsset>("skybox");
+        var skybox = AssetManager.Get<ShaderAsset>("skybox");
         if (skybox != null) _skyboxModel.Materials[0].Shader = skybox.Shader;
 
         var skyTex = AssetManager.Get<TextureAsset>("Skybox");
@@ -79,16 +86,17 @@ internal static class Core {
 
         var target = new RenderTexture2D { Id = Rlgl.LoadFramebuffer() };
 
-        target.Texture.Width  = width;
+        target.Texture.Width = width;
         target.Texture.Height = height;
 
         if (target.Id <= 0) return target;
 
         Rlgl.EnableFramebuffer(target.Id);
-        target.Depth.Id      = Rlgl.LoadTextureDepth(width, height, false);
-        target.Depth.Width   = width;
-        target.Depth.Height  = height;
-        target.Depth.Format  = PixelFormat.UncompressedGrayscale;
+
+        target.Depth.Id = Rlgl.LoadTextureDepth(width, height, false);
+        target.Depth.Width = width;
+        target.Depth.Height = height;
+        target.Depth.Format = PixelFormat.UncompressedGrayscale;
         target.Depth.Mipmaps = 1;
 
         Rlgl.FramebufferAttach(target.Id, target.Depth.Id, FramebufferAttachType.Depth, FramebufferAttachTextureType.Texture2D, 0);
@@ -107,9 +115,9 @@ internal static class Core {
 
         var target = new RenderTexture2D { Id = Rlgl.LoadFramebuffer() };
 
-        target.Texture.Width   = width;
-        target.Texture.Height  = height;
-        target.Texture.Format  = PixelFormat.UncompressedR8G8B8A8;
+        target.Texture.Width = width;
+        target.Texture.Height = height;
+        target.Texture.Format = PixelFormat.UncompressedR8G8B8A8;
         target.Texture.Mipmaps = 1;
 
         if (target.Id <= 0) return target;
@@ -121,10 +129,10 @@ internal static class Core {
         Rlgl.FramebufferAttach(target.Id, target.Texture.Id, FramebufferAttachType.ColorChannel0, FramebufferAttachTextureType.Texture2D, 0);
 
         // Depth texture
-        target.Depth.Id      = Rlgl.LoadTextureDepth(width, height, false);
-        target.Depth.Width   = width;
-        target.Depth.Height  = height;
-        target.Depth.Format  = PixelFormat.UncompressedGrayscale;
+        target.Depth.Id = Rlgl.LoadTextureDepth(width, height, false);
+        target.Depth.Width = width;
+        target.Depth.Height = height;
+        target.Depth.Format = PixelFormat.UncompressedGrayscale;
         target.Depth.Mipmaps = 1;
 
         Rlgl.FramebufferAttach(target.Id, target.Depth.Id, FramebufferAttachType.Depth, FramebufferAttachTextureType.Texture2D, 0);
@@ -156,6 +164,7 @@ internal static class Core {
 
                 return;
             }
+
         } else
             level = new Level(name, path);
 
@@ -300,12 +309,12 @@ internal static class Core {
         // Physical World Sync (Top-Down)
         if (obj.Parent != null) {
 
-            obj.WorldMatrix    = obj.Parent.WorldMatrix    * obj.Matrix;
+            obj.WorldMatrix = obj.Parent.WorldMatrix * obj.Matrix;
             obj.WorldRotMatrix = obj.Parent.WorldRotMatrix * obj.RotMatrix;
 
         } else {
 
-            obj.WorldMatrix    = obj.Matrix;
+            obj.WorldMatrix = obj.Matrix;
             obj.WorldRotMatrix = obj.RotMatrix;
         }
 
@@ -378,8 +387,8 @@ internal static class Core {
                     1 => pos + Vector3.UnitY * -1,
                     _ => pos + fwd
                 },
-                Up         = shadowLight.Type == 1 ? Vector3.UnitX : Vector3.UnitY,
-                FovY       = (shadowLight.Type == 0 ? shadowLight.Range * 2.0f : (shadowLight.Type == 2 ? 90.0f : 160.0f)) * RenderSettings.ShadowFovScale,
+                Up = shadowLight.Type == 1 ? Vector3.UnitX : Vector3.UnitY,
+                FovY = (shadowLight.Type == 0 ? shadowLight.Range * 2.0f : (shadowLight.Type == 2 ? 90.0f : 160.0f)) * RenderSettings.ShadowFovScale,
                 Projection = shadowLight.Type == 0 ? CameraProjection.Orthographic : CameraProjection.Perspective
             };
 
@@ -389,7 +398,7 @@ internal static class Core {
 
             var lightView = Rlgl.GetMatrixModelview();
             var lightProj = Rlgl.GetMatrixProjection();
-            var lightVp   = Raymath.MatrixMultiply(lightView, lightProj);
+            var lightVp = Raymath.MatrixMultiply(lightView, lightProj);
 
             // Draw objects for shadow depth
             var depth = AssetManager.Get<ShaderAsset>("depth");
@@ -405,10 +414,10 @@ internal static class Core {
             EndTextureMode();
 
             SetShaderValueMatrix(pbr.Shader, pbr.GetLoc("lightVP"), lightVp);
-            SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_light_index"),    shadowLightIndex,           ShaderUniformDataType.Int);
-            SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_strength"),       shadowLight.ShadowStrength, ShaderUniformDataType.Float);
-            SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_bias"),           RenderSettings.ShadowBias,  ShaderUniformDataType.Float);
-            SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_map_resolution"), ShadowMapResolution,        ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_light_index"), shadowLightIndex, ShaderUniformDataType.Int);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_strength"), shadowLight.ShadowStrength, ShaderUniformDataType.Float);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_bias"), RenderSettings.ShadowBias, ShaderUniformDataType.Float);
+            SetShaderValue(pbr.Shader, pbr.GetLoc("shadow_map_resolution"), ShadowMapResolution, ShaderUniformDataType.Int);
 
             const int shadowMapSlot = 10;
             Rlgl.ActiveTextureSlot(shadowMapSlot);
@@ -511,7 +520,7 @@ internal static class Core {
                 BeginMode3D(renderCamera.Raylib);
                 PostProcessing.ApplyJitter(renderCamera);
                 LastProjectionMatrix = Rlgl.GetMatrixProjection();
-                LastViewMatrix       = Rlgl.GetMatrixModelview();
+                LastViewMatrix = Rlgl.GetMatrixModelview();
                 Render(false);
                 EndMode3D();
             }

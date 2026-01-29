@@ -199,8 +199,6 @@ internal class ProjectBrowser : Viewport {
 
         var full = Path.GetFullPath(rootPath);
 
-        if (full.Contains(ScytheConfig.Current.Project)) return;
-
         if (!Directory.Exists(rootPath)) return;
 
         var name = Path.GetFileName(rootPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
@@ -367,11 +365,9 @@ internal class ProjectBrowser : Viewport {
 
             var full = Path.GetFullPath(entryPath);
 
-            if (full.Contains(ScytheConfig.Current.Project)) continue;
-
             // Skip meta files (e.g. Pistol.fbx.json)
             if (full.EndsWith(".json", StringComparison.OrdinalIgnoreCase)) {
-                var assetPath = full.Substring(0, full.Length - 5);
+                var assetPath = full[..^5];
 
                 if (File.Exists(assetPath)) continue;
             }

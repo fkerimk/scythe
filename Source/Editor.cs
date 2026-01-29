@@ -11,6 +11,7 @@ using static rlImGui_cs.rlImGui;
 internal static unsafe class Editor {
 
     private static bool _scheduledQuit;
+    private static bool _showExitModal;
     private static Camera3D _editorCamera = null!;
 
     // ReSharper disable MemberCanBePrivate.Global
@@ -82,10 +83,27 @@ internal static unsafe class Editor {
 
         Core.Load();
 
-        while (!WindowShouldClose()) {
+        var shouldClose = false;
+
+        while (!shouldClose) {
+
+            if (WindowShouldClose() || _scheduledQuit) {
+
+                if (Core.IsAnyLevelDirty || ScriptEditor.IsAnyTabDirty) {
+
+                    _showExitModal = true;
+                    _scheduledQuit = false;
+
+                } else {
+
+                    shouldClose = true;
+                }
+            }
+
             Window.UpdateFps();
 
             if (Core.ActiveLevel == null || Core.ActiveCamera == null) {
+
                 BeginDrawing();
                 ClearBackground(Color.Black);
                 Begin();
@@ -101,6 +119,9 @@ internal static unsafe class Editor {
 
                 PopFont();
                 Style.Pop();
+
+                DrawExitModal();
+
                 rlImGui.End();
                 Notifications.Draw();
                 EndDrawing();
@@ -110,14 +131,9 @@ internal static unsafe class Editor {
                 continue;
             }
 
-            // Sync Input State & Focus
-            // LuaMouse.InputAllowed = RuntimeRender.IsFocused;
-
-            // Start Drawing & ImGui Frame
             BeginDrawing();
 
-            // --- CORE SIMULATION ---
-            // Run logic inside BeginDrawing (for timing) but BEFORE rlImGui (to avoid input/state conflicts)
+            // Run logic inside BeginDrawing for timing - before rlImGui to avoid input/state conflicts
             Core.ActiveCamera = Core.IsPlaying ? Core.GameCamera : _editorCamera;
             Core.Logic();
             Core.ShadowPass();
@@ -246,6 +262,9 @@ internal static unsafe class Editor {
             // END
             PopFont();
             Style.Pop();
+
+            DrawExitModal();
+
             rlImGui.End();
 
             Notifications.Draw();
@@ -269,7 +288,69 @@ internal static unsafe class Editor {
 
     public static void Quit() => _scheduledQuit = true;
 
+    private static void DrawExitModal() {
+
+        if (!_showExitModal) return;
+
+        OpenPopup("Save Changes?###SaveExitModal");
+
+        var viewport = GetMainViewport();
+        SetNextWindowPos(viewport.GetCenter(), ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
+
+        PushStyleVar(ImGuiStyleVar.WindowPadding, new Vector2(24, 24));
+        PushStyleVar(ImGuiStyleVar.FramePadding, new Vector2(10, 8));
+        PushStyleVar(ImGuiStyleVar.ItemSpacing, new Vector2(8, 12));
+        PushStyleColor(ImGuiCol.ModalWindowDimBg, new Vector4(0f, 0f, 0f, 0.75f));
+
+        if (BeginPopupModal("Save Changes?###SaveExitModal", ref _showExitModal, ImGuiWindowFlags.AlwaysAutoResize | ImGuiWindowFlags.NoMove | ImGuiWindowFlags.NoTitleBar)) {
+
+            PushFont(Fonts.ImMontserratRegular);
+
+            TextColored(ColorNormalize(Colors.Primary), Icons.FaAsterisk + "  Unsaved Changes");
+            Separator();
+            Spacing();
+
+            Text("You have unsaved changes in your scripts or scenes.");
+            Text("Would you like to save them before exiting?");
+            Spacing();
+            Spacing();
+
+            if (Button("Save All & Exit", new Vector2(160, 40))) {
+
+                Core.SaveAllDirtyLevels();
+                ScriptEditor.SaveAllDirtyTabs();
+                _scheduledQuit = true;
+                _showExitModal = false;
+                CloseCurrentPopup();
+            }
+
+            SameLine();
+
+            if (Button("Discard", new Vector2(100, 40))) {
+
+                _scheduledQuit = true;
+                _showExitModal = false;
+                CloseCurrentPopup();
+            }
+
+            SameLine();
+
+            if (Button("Cancel", new Vector2(100, 40))) {
+
+                _showExitModal = false;
+                CloseCurrentPopup();
+            }
+
+            PopFont();
+            EndPopup();
+        }
+
+        PopStyleColor();
+        PopStyleVar(3);
+    }
+
     public static void TogglePlayMode(Vector2? mouseCenter = null) {
+        
         if (Core.ActiveLevel == null) return;
 
         if (!Core.IsPlaying) {

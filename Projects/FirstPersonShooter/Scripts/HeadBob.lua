@@ -5,7 +5,7 @@ function loop(dt)
 
     local targetPos = f3.zero
 
-    if kb:down("D") or kb:down("A") or kb:down("W") or kb:down("S") then
+    if kb:down(key.D) or kb:down(key.A) or kb:down(key.W) or kb:down(key.S) then
         targetPos = f3.new(math.sin(time.passed * speed * 0.5) * power, math.sin(time.passed * speed) * power, 0)
     end
 

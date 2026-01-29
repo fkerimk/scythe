@@ -15,6 +15,7 @@ internal class LuaLspClient(string serverPath) : IDisposable {
 
     public string Status { get; private set; } = "Not Started";
     public bool IsAlive => _process is { HasExited: false };
+    public bool IsReady { get; private set; }
 
     private static readonly string[] TokenTypes = ["namespace", "type", "class", "enum", "interface", "struct", "typeParameter", "parameter", "variable", "property", "enumMember", "event", "function", "method", "macro", "keyword", "modifier", "comment", "string", "number", "regexp", "operator"];
     private static readonly string[] Formats = ["relative"];
@@ -87,9 +88,10 @@ internal class LuaLspClient(string serverPath) : IDisposable {
         SendNotification("initialized", new { });
 
         // Library config
-        SendNotification("workspace/didChangeConfiguration", new { settings = new { Lua = new { workspace = new { library = new[] { Path.Join(ScytheConfig.Current.Project, "Project") }, checkThirdParty = false }, diagnostics = new { enable = true, globals = StringArray } } } });
+        SendNotification("workspace/didChangeConfiguration", new { settings = new { Lua = new { workspace = new { library = new[] { Path.Join(ScytheConfig.Current.Project, "Project"), Path.Combine(AppContext.BaseDirectory, "Resources") }, checkThirdParty = false }, diagnostics = new { enable = true, globals = StringArray } } } });
 
         Status = "Connected";
+        IsReady = true;
     }
 
     private void _Listen() {

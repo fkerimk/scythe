@@ -6,7 +6,7 @@ function loop()
 
     local targetTrack = 0
 
-    if kb:down("D") or kb:down("A") or kb:down("W") or kb:down("S") then
+    if kb:down(key.D) or kb:down(key.A) or kb:down(key.W) or kb:down(key.S) then
         targetTrack = 2
     end
 

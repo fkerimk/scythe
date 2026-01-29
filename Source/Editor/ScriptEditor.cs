@@ -45,6 +45,21 @@ internal unsafe class ScriptEditor : Viewport {
     private int _dropChoiceLine, _dropChoiceChar;
     private Vector2 _dropChoicePos;
     private HistoryStack History => ActiveTab.History;
+    public bool IsAnyTabDirty => _tabs.Any(t => t.IsDirty);
+
+    private ScriptTab? GetTabByUri(string uri) => _tabs.FirstOrDefault(t => t.Uri == uri);
+
+    public void SaveAllDirtyTabs() {
+        foreach (var tab in _tabs) {
+            if (tab.IsDirty && tab.FilePath != null) {
+                SafeExec.Try(() => {
+                        File.WriteAllText(tab.FilePath, string.Join("\n", tab.Lines));
+                        tab.IsDirty = false;
+                    }
+                );
+            }
+        }
+    }
 
     public ScriptEditor() : base("Script Editor") {
 
@@ -118,7 +133,7 @@ internal unsafe class ScriptEditor : Viewport {
         _activeTabIndex = _tabs.Count - 1;
         _scrollToTab = true;
 
-        if (_lsp is not { IsAlive: true }) return;
+        if (_lsp is not { IsReady: true }) return;
 
         _lsp.SendNotification("textDocument/didOpen", new { textDocument = new { uri = tab.Uri, languageId = "lua", version = tab.LspVersion, text = string.Join("\n", tab.Lines) } });
 
@@ -163,7 +178,11 @@ internal unsafe class ScriptEditor : Viewport {
 
         _lsp.NotificationReceived += (m, p) => {
 
-            if (m == "textDocument/publishDiagnostics") UpdateDiagnostics(p);
+            if (m != "textDocument/publishDiagnostics") return;
+
+            var uri = (string)p["uri"]!;
+            var tab = GetTabByUri(uri);
+            if (tab != null) UpdateDiagnostics(tab, p);
         };
 
         _lsp.ResponseReceived += (id, r) => {
@@ -173,7 +192,7 @@ internal unsafe class ScriptEditor : Viewport {
             else if (id == _sigRequestId)
                 UpdateSignatureHelp(r);
             else if (id == _semanticTokensRequestId)
-                UpdateSemanticTokens(r);
+                UpdateSemanticTokens(ActiveTab, r);
             else if (id == _hoverRequestId && r["contents"] is { } c) _tooltipText = c is JArray a ? string.Join("\n", a.Select(x => x["value"]?.ToString() ?? x.ToString())) : (string)(c["value"] ?? c)!;
         };
 
@@ -188,11 +207,11 @@ internal unsafe class ScriptEditor : Viewport {
         _lsp.Start()
             .ContinueWith(_ => {
 
-                    if (_lsp is not { IsAlive: true }) return;
+                    if (_lsp is not { IsReady: true }) return;
 
                     foreach (var tab in _tabs) _lsp.SendNotification("textDocument/didOpen", new { textDocument = new { uri = tab.Uri, languageId = "lua", version = tab.LspVersion, text = string.Join("\n", tab.Lines) } });
 
-                    RequestSemanticTokens();
+                    _lspUpdateTimer = 0.5f;
                 }
             );
     }
@@ -269,12 +288,12 @@ internal unsafe class ScriptEditor : Viewport {
         return l.Substring(s, ActiveTab.CursorChar - s);
     }
 
-    private void UpdateDiagnostics(JToken p) {
+    private static void UpdateDiagnostics(ScriptTab tab, JToken p) {
 
         var newDiags = new List<DiagnosticInfo>();
 
         foreach (var diagnostic in p["diagnostics"] ?? Enumerable.Empty<JToken>()) {
-
+            
             var msg = (string)diagnostic["message"]!;
 
             if (msg.Contains("lowercase initial")) continue;
@@ -292,10 +311,10 @@ internal unsafe class ScriptEditor : Viewport {
             );
         }
 
-        lock (ActiveTab.Diagnostics) {
+        lock (tab.Diagnostics) {
 
-            ActiveTab.Diagnostics.Clear();
-            ActiveTab.Diagnostics.AddRange(newDiags);
+            tab.Diagnostics.Clear();
+            tab.Diagnostics.AddRange(newDiags);
         }
     }
 
@@ -356,7 +375,11 @@ internal unsafe class ScriptEditor : Viewport {
 
                 if (BeginTabItem($"{(_tabs[i].IsDirty ? Icons.FaAsterisk + " " : " ")}{_tabs[i].Title} ###tab_{_tabs[i].Uri}", ref open, (_scrollToTab && i == _activeTabIndex) ? ImGuiTabItemFlags.SetSelected : 0)) {
 
-                    _activeTabIndex = i;
+                    if (_activeTabIndex != i) {
+                        _activeTabIndex = i;
+                        _lspUpdateTimer = 0.1f; // Force refresh when switching tabs
+                    }
+
                     EndTabItem();
                 }
 
@@ -534,7 +557,7 @@ internal unsafe class ScriptEditor : Viewport {
         _lspUpdateTimer = 0.15f;
         _didChangeTimer = 0.05f;
 
-        if (_lsp is not { IsAlive: true }) return;
+        if (_lsp is not { IsReady: true }) return;
 
         var l = ActiveTab.Lines[ActiveTab.CursorLine];
         var pref = GetCurrentWordPrefix();
@@ -563,7 +586,7 @@ internal unsafe class ScriptEditor : Viewport {
 
     private void SyncChanges() {
 
-        if (_lsp is not { IsAlive: true }) return;
+        if (_lsp is not { IsReady: true }) return;
 
         _didChangeTimer = 0;
 
@@ -584,10 +607,13 @@ internal unsafe class ScriptEditor : Viewport {
 
     private void RequestSemanticTokens() {
 
-        if (_lsp is { IsAlive: true }) _semanticTokensRequestId = _lsp.SendRequest("textDocument/semanticTokens/full", new { textDocument = new { uri = ActiveTab.Uri } });
+        if (_lsp is { IsReady: true }) {
+            var tab = ActiveTab;
+            _semanticTokensRequestId = _lsp.SendRequest("textDocument/semanticTokens/full", new { textDocument = new { uri = tab.Uri } });
+        }
     }
 
-    private void UpdateSemanticTokens(JToken data) {
+    private void UpdateSemanticTokens(ScriptTab tab, JToken data) {
 
         var res = data["data"] ?? data["result"]?["data"];
         var ints = res?.ToObject<int[]>();
@@ -606,7 +632,7 @@ internal unsafe class ScriptEditor : Viewport {
             tokens.Add(new SemanticToken { Line = l, StartChar = c, Length = ints[i + 2], Type = ints[i + 3] });
         }
 
-        ActiveTab.SemanticTokens = tokens;
+        tab.SemanticTokens = tokens;
     }
 
     private void HandleDropChoice() {

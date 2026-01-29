@@ -88,6 +88,8 @@ internal static class LuaDefinitionGenerator {
 
     private static void GenerateClass(StringBuilder sb, Type type, string className, Queue<Type> queue) {
 
+        const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
+
         var inheritance = "";
 
         if (type.BaseType != null && type.BaseType != typeof(object) && type.BaseType != typeof(ValueType)) {
@@ -104,9 +106,26 @@ internal static class LuaDefinitionGenerator {
             }
         }
 
-        sb.AppendLine($"---@class {className}{inheritance}");
+        if (type.IsEnum) {
+            sb.AppendLine($"---@class {className}");
 
-        const BindingFlags flags = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
+            foreach (var f in type.GetFields(flags)) {
+                if (!f.IsStatic || !IsSafeName(f.Name)) continue;
+                sb.AppendLine($"---@field {f.Name} {className}");
+            }
+
+            sb.AppendLine($"local {className} = {{");
+
+            foreach (var f in type.GetFields(flags)) {
+                if (!f.IsStatic || !IsSafeName(f.Name)) continue;
+                sb.AppendLine($"    {f.Name} = {f.GetRawConstantValue()},");
+            }
+
+            sb.AppendLine("}");
+            return;
+        }
+
+        sb.AppendLine($"---@class {className}{inheritance}");
 
         var generatedMembers = new HashSet<string>();
 

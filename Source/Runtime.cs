@@ -15,6 +15,7 @@ internal static class Runtime {
         while (!WindowShouldClose()) {
 
             if (Core.ActiveCamera == null) {
+
                 TraceLog(TraceLogLevel.Error, "RUNTIME: No active camera found, exiting loop.");
 
                 break;

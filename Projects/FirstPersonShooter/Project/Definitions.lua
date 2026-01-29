@@ -39,6 +39,9 @@ game = nil
 ---@type LuaColor
 color = nil
 
+---@type LuaKey
+key = nil
+
 ---@class Obj
 ---@field icon string
 ---@field color Color
@@ -243,21 +246,21 @@ function LuaTime.reset() end
 
 ---@class LuaKb
 local LuaKb = {}
----@param keyName string
+---@param key LuaKey
 ---@return boolean
-function LuaKb:down(keyName) end
+function LuaKb:down(key) end
 
----@param keyName string
+---@param key LuaKey
 ---@return boolean
-function LuaKb:pressed(keyName) end
+function LuaKb:pressed(key) end
 
----@param keyName string
+---@param key LuaKey
 ---@return boolean
-function LuaKb:released(keyName) end
+function LuaKb:released(key) end
 
----@param keyName string
+---@param key LuaKey
 ---@return boolean
-function LuaKb:up(keyName) end
+function LuaKb:up(key) end
 
 ---@class LuaMouse
 ---@field scroll number
@@ -312,6 +315,139 @@ local LuaColor = {}
 ---@return Color
 function LuaColor.new(r, g, b, a) end
 
+---@class LuaKey
+---@field A LuaKey
+---@field B LuaKey
+---@field C LuaKey
+---@field D LuaKey
+---@field E LuaKey
+---@field F LuaKey
+---@field G LuaKey
+---@field H LuaKey
+---@field I LuaKey
+---@field J LuaKey
+---@field K LuaKey
+---@field L LuaKey
+---@field M LuaKey
+---@field N LuaKey
+---@field O LuaKey
+---@field P LuaKey
+---@field Q LuaKey
+---@field R LuaKey
+---@field S LuaKey
+---@field T LuaKey
+---@field U LuaKey
+---@field V LuaKey
+---@field W LuaKey
+---@field X LuaKey
+---@field Y LuaKey
+---@field Z LuaKey
+---@field Zero LuaKey
+---@field One LuaKey
+---@field Two LuaKey
+---@field Three LuaKey
+---@field Four LuaKey
+---@field Five LuaKey
+---@field Six LuaKey
+---@field Seven LuaKey
+---@field Eight LuaKey
+---@field Nine LuaKey
+---@field Space LuaKey
+---@field Escape LuaKey
+---@field Enter LuaKey
+---@field Tab LuaKey
+---@field Backspace LuaKey
+---@field Insert LuaKey
+---@field Delete LuaKey
+---@field Right LuaKey
+---@field Left LuaKey
+---@field Down LuaKey
+---@field Up LuaKey
+---@field LeftShift LuaKey
+---@field LeftControl LuaKey
+---@field LeftAlt LuaKey
+---@field RightShift LuaKey
+---@field RightControl LuaKey
+---@field RightAlt LuaKey
+---@field F1 LuaKey
+---@field F2 LuaKey
+---@field F3 LuaKey
+---@field F4 LuaKey
+---@field F5 LuaKey
+---@field F6 LuaKey
+---@field F7 LuaKey
+---@field F8 LuaKey
+---@field F9 LuaKey
+---@field F10 LuaKey
+---@field F11 LuaKey
+---@field F12 LuaKey
+local LuaKey = {
+    A = 65,
+    B = 66,
+    C = 67,
+    D = 68,
+    E = 69,
+    F = 70,
+    G = 71,
+    H = 72,
+    I = 73,
+    J = 74,
+    K = 75,
+    L = 76,
+    M = 77,
+    N = 78,
+    O = 79,
+    P = 80,
+    Q = 81,
+    R = 82,
+    S = 83,
+    T = 84,
+    U = 85,
+    V = 86,
+    W = 87,
+    X = 88,
+    Y = 89,
+    Z = 90,
+    Zero = 48,
+    One = 49,
+    Two = 50,
+    Three = 51,
+    Four = 52,
+    Five = 53,
+    Six = 54,
+    Seven = 55,
+    Eight = 56,
+    Nine = 57,
+    Space = 32,
+    Escape = 256,
+    Enter = 257,
+    Tab = 258,
+    Backspace = 259,
+    Insert = 260,
+    Delete = 261,
+    Right = 262,
+    Left = 263,
+    Down = 264,
+    Up = 265,
+    LeftShift = 340,
+    LeftControl = 341,
+    LeftAlt = 342,
+    RightShift = 344,
+    RightControl = 345,
+    RightAlt = 346,
+    F1 = 290,
+    F2 = 291,
+    F3 = 292,
+    F4 = 293,
+    F5 = 294,
+    F6 = 295,
+    F7 = 296,
+    F8 = 297,
+    F9 = 298,
+    F10 = 299,
+    F11 = 300,
+    F12 = 301,
+}
 ---@class Component
 ---@field labelIcon string
 ---@field labelColor Color
@@ -2173,12 +2309,16 @@ function ModelAsset:applyMaterialState(index, force) end
 function ModelAsset:unload() end
 
 ---@class PhysicsCombineMode
----@field value__ number
----@field average PhysicsCombineMode
----@field minimum PhysicsCombineMode
----@field multiply PhysicsCombineMode
----@field maximum PhysicsCombineMode
-local PhysicsCombineMode = {}
+---@field Average PhysicsCombineMode
+---@field Minimum PhysicsCombineMode
+---@field Multiply PhysicsCombineMode
+---@field Maximum PhysicsCombineMode
+local PhysicsCombineMode = {
+    Average = 0,
+    Minimum = 1,
+    Multiply = 2,
+    Maximum = 3,
+}
 ---@class Bool3
 ---@field x boolean
 ---@field y boolean
@@ -3281,10 +3421,12 @@ function Plane:getHashCode() end
 function Plane:toString() end
 
 ---@class CameraProjection
----@field value__ number
----@field perspective CameraProjection
----@field orthographic CameraProjection
-local CameraProjection = {}
+---@field Perspective CameraProjection
+---@field Orthographic CameraProjection
+local CameraProjection = {
+    Perspective = 0,
+    Orthographic = 1,
+}
 ---@class BloomSettings
 ---@field enabled boolean
 ---@field intensity number
@@ -3909,11 +4051,14 @@ function JQuaternion:equals(other) end
 function JQuaternion:getHashCode() end
 
 ---@class MotionType
----@field value__ number
----@field dynamic MotionType
----@field kinematic MotionType
----@field static MotionType
-local MotionType = {}
+---@field Dynamic MotionType
+---@field Kinematic MotionType
+---@field Static MotionType
+local MotionType = {
+    Dynamic = 0,
+    Kinematic = 1,
+    Static = 2,
+}
 ---@class RigidBodyShape : Shape
 ---@field rigidBody RigidBody
 ---@field velocity JVector
@@ -4052,44 +4197,71 @@ function JBoundingBox:equals(other) end
 function JBoundingBox:getHashCode() end
 
 ---@class DateTimeZoneHandling
----@field value__ number
----@field local DateTimeZoneHandling
----@field utc DateTimeZoneHandling
----@field unspecified DateTimeZoneHandling
----@field roundtripKind DateTimeZoneHandling
-local DateTimeZoneHandling = {}
+---@field Local DateTimeZoneHandling
+---@field Utc DateTimeZoneHandling
+---@field Unspecified DateTimeZoneHandling
+---@field RoundtripKind DateTimeZoneHandling
+local DateTimeZoneHandling = {
+    Local = 0,
+    Utc = 1,
+    Unspecified = 2,
+    RoundtripKind = 3,
+}
 ---@class DateParseHandling
----@field value__ number
----@field none DateParseHandling
----@field dateTime DateParseHandling
----@field dateTimeOffset DateParseHandling
-local DateParseHandling = {}
+---@field None DateParseHandling
+---@field DateTime DateParseHandling
+---@field DateTimeOffset DateParseHandling
+local DateParseHandling = {
+    None = 0,
+    DateTime = 1,
+    DateTimeOffset = 2,
+}
 ---@class FloatParseHandling
----@field value__ number
----@field double FloatParseHandling
----@field decimal FloatParseHandling
-local FloatParseHandling = {}
+---@field Double FloatParseHandling
+---@field Decimal FloatParseHandling
+local FloatParseHandling = {
+    Double = 0,
+    Decimal = 1,
+}
 ---@class JsonToken
----@field value__ number
----@field none JsonToken
----@field startObject JsonToken
----@field startArray JsonToken
----@field startConstructor JsonToken
----@field propertyName JsonToken
----@field comment JsonToken
----@field raw JsonToken
----@field integer JsonToken
----@field float JsonToken
----@field string JsonToken
----@field boolean JsonToken
----@field null JsonToken
----@field undefined JsonToken
----@field endObject JsonToken
----@field endArray JsonToken
----@field endConstructor JsonToken
----@field date JsonToken
----@field bytes JsonToken
-local JsonToken = {}
+---@field None JsonToken
+---@field StartObject JsonToken
+---@field StartArray JsonToken
+---@field StartConstructor JsonToken
+---@field PropertyName JsonToken
+---@field Comment JsonToken
+---@field Raw JsonToken
+---@field Integer JsonToken
+---@field Float JsonToken
+---@field String JsonToken
+---@field Boolean JsonToken
+---@field Null JsonToken
+---@field Undefined JsonToken
+---@field EndObject JsonToken
+---@field EndArray JsonToken
+---@field EndConstructor JsonToken
+---@field Date JsonToken
+---@field Bytes JsonToken
+local JsonToken = {
+    None = 0,
+    StartObject = 1,
+    StartArray = 2,
+    StartConstructor = 3,
+    PropertyName = 4,
+    Comment = 5,
+    Raw = 6,
+    Integer = 7,
+    Float = 8,
+    String = 9,
+    Boolean = 10,
+    Null = 11,
+    Undefined = 12,
+    EndObject = 13,
+    EndArray = 14,
+    EndConstructor = 15,
+    Date = 16,
+    Bytes = 17,
+}
 ---@class IReferenceResolver
 local IReferenceResolver = {}
 ---@param context Object
@@ -4136,65 +4308,95 @@ local ITraceWriter = {}
 function ITraceWriter:trace(level, message, ex) end
 
 ---@class TypeNameHandling
----@field value__ number
----@field none TypeNameHandling
----@field objects TypeNameHandling
----@field arrays TypeNameHandling
----@field all TypeNameHandling
----@field auto TypeNameHandling
-local TypeNameHandling = {}
+---@field None TypeNameHandling
+---@field Objects TypeNameHandling
+---@field Arrays TypeNameHandling
+---@field All TypeNameHandling
+---@field Auto TypeNameHandling
+local TypeNameHandling = {
+    None = 0,
+    Objects = 1,
+    Arrays = 2,
+    All = 3,
+    Auto = 4,
+}
 ---@class TypeNameAssemblyFormatHandling
----@field value__ number
----@field simple TypeNameAssemblyFormatHandling
----@field full TypeNameAssemblyFormatHandling
-local TypeNameAssemblyFormatHandling = {}
+---@field Simple TypeNameAssemblyFormatHandling
+---@field Full TypeNameAssemblyFormatHandling
+local TypeNameAssemblyFormatHandling = {
+    Simple = 0,
+    Full = 1,
+}
 ---@class PreserveReferencesHandling
----@field value__ number
----@field none PreserveReferencesHandling
----@field objects PreserveReferencesHandling
----@field arrays PreserveReferencesHandling
----@field all PreserveReferencesHandling
-local PreserveReferencesHandling = {}
+---@field None PreserveReferencesHandling
+---@field Objects PreserveReferencesHandling
+---@field Arrays PreserveReferencesHandling
+---@field All PreserveReferencesHandling
+local PreserveReferencesHandling = {
+    None = 0,
+    Objects = 1,
+    Arrays = 2,
+    All = 3,
+}
 ---@class ReferenceLoopHandling
----@field value__ number
----@field error ReferenceLoopHandling
----@field ignore ReferenceLoopHandling
----@field serialize ReferenceLoopHandling
-local ReferenceLoopHandling = {}
+---@field Error ReferenceLoopHandling
+---@field Ignore ReferenceLoopHandling
+---@field Serialize ReferenceLoopHandling
+local ReferenceLoopHandling = {
+    Error = 0,
+    Ignore = 1,
+    Serialize = 2,
+}
 ---@class MissingMemberHandling
----@field value__ number
----@field ignore MissingMemberHandling
----@field error MissingMemberHandling
-local MissingMemberHandling = {}
+---@field Ignore MissingMemberHandling
+---@field Error MissingMemberHandling
+local MissingMemberHandling = {
+    Ignore = 0,
+    Error = 1,
+}
 ---@class NullValueHandling
----@field value__ number
----@field include NullValueHandling
----@field ignore NullValueHandling
-local NullValueHandling = {}
+---@field Include NullValueHandling
+---@field Ignore NullValueHandling
+local NullValueHandling = {
+    Include = 0,
+    Ignore = 1,
+}
 ---@class DefaultValueHandling
----@field value__ number
----@field include DefaultValueHandling
----@field ignore DefaultValueHandling
----@field populate DefaultValueHandling
----@field ignoreAndPopulate DefaultValueHandling
-local DefaultValueHandling = {}
+---@field Include DefaultValueHandling
+---@field Ignore DefaultValueHandling
+---@field Populate DefaultValueHandling
+---@field IgnoreAndPopulate DefaultValueHandling
+local DefaultValueHandling = {
+    Include = 0,
+    Ignore = 1,
+    Populate = 2,
+    IgnoreAndPopulate = 3,
+}
 ---@class ObjectCreationHandling
----@field value__ number
----@field auto ObjectCreationHandling
----@field reuse ObjectCreationHandling
----@field replace ObjectCreationHandling
-local ObjectCreationHandling = {}
+---@field Auto ObjectCreationHandling
+---@field Reuse ObjectCreationHandling
+---@field Replace ObjectCreationHandling
+local ObjectCreationHandling = {
+    Auto = 0,
+    Reuse = 1,
+    Replace = 2,
+}
 ---@class ConstructorHandling
----@field value__ number
----@field default ConstructorHandling
----@field allowNonPublicDefaultConstructor ConstructorHandling
-local ConstructorHandling = {}
+---@field Default ConstructorHandling
+---@field AllowNonPublicDefaultConstructor ConstructorHandling
+local ConstructorHandling = {
+    Default = 0,
+    AllowNonPublicDefaultConstructor = 1,
+}
 ---@class MetadataPropertyHandling
----@field value__ number
----@field default MetadataPropertyHandling
----@field readAhead MetadataPropertyHandling
----@field ignore MetadataPropertyHandling
-local MetadataPropertyHandling = {}
+---@field Default MetadataPropertyHandling
+---@field ReadAhead MetadataPropertyHandling
+---@field Ignore MetadataPropertyHandling
+local MetadataPropertyHandling = {
+    Default = 0,
+    ReadAhead = 1,
+    Ignore = 2,
+}
 ---@class JsonConverterCollection
 ---@field count number
 ---@field item JsonConverter
@@ -4206,37 +4408,54 @@ local IContractResolver = {}
 function IContractResolver:resolveContract(type) end
 
 ---@class Formatting
----@field value__ number
----@field none Formatting
----@field indented Formatting
-local Formatting = {}
+---@field None Formatting
+---@field Indented Formatting
+local Formatting = {
+    None = 0,
+    Indented = 1,
+}
 ---@class DateFormatHandling
----@field value__ number
----@field isoDateFormat DateFormatHandling
----@field microsoftDateFormat DateFormatHandling
-local DateFormatHandling = {}
+---@field IsoDateFormat DateFormatHandling
+---@field MicrosoftDateFormat DateFormatHandling
+local DateFormatHandling = {
+    IsoDateFormat = 0,
+    MicrosoftDateFormat = 1,
+}
 ---@class FloatFormatHandling
----@field value__ number
----@field string FloatFormatHandling
----@field symbol FloatFormatHandling
----@field defaultValue FloatFormatHandling
-local FloatFormatHandling = {}
+---@field String FloatFormatHandling
+---@field Symbol FloatFormatHandling
+---@field DefaultValue FloatFormatHandling
+local FloatFormatHandling = {
+    String = 0,
+    Symbol = 1,
+    DefaultValue = 2,
+}
 ---@class StringEscapeHandling
----@field value__ number
----@field default StringEscapeHandling
----@field escapeNonAscii StringEscapeHandling
----@field escapeHtml StringEscapeHandling
-local StringEscapeHandling = {}
+---@field Default StringEscapeHandling
+---@field EscapeNonAscii StringEscapeHandling
+---@field EscapeHtml StringEscapeHandling
+local StringEscapeHandling = {
+    Default = 0,
+    EscapeNonAscii = 1,
+    EscapeHtml = 2,
+}
 ---@class WriteState
----@field value__ number
----@field error WriteState
----@field closed WriteState
----@field object WriteState
----@field array WriteState
----@field constructor WriteState
----@field property WriteState
----@field start WriteState
-local WriteState = {}
+---@field Error WriteState
+---@field Closed WriteState
+---@field Object WriteState
+---@field Array WriteState
+---@field Constructor WriteState
+---@field Property WriteState
+---@field Start WriteState
+local WriteState = {
+    Error = 0,
+    Closed = 1,
+    Object = 2,
+    Array = 3,
+    Constructor = 4,
+    Property = 5,
+    Start = 6,
+}
 ---@class Arbiter
 ---@field body1 RigidBody
 ---@field body2 RigidBody
@@ -4258,10 +4477,12 @@ local Arbiter = {}
 ---@field smallConstraints Span
 local SpanData = {}
 ---@class ThreadModelType
----@field value__ number
----@field regular ThreadModelType
----@field persistent ThreadModelType
-local ThreadModelType = {}
+---@field Regular ThreadModelType
+---@field Persistent ThreadModelType
+local ThreadModelType = {
+    Regular = 0,
+    Persistent = 1,
+}
 ---@class ReadOnlyPartitionedSet
 ---@field activeCount number
 ---@field count number
@@ -4379,18 +4600,28 @@ function IBroadPhaseFilter:filter(proxyA, proxyB) end
 ---@field worldBoundingBox JBoundingBox
 local IDynamicTreeProxy = {}
 ---@class SolveMode
----@field value__ number
----@field none SolveMode
----@field linearBody1 SolveMode
----@field angularBody1 SolveMode
----@field linearBody2 SolveMode
----@field angularBody2 SolveMode
----@field fullBody1 SolveMode
----@field fullBody2 SolveMode
----@field linear SolveMode
----@field angular SolveMode
----@field full SolveMode
-local SolveMode = {}
+---@field None SolveMode
+---@field LinearBody1 SolveMode
+---@field AngularBody1 SolveMode
+---@field LinearBody2 SolveMode
+---@field AngularBody2 SolveMode
+---@field FullBody1 SolveMode
+---@field FullBody2 SolveMode
+---@field Linear SolveMode
+---@field Angular SolveMode
+---@field Full SolveMode
+local SolveMode = {
+    None = 0,
+    LinearBody1 = 1,
+    AngularBody1 = 2,
+    LinearBody2 = 4,
+    AngularBody2 = 8,
+    FullBody1 = 3,
+    FullBody2 = 12,
+    Linear = 5,
+    Angular = 10,
+    Full = 15,
+}
 ---@class Shape
 ---@field worldBoundingBox JBoundingBox
 ---@field velocity JVector

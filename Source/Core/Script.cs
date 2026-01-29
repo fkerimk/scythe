@@ -77,6 +77,7 @@ internal class Script(Obj obj) : Component(obj) {
         UserData.RegisterType<Vector3>();
         UserData.RegisterType<Quaternion>();
         UserData.RegisterType<Color>();
+        UserData.RegisterType<LuaKey>();
 
         // Generate definitions
         Make(generateDefinitions: true);
@@ -100,6 +101,7 @@ internal class Script(Obj obj) : Component(obj) {
                 ["quat"] = LuaQuat,
                 ["game"] = LuaGame,
                 ["color"] = LuaColor,
+                ["key"] = typeof(LuaKey),
             }
         };
 
