@@ -17,15 +17,15 @@ function loop(dt)
     camera(dt)
     movement(dt)
 
-    if kb.pressed("Escape") then game.quit() end
+    if kb:pressed(key.Escape) then game.quit() end
 end
 
 function movement(dt)
 
     local moveInput = f2.new(
 
-        (kb.down("D") and 1 or 0) - (kb.down("A") and 1 or 0),
-        (kb.down("W") and 1 or 0) - (kb.down("S") and 1 or 0)
+        (kb:down(key.D) and 1 or 0) - (kb:down(key.A) and 1 or 0),
+        (kb:down(key.W) and 1 or 0) - (kb:down(key.S) and 1 or 0)
     )
 
     if moveInput ~= f2.zero then

@@ -47,7 +47,7 @@ internal unsafe class ScriptEditor : Viewport {
     private HistoryStack History => ActiveTab.History;
     public bool IsAnyTabDirty => _tabs.Any(t => t.IsDirty);
 
-    private ScriptTab? GetTabByUri(string uri) => _tabs.FirstOrDefault(t => t.Uri == uri);
+    private ScriptTab? GetTabByUri(string uri) { return _tabs.FirstOrDefault(t => string.Equals(t.Uri, uri, StringComparison.OrdinalIgnoreCase) || string.Equals(Uri.UnescapeDataString(t.Uri), Uri.UnescapeDataString(uri), StringComparison.OrdinalIgnoreCase)); }
 
     public void SaveAllDirtyTabs() {
         foreach (var tab in _tabs) {
@@ -293,20 +293,24 @@ internal unsafe class ScriptEditor : Viewport {
         var newDiags = new List<DiagnosticInfo>();
 
         foreach (var diagnostic in p["diagnostics"] ?? Enumerable.Empty<JToken>()) {
-            
-            var msg = (string)diagnostic["message"]!;
+
+            var msg = (string?)diagnostic["message"];
+
+            if (string.IsNullOrEmpty(msg)) continue;
 
             if (msg.Contains("lowercase initial")) continue;
 
             var r = diagnostic["range"];
 
+            if (r == null) continue;
+
             newDiags.Add(
                 new DiagnosticInfo {
                     Message = msg,
-                    Severity = (int)diagnostic["severity"]!,
-                    Line = (int)r!["start"]!["line"]!,
-                    StartChar = (int)r["start"]!["character"]!,
-                    EndChar = (int)r["end"]!["character"]!
+                    Severity = (int?)diagnostic["severity"] ?? 1,
+                    Line = (int?)r["start"]?["line"] ?? 0,
+                    StartChar = (int?)r["start"]?["character"] ?? 0,
+                    EndChar = (int?)r["end"]?["character"] ?? 0
                 }
             );
         }

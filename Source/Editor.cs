@@ -23,7 +23,6 @@ internal static unsafe class Editor {
     public static MusicPlayer MusicPlayer = null!;
     public static Preview Preview = null!;
     public static RuntimeRender RuntimeRender = null!;
-
     // ReSharper restore MemberCanBePrivate.Global
 
     private static Level? _editorLevelRef;
