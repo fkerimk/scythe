@@ -10,6 +10,8 @@ It combines a modern rendering pipeline, a fully integrated editor, and a runtim
 > [!CAUTION]  
 > Scythe is still in an early stage of development and is not even in an Alpha or Beta phase. Existing features may be removed or changed at any time. It is not unexpected for sample projects to be incomplete, for some existing features to be temporarily unavailable, or for default settings to change with each commit.
 
+https://github.com/user-attachments/assets/0c301833-79d5-4ac3-ab05-dfff61f48d2b
+
 ## 🎯 Who is this for?
 
 - Indie developers who want full control over engine internals.
@@ -131,5 +133,6 @@ Many post-processing shaders and various other shaders were taken from, or based
 [Animated FPS Pistol](https://skfb.ly/psqCp) by Levraicoincoin, DJMaesen, licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
 
 #### Early Samples
+
 
 [Bear Man PSX](https://skfb.ly/p9SUZ) by Bonvikt, licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
