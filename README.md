@@ -23,9 +23,9 @@ Scythe is licensed under the [MIT license](./LICENSE).
 
 This project uses:
 
-- [C# bindings of Raylib](https://github.com/raylib-cs/raylib-cs?tab=Zlib-1-ov-file#readme) and [C# bindings of ImGui](https://github.com/ocornut/imgui), both licensed under zlib/libpng.
+- [C# bindings](https://github.com/raylib-cs/raylib-cs?tab=Zlib-1-ov-file#readme) of [Raylib](https://github.com/raysan5/raylib?tab=Zlib-1-ov-file#readme) and [C# bindings](https://github.com/raylib-extras/rlImGui-cs?tab=Zlib-1-ov-file#readme) of [rlImGui](https://github.com/raylib-extras/rlImGui?tab=Zlib-1-ov-file#readme), all licensed under zlib/libpng.
 
-- [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json?tab=MIT-1-ov-file#readme), [Jitter Physics 2 *(Jitter2)*](https://github.com/notgiven688/jitterphysics2?tab=MIT-1-ov-file#readme), [NLayer](https://github.com/naudio/NLayer?tab=MIT-1-ov-file#readme) and [AssimpNet](https://bitbucket.org/Starnick/assimpnet/src/master/License.txt) all licensed under MIT.
+- [ImGui](https://github.com/ocornut/imgui?tab=MIT-1-ov-file#readme), [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json?tab=MIT-1-ov-file#readme), [LuaLS (lua-language-server)](https://github.com/LuaLS/lua-language-server?tab=MIT-1-ov-file#readme), [Jitter Physics 2 *(Jitter2)*](https://github.com/notgiven688/jitterphysics2?tab=MIT-1-ov-file#readme), [NLayer](https://github.com/naudio/NLayer?tab=MIT-1-ov-file#readme) and [AssimpNet](https://bitbucket.org/Starnick/assimpnet/src/master/License.txt) all licensed under MIT.
 
 - [MoonSharp](https://github.com/moonsharp-devs/moonsharp/?tab=License-1-ov-file#readme) licensed under the BSD 3-Clause.
 
