@@ -1,12 +1,21 @@
 # SCYTHE 
 
 SCYTHE is a lightweight, C#-based game engine focused on modifiability and rapid iteration using [Raylib](https://github.com/raysan5/raylib).
+<br/>
+It combines a modern rendering pipeline, a fully integrated editor, and a runtime into a single codebase.
+
+> [!NOTE]  
+> Scythe is a hobby project. It is developed by me alone, for personal enjoyment. Do not expect official support, and relying on it for commercial projects is entirely your own responsibility and is not recommended.
+
+> [!CAUTION]  
+> Scythe is still in an early stage of development and is not even in an Alpha or Beta phase. Existing features may be removed or changed at any time. It is not unexpected for sample projects to be incomplete, for some existing features to be temporarily unavailable, or for default settings to change with each commit.
 
 ## 🎯 Who is this for?
 
-- Indie developers who want full control over engine internals
-- Developers interested in moddable, scriptable game architectures
-- Learning-oriented projects (rendering, physics, and engine tooling)
+- Indie developers who want full control over engine internals.
+- Developers interested in moddable, scriptable game architectures.
+- Learning-oriented projects *(rendering, physics, and engine tooling)*.
+- Developers who prefer code-first workflows over black-box engines.
 
 ## 🛠️ License
 
@@ -16,14 +25,14 @@ This project uses:
 
 - [C# bindings of Raylib](https://github.com/raylib-cs/raylib-cs?tab=Zlib-1-ov-file#readme) and [C# bindings of ImGui](https://github.com/ocornut/imgui), both licensed under zlib/libpng.
 
-- [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json?tab=MIT-1-ov-file#readme), [Jitter Physics 2 *(Jitter2)*](https://github.com/notgiven688/jitterphysics2?tab=MIT-1-ov-file#readme) and [NLayer](https://github.com/naudio/NLayer?tab=MIT-1-ov-file#readme) all licensed under MIT.
+- [Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json?tab=MIT-1-ov-file#readme), [Jitter Physics 2 *(Jitter2)*](https://github.com/notgiven688/jitterphysics2?tab=MIT-1-ov-file#readme), [NLayer](https://github.com/naudio/NLayer?tab=MIT-1-ov-file#readme) and [AssimpNet](https://bitbucket.org/Starnick/assimpnet/src/master/License.txt) all licensed under MIT.
 
 - [MoonSharp](https://github.com/moonsharp-devs/moonsharp/?tab=License-1-ov-file#readme) licensed under the BSD 3-Clause.
 
 ## 🧱 Architecture Overview
 
-- Component-based object model *(not ECS)*
-- Shared runtime between editor and game execution
+- Component-based object model *(not ECS)*.
+- Shared runtime between editor and game execution.
 
 ## ✨ Features
 
@@ -31,11 +40,25 @@ This project uses:
 
 - **Modern .NET:** High-performance architecture built on the latest .NET 10 runtime.
 - **Hybrid Runtime/Editor:** Combines a scene editor with a fast game runtime in a single environment.
+- **Asset Management:** Centralized asset manager with hot-reloading via filesystem watching.
+    - **Models:** .fbx, .obj, .gltf
+    - **Textures:** .png, .jpg, .jpeg, .tga, .bmp
+    - **Shaders:** .vs, .fs
 
 ### Graphics
 
 - **PBR Rendering:** Shader-based Physically Based Rendering *(PBR)* support for realistic material appearance.
 - **Advanced Lighting & Shadows:** Dynamic light sources with real-time Shadow Mapping.
+- **Transparent Render Queue:** Proper depth-sorted rendering of transparent objects.
+- **Skybox:** Skybox rendering with cubemaps.
+- **Post-Processing:**
+    - SSAO *(Screen Space Ambient Occlusion)*
+    - FXAA, SMAA, TAA *(with jitter)*
+    - Bloom, Blur, Pixellizer, Cross Hatching, Cross Stitching, Sobel edge detection, Scanlines, Fisheye, Dream Vision, Predator, Grayscale, Posterization
+
+### Animation
+- **Skeletal Animation:** Mesh skinning and bone animation.
+- **Animation Blending:** Smooth transitions between animations.
 
 ### Physics
 
@@ -45,9 +68,16 @@ This project uses:
 ### Editor
 
 - **Docking UI:** ImGui-based interface with freely dockable windows.
+- **Advanced Script Editor:**
+    - Lua Language Server Protocol *(LSP)* support.
+    - Code completion *(IntelliSense)*.
+    - Error diagnostics.
+    - Tabbed multi-file editing.
+    - Syntax highlighting.
 - **Level Browser:** Hierarchical object management with a layered structure.
-- **Object Browser:** Real-time panel for editing object properties, components, and physics settings.
-- **JSON Level System:** Scenes and objects can be saved and loaded in a human-readable JSON format.
+- **Object Browser:** Real-time panel for editing object properties.
+- **Undo / Redo System:** Action history tracking across editor operations.
+- A built-in music player! 😎
 
 ### Scripting
 
@@ -63,7 +93,7 @@ This project uses:
 ## 👷 Building
 
 > [!NOTE]  
->  Make sure you have the .NET SDK 10.0+ packages installed.
+> Make sure you have the .NET SDK 10.0+ packages installed.
 
 ```bash
 git clone https://github.com/fkerimk/scythe.git
@@ -80,15 +110,9 @@ dotnet run -- editor
 - Opens the editor
 - Press F5 to run the play mode
 
-## 🔧 Configuring
-
-The [Scythe.ini](./Scythe.ini) file in the project folder comes with all default settings. Scythe first reads the [Scythe.ini](./Scythe.ini) file in the working directory; if it’s not found there, it reads the one in the executable directory.
-
-Make sure the basic resources included with the template are in the necessary locations within the project.
-
-For more detailed configuration, you can refer to the [configuring](./CONFIGURING.md) file.
-
 ## 🙏 Attributions
+
+Many post-processing shaders and various other shaders were taken from, or based on, [Raylib Examples](https://github.com/raysan5/raylib/tree/master/examples). Thanks, Raylib!
 
 #### Fonts
 
