@@ -1,6 +1,6 @@
-# SCYTHE 
+# Scythe
 
-SCYTHE is a lightweight, C#-based game engine focused on modifiability and rapid iteration using [Raylib](https://github.com/raysan5/raylib).
+Scythe is a lightweight, C#-based game engine focused on modifiability and rapid iteration using [Raylib](https://github.com/raysan5/raylib).
 <br/>
 It combines a modern rendering pipeline, a fully integrated editor, and a runtime into a single codebase.
 
@@ -136,3 +136,4 @@ Many post-processing shaders and various other shaders were taken from, or based
 
 
 [Bear Man PSX](https://skfb.ly/p9SUZ) by Bonvikt, licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
+
